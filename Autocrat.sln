@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29001.49
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Abstractions", "src\Autocrat.Abstractions\Autocrat.Abstractions.csproj", "{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Compiler", "src\Autocrat.Compiler\Autocrat.Compiler.csproj", "{1178FE97-0C99-4E74-8977-B48FBA81E267}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abstractions.Tests", "tests\Abstractions.Tests\Abstractions.Tests.csproj", "{6511D618-BE95-4AD5-82A4-81D67AE86F3C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0AD2F87E-7081-4D98-907D-37DE3AF727D6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F7F91C1F-220D-494A-A575-A5B52D654F26}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compiler.Tests", "tests\Compiler.Tests\Compiler.Tests.csproj", "{A9E398F6-7C31-4333-8EC9-7860E782607B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{67148BEE-BFD2-4A1F-A12C-4947C2B62455}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		CHANGELOG.md = CHANGELOG.md
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1178FE97-0C99-4E74-8977-B48FBA81E267}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1178FE97-0C99-4E74-8977-B48FBA81E267}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1178FE97-0C99-4E74-8977-B48FBA81E267}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1178FE97-0C99-4E74-8977-B48FBA81E267}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6511D618-BE95-4AD5-82A4-81D67AE86F3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6511D618-BE95-4AD5-82A4-81D67AE86F3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6511D618-BE95-4AD5-82A4-81D67AE86F3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6511D618-BE95-4AD5-82A4-81D67AE86F3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9E398F6-7C31-4333-8EC9-7860E782607B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9E398F6-7C31-4333-8EC9-7860E782607B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9E398F6-7C31-4333-8EC9-7860E782607B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9E398F6-7C31-4333-8EC9-7860E782607B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6B9EC2CF-393A-4B66-976E-573A0CCD58EB} = {0AD2F87E-7081-4D98-907D-37DE3AF727D6}
+		{1178FE97-0C99-4E74-8977-B48FBA81E267} = {0AD2F87E-7081-4D98-907D-37DE3AF727D6}
+		{6511D618-BE95-4AD5-82A4-81D67AE86F3C} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
+		{A9E398F6-7C31-4333-8EC9-7860E782607B} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4EF8B246-D856-451C-AB5D-4C4821DBE8A4}
+	EndGlobalSection
+EndGlobal
