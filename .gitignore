@@ -1,0 +1,8 @@
+# Visual Studio
+.vs/
+[Bb]in/
+[Oo]bj/
+
+# Cake
+build/tools/*
+!build/tools/packages.config
