@@ -3,11 +3,15 @@
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);NU5100</NoWarn>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
+    <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+    <DevelopmentDependency>true</DevelopmentDependency>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,5 +23,13 @@
   <ItemGroup>
     <AdditionalFiles Include="..\stylecop.json" Link="Properties\stylecop.json" />
     <Compile Include="..\GlobalSuppressions.cs" Link="Properties\GlobalSuppressions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Package.targets">
+      <Pack>true</Pack>
+      <PackagePath>build/$(PackageId).targets</PackagePath>
+      <Visible>true</Visible>
+    </Content>
   </ItemGroup>
 </Project>

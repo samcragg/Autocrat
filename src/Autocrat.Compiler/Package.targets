@@ -1,0 +1,6 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="AutocratTarget"
+          AfterTargets="AfterBuild">
+    <Exec Command="dotnet $(MSBuildThisFileDirectory)../tasks/netcoreapp2.1/Autocrat.Compiler.dll" />
+  </Target>
+</Project>
