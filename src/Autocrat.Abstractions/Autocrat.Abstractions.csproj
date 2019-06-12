@@ -6,6 +6,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
