@@ -21,7 +21,7 @@
             {
                 this.resolver.AddKnownClasses(new[] { typeof(AbstractClass) });
 
-                IReadOnlyList<Type> result = this.resolver.FindClasses(
+                IReadOnlyCollection<Type> result = this.resolver.FindClasses(
                     typeof(IFakeInterface));
 
                 result.Should().BeEmpty();
@@ -38,7 +38,7 @@
 
                 this.resolver.AddKnownClasses(classes);
 
-                IReadOnlyList<Type> result = this.resolver.FindClasses(
+                IReadOnlyCollection<Type> result = this.resolver.FindClasses(
                     typeof(IFakeInterface));
 
                 result.Should().BeEquivalentTo(classes);
@@ -47,10 +47,21 @@
             [Fact]
             public void ShouldReturnAnEmptyListForUnknownInterfaces()
             {
-                IReadOnlyList<Type> result = this.resolver.FindClasses(
+                IReadOnlyCollection<Type> result = this.resolver.FindClasses(
                     typeof(IFakeInterface));
 
                 result.Should().BeEmpty();
+            }
+
+            [Fact]
+            public void ShouldReturnClassesForAbstractBaseClasses()
+            {
+                this.resolver.AddKnownClasses(new[] { typeof(DerivedClass) });
+
+                IReadOnlyCollection<Type> result = this.resolver.FindClasses(
+                    typeof(AbstractClass));
+
+                result.Should().ContainSingle().Which.Should().Be(typeof(DerivedClass));
             }
 
             [Fact]
@@ -58,10 +69,21 @@
             {
                 this.resolver.AddKnownClasses(new[] { typeof(DerivedClass) });
 
-                IReadOnlyList<Type> result = this.resolver.FindClasses(
+                IReadOnlyCollection<Type> result = this.resolver.FindClasses(
                     typeof(IFakeInterface));
 
                 result.Should().ContainSingle().Which.Should().Be(typeof(DerivedClass));
+            }
+
+            [Fact]
+            public void ShouldReturnConcreteClasses()
+            {
+                this.resolver.AddKnownClasses(new[] { typeof(FakeClass1) });
+
+                IReadOnlyCollection<Type> result = this.resolver.FindClasses(
+                    typeof(FakeClass1));
+
+                result.Should().ContainSingle().Which.Should().Be(typeof(FakeClass1));
             }
         }
 

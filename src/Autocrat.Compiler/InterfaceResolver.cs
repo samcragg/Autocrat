@@ -7,15 +7,14 @@ namespace Autocrat.Compiler
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     /// Allows the matching of concrete types to an interface.
     /// </summary>
     internal class InterfaceResolver
     {
-        private readonly Dictionary<Type, List<Type>> interfaceClasses =
-            new Dictionary<Type, List<Type>>();
+        private readonly Dictionary<Type, HashSet<Type>> interfaceClasses =
+            new Dictionary<Type, HashSet<Type>>();
 
         /// <summary>
         /// Adds the specified class types as candidates when resolving
@@ -24,17 +23,11 @@ namespace Autocrat.Compiler
         /// <param name="classes">The collection of classes to add.</param>
         public virtual void AddKnownClasses(IEnumerable<Type> classes)
         {
-            foreach (Type classType in classes.Where(c => c.IsClass && !c.IsAbstract))
+            foreach (Type classType in classes)
             {
-                foreach (Type interfaceType in classType.GetInterfaces())
+                if (classType.IsClass && !classType.IsAbstract)
                 {
-                    if (!this.interfaceClasses.TryGetValue(interfaceType, out List<Type> mappedClasses))
-                    {
-                        mappedClasses = new List<Type>();
-                        this.interfaceClasses.Add(interfaceType, mappedClasses);
-                    }
-
-                    mappedClasses.Add(classType);
+                    this.RegisterClass(classType, classType);
                 }
             }
         }
@@ -44,9 +37,9 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="interfaceType">The type of the interface.</param>
         /// <returns>A list of all classes that implement the specified type.</returns>
-        public virtual IReadOnlyList<Type> FindClasses(Type interfaceType)
+        public virtual IReadOnlyCollection<Type> FindClasses(Type interfaceType)
         {
-            if (this.interfaceClasses.TryGetValue(interfaceType, out List<Type> mappedClasses))
+            if (this.interfaceClasses.TryGetValue(interfaceType, out HashSet<Type> mappedClasses))
             {
                 return mappedClasses;
             }
@@ -54,6 +47,31 @@ namespace Autocrat.Compiler
             {
                 return Array.Empty<Type>();
             }
+        }
+
+        private void RegisterClass(Type serviceType, Type classType)
+        {
+            this.RegisterMapping(serviceType, classType);
+            foreach (Type interfaceType in classType.GetInterfaces())
+            {
+                this.RegisterMapping(serviceType, interfaceType);
+            }
+
+            if (classType.BaseType != typeof(object))
+            {
+                this.RegisterClass(serviceType, classType.BaseType);
+            }
+        }
+
+        private void RegisterMapping(Type classType, Type interfaceType)
+        {
+            if (!this.interfaceClasses.TryGetValue(interfaceType, out HashSet<Type> mappedClasses))
+            {
+                mappedClasses = new HashSet<Type>();
+                this.interfaceClasses.Add(interfaceType, mappedClasses);
+            }
+
+            mappedClasses.Add(classType);
         }
     }
 }
