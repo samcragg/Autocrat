@@ -36,7 +36,7 @@ namespace Autocrat.Compiler
         /// <remarks>
         /// The types returned will be in the order expected by the constructor.
         /// </remarks>
-        public Type[] GetParameters(Type classType)
+        public virtual Type[] GetParameters(Type classType)
         {
             // Classes always have one constructor, hence the call to First
             ParameterInfo[] constructorParameters =
