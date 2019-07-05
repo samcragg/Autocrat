@@ -40,17 +40,7 @@
         return " + identifier.ToString() + @";
     }
 }";
-            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            MetadataReference[] references =
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(InstanceBuilderTests).Assembly.Location),
-            };
-            CSharpCompilation compilation = CSharpCompilation
-                .Create("TestAssembly", options: options)
-                .AddReferences(references)
-                .AddSyntaxTrees(SyntaxFactory.ParseSyntaxTree(code));
-
+            Compilation compilation = CompilationHelper.CompileCode(code);
             using (var ms = new MemoryStream())
             {
                 EmitResult result = compilation.Emit(ms);
