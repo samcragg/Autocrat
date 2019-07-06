@@ -25,8 +25,8 @@ namespace Autocrat.Compiler
         private readonly HashSet<string> localNames =
             new HashSet<string>(StringComparer.Ordinal);
 
-        private readonly Dictionary<Type, IdentifierNameSyntax> variables =
-            new Dictionary<Type, IdentifierNameSyntax>();
+        private readonly Dictionary<ITypeSymbol, IdentifierNameSyntax> variables =
+            new Dictionary<ITypeSymbol, IdentifierNameSyntax>();
 
         private readonly TypeSyntax varKeyword = ParseTypeName("var");
 
@@ -58,7 +58,7 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="type">The type of the local variable.</param>
         /// <returns>The name of the local variable.</returns>
-        public IdentifierNameSyntax GenerateForType(Type type)
+        public IdentifierNameSyntax GenerateForType(INamedTypeSymbol type)
         {
             if (!this.variables.TryGetValue(type, out IdentifierNameSyntax name))
             {
@@ -69,7 +69,7 @@ namespace Autocrat.Compiler
             }
 
             return name ?? throw new InvalidOperationException(
-                "There is a cyclic dependency resolving '" + type.FullName + "'");
+                "There is a cyclic dependency resolving '" + type.ToDisplayString() + "'");
         }
 
         private void AddDeclaration(IdentifierNameSyntax name, ExpressionSyntax create)
@@ -100,17 +100,17 @@ namespace Autocrat.Compiler
             return name;
         }
 
-        private IdentifierNameSyntax DeclareArray(Type type)
+        private IdentifierNameSyntax DeclareArray(INamedTypeSymbol type)
         {
             SeparatedSyntaxList<ExpressionSyntax> instances = default;
-            foreach (Type classType in this.interfaceResolver.FindClasses(type))
+            foreach (INamedTypeSymbol classType in this.interfaceResolver.FindClasses(type))
             {
                 instances = instances.Add(this.GenerateForType(classType));
             }
 
             IdentifierNameSyntax nameSyntax = IdentifierName(this.CreateName("array"));
             ArrayTypeSyntax arrayTypeSyntax = ArrayType(
-                ParseTypeName(type.FullName.Replace('+', '.')),
+                ParseTypeName(type.ToDisplayString()),
                 SingletonList(ArrayRankSpecifier()));
 
             this.AddDeclaration(
@@ -124,10 +124,10 @@ namespace Autocrat.Compiler
             return nameSyntax;
         }
 
-        private IdentifierNameSyntax DeclareLocal(Type type)
+        private IdentifierNameSyntax DeclareLocal(INamedTypeSymbol type)
         {
             IdentifierNameSyntax nameSyntax = IdentifierName(this.CreateName(type.Name));
-            TypeSyntax typeSyntax = ParseTypeName(type.FullName.Replace('+', '.'));
+            TypeSyntax typeSyntax = ParseTypeName(type.ToDisplayString());
             SeparatedSyntaxList<SyntaxNode> arguments = SeparatedList(
                 this.GetConstructorArguments(type));
 
@@ -139,17 +139,17 @@ namespace Autocrat.Compiler
             return nameSyntax;
         }
 
-        private IEnumerable<SyntaxNode> GetConstructorArguments(Type type)
+        private IEnumerable<SyntaxNode> GetConstructorArguments(INamedTypeSymbol type)
         {
-            foreach (Type parameter in this.constructorResolver.GetParameters(type))
+            foreach (ITypeSymbol parameter in this.constructorResolver.GetParameters(type))
             {
-                if (parameter.IsArray)
+                if (parameter is IArrayTypeSymbol arrayType)
                 {
-                    yield return Argument(this.DeclareArray(parameter.GetElementType()));
+                    yield return Argument(this.DeclareArray((INamedTypeSymbol)arrayType.ElementType));
                 }
-                else
+                else if (parameter is INamedTypeSymbol namedType)
                 {
-                    yield return Argument(this.GenerateForType(parameter));
+                    yield return Argument(this.GenerateForType(namedType));
                 }
             }
         }
