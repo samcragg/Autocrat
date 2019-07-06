@@ -7,25 +7,30 @@ namespace Autocrat.Compiler
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.Immutable;
     using System.Linq;
-    using System.Reflection;
+    using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.Operations;
 
     /// <summary>
     /// Allows the resolving of constructor parameters for a type.
     /// </summary>
     internal class ConstructorResolver
     {
+        private readonly Compilation compilation;
         private readonly InterfaceResolver interfaceResolver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConstructorResolver"/> class.
         /// </summary>
+        /// <param name="compilation">Represents the compiler.</param>
         /// <param name="interfaceResolver">
         /// Used to resolve classes implementing interfaces.
         /// </param>
-        public ConstructorResolver(InterfaceResolver interfaceResolver)
+        public ConstructorResolver(Compilation compilation, InterfaceResolver interfaceResolver)
         {
             this.interfaceResolver = interfaceResolver;
+            this.compilation = compilation;
         }
 
         /// <summary>
@@ -36,65 +41,78 @@ namespace Autocrat.Compiler
         /// <remarks>
         /// The types returned will be in the order expected by the constructor.
         /// </remarks>
-        public virtual Type[] GetParameters(Type classType)
+        public virtual IReadOnlyList<ITypeSymbol> GetParameters(INamedTypeSymbol classType)
         {
-            // Classes always have one constructor, hence the call to First
-            ParameterInfo[] constructorParameters =
-                classType.GetConstructors()
-                         .Select(c => c.GetParameters())
+            ImmutableArray<IParameterSymbol> constructorParameters =
+                classType.Constructors
+                         .Select(c => c.Parameters)
                          .OrderByDescending(p => p.Length)
-                         .First();
+                         .FirstOrDefault();
 
-            Array.Sort(constructorParameters, (a, b) => a.Position.CompareTo(b.Position));
-            return Array.ConvertAll(constructorParameters, this.ResolveParameterType);
+            if ((constructorParameters == null) || (constructorParameters.Length == 0))
+            {
+                return Array.Empty<ITypeSymbol>();
+            }
+            else
+            {
+                var types = new List<ITypeSymbol>(constructorParameters.Length);
+                types.AddRange(constructorParameters.Select(this.ResolveParameterType));
+                return types;
+            }
         }
 
-        private static Type GetArrayDependencyType(Type type)
+        private ITypeSymbol GetArrayDependencyType(ITypeSymbol type)
         {
-            if (type.IsArray)
+            bool ContainsSingleGenericArgument(INamedTypeSymbol classType)
+            {
+                return classType.IsGenericType && (classType.TypeArguments.Length == 1);
+            }
+
+            if (type is IArrayTypeSymbol)
             {
                 return type;
             }
-
-            if (type.IsGenericType)
+            else if ((type is INamedTypeSymbol classType) && ContainsSingleGenericArgument(classType))
             {
-                Type[] arguments = type.GetGenericArguments();
-                if (arguments.Length == 1)
+                IArrayTypeSymbol arrayType = this.compilation.CreateArrayTypeSymbol(
+                    classType.TypeArguments[0]);
+
+                CommonConversion conversion = this.compilation.ClassifyCommonConversion(
+                    arrayType,
+                    type);
+
+                if (conversion.Exists)
                 {
-                    Type arrayType = arguments[0].MakeArrayType();
-                    if (type.IsAssignableFrom(arrayType))
-                    {
-                        return arrayType;
-                    }
+                    return arrayType;
                 }
             }
 
             return null;
         }
 
-        private Type ResolveParameterType(ParameterInfo parameter)
+        private ITypeSymbol ResolveParameterType(IParameterSymbol parameter)
         {
-            Type arrayType = GetArrayDependencyType(parameter.ParameterType);
+            ITypeSymbol arrayType = this.GetArrayDependencyType(parameter.Type);
             if (arrayType != null)
             {
                 return arrayType;
             }
 
-            IReadOnlyCollection<Type> classes = this.interfaceResolver.FindClasses(
-                parameter.ParameterType);
+            IReadOnlyCollection<ITypeSymbol> classes = this.interfaceResolver.FindClasses(
+                parameter.Type);
 
             switch (classes.Count)
             {
                 case 0:
                     throw new InvalidOperationException(
-                        "Unable to find a class for the dependency " + parameter.ParameterType.Name);
+                        "Unable to find a class for the dependency " + parameter.Type.ToDisplayString());
 
                 case 1:
                     return classes.First();
 
                 default:
                     throw new InvalidOperationException(
-                        "Multiple dependencies found for " + parameter.ParameterType.Name);
+                        "Multiple dependencies found for " + parameter.Type.ToDisplayString());
             }
         }
     }
