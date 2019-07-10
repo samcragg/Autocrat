@@ -18,7 +18,7 @@
 
         private NativeRegisterRewriterTests()
         {
-            this.callbackGenerator = Substitute.For<ManagedCallbackGenerator>();
+            this.callbackGenerator = Substitute.For<ManagedCallbackGenerator>(new object[] { null });
             this.callbackGenerator.CreateMethod(null)
                 .ReturnsForAnyArgs(ci => SyntaxFactory.ParseName("Callback_" + ci.Arg<IMethodSymbol>().Name));
         }

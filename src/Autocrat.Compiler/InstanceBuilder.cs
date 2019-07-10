@@ -18,6 +18,7 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class InstanceBuilder
     {
+        private static readonly TypeSyntax VarKeyword = ParseTypeName("var");
         private readonly ConstructorResolver constructorResolver;
         private readonly List<StatementSyntax> declarations = new List<StatementSyntax>();
         private readonly InterfaceResolver interfaceResolver;
@@ -27,8 +28,6 @@ namespace Autocrat.Compiler
 
         private readonly Dictionary<ITypeSymbol, IdentifierNameSyntax> variables =
             new Dictionary<ITypeSymbol, IdentifierNameSyntax>();
-
-        private readonly TypeSyntax varKeyword = ParseTypeName("var");
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstanceBuilder"/> class.
@@ -50,7 +49,7 @@ namespace Autocrat.Compiler
         /// <summary>
         /// Gets the statements for declaring the local variables.
         /// </summary>
-        public IEnumerable<StatementSyntax> LocalDeclarations => this.declarations;
+        public virtual IEnumerable<StatementSyntax> LocalDeclarations => this.declarations;
 
         /// <summary>
         /// Generates a local variable of the specified type, reusing existing
@@ -58,7 +57,7 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="type">The type of the local variable.</param>
         /// <returns>The name of the local variable.</returns>
-        public IdentifierNameSyntax GenerateForType(INamedTypeSymbol type)
+        public virtual IdentifierNameSyntax GenerateForType(INamedTypeSymbol type)
         {
             if (!this.variables.TryGetValue(type, out IdentifierNameSyntax name))
             {
@@ -81,7 +80,7 @@ namespace Autocrat.Compiler
             this.declarations.Add(
                 LocalDeclarationStatement(
                     VariableDeclaration(
-                        this.varKeyword,
+                        VarKeyword,
                         SingletonSeparatedList(variable))));
         }
 
