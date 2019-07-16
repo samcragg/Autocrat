@@ -22,12 +22,13 @@ namespace Autocrat.Compiler
         // This class transforms an expression in the form of:
         //// interfaceInstance.Register<Class>(arguments);
         // to:
-        //// ExportedNativeMethods.Register_Method1(arguments, "Class_Method1");
-        //// ExportedNativeMethods.Register_Method2(arguments, "Class_Method2");
+        //// ExportedNativeMethods.Register_Method1(arguments, 0);
+        //// ExportedNativeMethods.Register_Method2(arguments, 1);
         private readonly TypeSyntax adapterType;
         private readonly ManagedCallbackGenerator callbackGenerator;
         private readonly string classToReplace;
         private readonly SemanticModel model;
+        private readonly SignatureGenerator signatureGenerator;
 
         private readonly List<(SyntaxNode original, SyntaxNode[] replacements)> nodesToReplace =
             new List<(SyntaxNode, SyntaxNode[])>();
@@ -39,6 +40,9 @@ namespace Autocrat.Compiler
         /// <param name="callbackGenerator">
         /// Allows the creation of callback methods.
         /// </param>
+        /// <param name="signatureGenerator">
+        /// Generates the native method signatures.
+        /// </param>
         /// <param name="classType">
         /// The class type to replace the static calls from.
         /// </param>
@@ -48,11 +52,13 @@ namespace Autocrat.Compiler
         public NativeRegisterRewriter(
             SemanticModel model,
             ManagedCallbackGenerator callbackGenerator,
+            SignatureGenerator signatureGenerator,
             Type classType,
             Type adapterType)
         {
             this.model = model;
             this.callbackGenerator = callbackGenerator;
+            this.signatureGenerator = signatureGenerator;
             this.adapterType = ParseTypeName(adapterType.FullName.Replace('+', '.'));
             this.classToReplace = classType.FullName.Replace('+', '.');
         }
@@ -117,10 +123,11 @@ namespace Autocrat.Compiler
         {
             foreach (IMethodSymbol method in GetMethodsToExport(originalMethod))
             {
+                string signature = this.signatureGenerator.GetSignature(method);
                 ArgumentSyntax memberArgument = Argument(
                     LiteralExpression(
-                        SyntaxKind.StringLiteralExpression,
-                        Literal(this.callbackGenerator.CreateMethod(method).ToString())));
+                        SyntaxKind.NumericLiteralExpression,
+                        Literal(this.callbackGenerator.CreateMethod(signature, method))));
 
                 ExpressionSyntax adapterMethod = MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,

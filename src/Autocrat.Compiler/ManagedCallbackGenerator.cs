@@ -8,6 +8,7 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -52,6 +53,7 @@ namespace Autocrat.Compiler
         //// }
         private const string AdapterClassName = "NativeCallableMethods";
         private readonly Func<InstanceBuilder> instanceBuilder;
+        private readonly NativeImportGenerator nativeGenerator;
         private ClassDeclarationSyntax nativeClass;
 
         /// <summary>
@@ -60,18 +62,23 @@ namespace Autocrat.Compiler
         /// <param name="instanceBuilder">
         /// Factory that creates the builder to generates code to create objects.
         /// </param>
-        public ManagedCallbackGenerator(Func<InstanceBuilder> instanceBuilder)
+        /// <param name="nativeGenerator">Used to register the managed methods.</param>
+        public ManagedCallbackGenerator(
+            Func<InstanceBuilder> instanceBuilder,
+            NativeImportGenerator nativeGenerator)
         {
             this.instanceBuilder = instanceBuilder;
             this.nativeClass = ClassDeclaration(AdapterClassName);
+            this.nativeGenerator = nativeGenerator;
         }
 
         /// <summary>
         /// Generates a native callable method for the specified type.
         /// </summary>
+        /// <param name="nativeSignature">The format of the native signature.</param>
         /// <param name="method">The method in the type to generate.</param>
         /// <returns>The name of the generated method.</returns>
-        public virtual SimpleNameSyntax CreateMethod(IMethodSymbol method)
+        public virtual int CreateMethod(string nativeSignature, IMethodSymbol method)
         {
             TypeSyntax returnType = ParseTypeName(method.ReturnType.ToDisplayString());
             string methodName = method.ContainingType.Name + "_" + method.Name;
@@ -83,7 +90,7 @@ namespace Autocrat.Compiler
                     CreateParameters(method))));
 
             this.nativeClass = this.nativeClass.AddMembers(declaration);
-            return IdentifierName(declaration.Identifier);
+            return this.nativeGenerator.RegisterMethod(nativeSignature, methodName);
         }
 
         /// <summary>
@@ -108,8 +115,8 @@ namespace Autocrat.Compiler
                 null,
                 MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
-                    IdentifierName("CallingConvention"),
-                    IdentifierName("StdCall")));
+                    IdentifierName(nameof(CallingConvention)),
+                    IdentifierName(nameof(CallingConvention.Cdecl))));
 
             AttributeArgumentSyntax entryPoint = AttributeArgument(
                 NameEquals(IdentifierName("EntryPoint")),

@@ -1,5 +1,6 @@
 ﻿namespace Compiler.Tests
 {
+    using System.Collections.Generic;
     using System.Linq;
     using Autocrat.Compiler;
     using FluentAssertions;
@@ -13,6 +14,7 @@
     {
         private readonly ManagedCallbackGenerator generator;
         private readonly InstanceBuilder instanceBuilder;
+        private readonly NativeImportGenerator nativeGenerator;
 
         private ManagedCallbackGeneratorTests()
         {
@@ -20,7 +22,11 @@
             this.instanceBuilder.GenerateForType(null)
                 .ReturnsForAnyArgs(SyntaxFactory.IdentifierName("instance"));
 
-            this.generator = new ManagedCallbackGenerator(() => this.instanceBuilder);
+            this.nativeGenerator = Substitute.For<NativeImportGenerator>();
+
+            this.generator = new ManagedCallbackGenerator(
+                () => this.instanceBuilder,
+                this.nativeGenerator);
         }
 
         private static IMethodSymbol CreateMethodSymbol(string methodName, string arguments = null, string returnType = "void")
@@ -98,27 +104,27 @@
             }
 
             [Fact]
-            public void ShouldReturnTheNameOfTheGeneratedMethod()
+            public void ShouldReturnTheRegistrationOfTheGeneratedMethod()
             {
                 IMethodSymbol method = CreateMethodSymbol("TestMethod");
+                this.nativeGenerator.RegisterMethod("signature", Arg.Any<string>())
+                    .Returns(123);
 
-                SimpleNameSyntax result = this.generator.CreateMethod(method);
+                int result = this.generator.CreateMethod("signature", method);
 
-                result.Identifier.ValueText.Should().Contain("TestMethod");
+                result.Should().Be(123);
             }
 
             private MethodDeclarationSyntax CallCreateMethod(IMethodSymbol method)
             {
-                SimpleNameSyntax result = this.generator.CreateMethod(method);
-                return this.FindMethod(result);
-            }
+                string name = null;
+                this.nativeGenerator.RegisterMethod("native", Arg.Do<string>(s => name = s));
+                this.generator.CreateMethod("native", method);
 
-            private MethodDeclarationSyntax FindMethod(SimpleNameSyntax name)
-            {
                 return this.generator.GetCompilationUnit()
                     .DescendantNodes()
                     .OfType<MethodDeclarationSyntax>()
-                    .FirstOrDefault(m => m.Identifier.ValueText.Equals(name.Identifier.ValueText));
+                    .FirstOrDefault(m => m.Identifier.ValueText.Equals(name));
             }
         }
 
@@ -127,8 +133,11 @@
             [Fact]
             public void ShouldReturnAllTheAddedMethods()
             {
-                SimpleNameSyntax method1 = this.generator.CreateMethod(CreateMethodSymbol("Method1"));
-                SimpleNameSyntax method2 = this.generator.CreateMethod(CreateMethodSymbol("Method2"));
+                var names = new List<string>();
+                this.nativeGenerator.RegisterMethod(Arg.Any<string>(), Arg.Do<string>(names.Add));
+
+                this.generator.CreateMethod("", CreateMethodSymbol("Method1"));
+                this.generator.CreateMethod("", CreateMethodSymbol("Method2"));
 
                 CompilationUnitSyntax result = this.generator.GetCompilationUnit();
                 string[] methods = result.DescendantNodes()
@@ -136,9 +145,7 @@
                     .Select(m => m.Identifier.ValueText)
                     .ToArray();
 
-                methods.Should().BeEquivalentTo(
-                    method1.Identifier.ValueText,
-                    method2.Identifier.ValueText);
+                methods.Should().BeEquivalentTo(names);
             }
         }
     }

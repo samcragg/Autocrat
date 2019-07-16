@@ -5,22 +5,25 @@
     using Autocrat.Compiler;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
     using NSubstitute;
     using Xunit;
 
     public class NativeRegisterRewriterTests
     {
+        private const int MethodIndex = 123;
         private const string TestNativeAdapterName =
             "Compiler.Tests." + nameof(NativeRegisterRewriterTests) + "." + nameof(TestNativeAdapter);
 
         private readonly ManagedCallbackGenerator callbackGenerator;
+        private readonly SignatureGenerator signatureGenerator;
 
         private NativeRegisterRewriterTests()
         {
-            this.callbackGenerator = Substitute.For<ManagedCallbackGenerator>(new object[] { null });
-            this.callbackGenerator.CreateMethod(null)
-                .ReturnsForAnyArgs(ci => SyntaxFactory.ParseName("Callback_" + ci.Arg<IMethodSymbol>().Name));
+            this.callbackGenerator = Substitute.For<ManagedCallbackGenerator>(null, null);
+            this.callbackGenerator.CreateMethod(null, null)
+                .ReturnsForAnyArgs(MethodIndex);
+
+            this.signatureGenerator = Substitute.For<SignatureGenerator>();
         }
 
         public interface IMultipleMethods
@@ -54,6 +57,7 @@ class TestClass{ " + code + "}");
             var rewriter = new NativeRegisterRewriter(
                 model,
                 this.callbackGenerator,
+                this.signatureGenerator,
                 interfaceType,
                 typeof(TestNativeAdapter));
 
@@ -88,7 +92,7 @@ class TestClass{ " + code + "}");
                 result.Should().Contain(@"void Method(ITestInterface instance)
 {
     int other = 123;
-    " + TestNativeAdapterName + @".InterfaceMethod(other, ""Callback_InterfaceMethod"");
+    " + TestNativeAdapterName + @".InterfaceMethod(other, " + MethodIndex + @");
 }");
             }
 
@@ -104,8 +108,8 @@ class TestClass{ " + code + "}");
 
                 result.Should().Contain(@"void Method(ITestInterface instance)
 {
-    " + TestNativeAdapterName + @".Method1(""Callback_Method1"");
-    " + TestNativeAdapterName + @".Method2(""Callback_Method2"");
+    " + TestNativeAdapterName + @".Method1(" + MethodIndex + @");
+    " + TestNativeAdapterName + @".Method2(" + MethodIndex + @");
 }");
             }
         }
