@@ -29,26 +29,12 @@
                 this.nativeGenerator);
         }
 
-        private static IMethodSymbol CreateMethodSymbol(string methodName, string arguments = null, string returnType = "void")
-        {
-            Compilation compilation = CompilationHelper.CompileCode("partial class TestClass { " +
-                returnType + " " + methodName + "(" + arguments + "){}}");
-            SyntaxTree tree = compilation.SyntaxTrees.First();
-            MethodDeclarationSyntax method = tree.GetRoot()
-                .DescendantNodes()
-                .OfType<MethodDeclarationSyntax>()
-                .First();
-
-            SemanticModel model = compilation.GetSemanticModel(tree);
-            return model.GetDeclaredSymbol(method);
-        }
-
         public sealed class CreateMethodTests : ManagedCallbackGeneratorTests
         {
             [Fact]
             public void ShouldCallTheMethodOnTheType()
             {
-                IMethodSymbol method = CreateMethodSymbol("TestMethod");
+                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod");
 
                 MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
 
@@ -62,7 +48,7 @@
             [Fact]
             public void ShouldHaveTheOriginalArguments()
             {
-                IMethodSymbol method = CreateMethodSymbol("TestMethod", arguments: "int a");
+                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod", arguments: "int a");
 
                 MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
 
@@ -73,7 +59,7 @@
             [Fact]
             public void ShouldHaveTheOriginalReturnType()
             {
-                IMethodSymbol method = CreateMethodSymbol("TestMethod", returnType: "string");
+                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod", returnType: "string");
 
                 MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
 
@@ -84,7 +70,7 @@
             [Fact]
             public void ShouldIncludeTheLocalDeclarations()
             {
-                IMethodSymbol method = CreateMethodSymbol("TestMethod");
+                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod");
                 this.instanceBuilder.LocalDeclarations.Returns(new[] { SyntaxFactory.EmptyStatement() });
 
                 MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
@@ -95,7 +81,7 @@
             [Fact]
             public void ShouldReturnNonVoidMethods()
             {
-                IMethodSymbol method = CreateMethodSymbol("TestMethod", returnType: "int");
+                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod", returnType: "int");
 
                 MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
 
@@ -106,7 +92,7 @@
             [Fact]
             public void ShouldReturnTheRegistrationOfTheGeneratedMethod()
             {
-                IMethodSymbol method = CreateMethodSymbol("TestMethod");
+                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod");
                 this.nativeGenerator.RegisterMethod("signature", Arg.Any<string>())
                     .Returns(123);
 
@@ -136,8 +122,8 @@
                 var names = new List<string>();
                 this.nativeGenerator.RegisterMethod(Arg.Any<string>(), Arg.Do<string>(names.Add));
 
-                this.generator.CreateMethod("", CreateMethodSymbol("Method1"));
-                this.generator.CreateMethod("", CreateMethodSymbol("Method2"));
+                this.generator.CreateMethod("", CompilationHelper.CreateMethodSymbol("Method1"));
+                this.generator.CreateMethod("", CompilationHelper.CreateMethodSymbol("Method2"));
 
                 CompilationUnitSyntax result = this.generator.GetCompilationUnit();
                 string[] methods = result.DescendantNodes()
