@@ -77,6 +77,8 @@ namespace Autocrat.Compiler
         private static void WriteHeaders(StreamWriter writer)
         {
             writer.WriteLine("#include <array>");
+            writer.WriteLine("#include <cstddef>");
+            writer.WriteLine("#include <cstdint>");
             writer.WriteLine("#include <variant>");
         }
 
