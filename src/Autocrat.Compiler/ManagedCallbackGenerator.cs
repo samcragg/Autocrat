@@ -108,7 +108,13 @@ namespace Autocrat.Compiler
                 .WithMembers(SingletonList<MemberDeclarationSyntax>(this.nativeClass));
         }
 
-        private static AttributeSyntax CreateNativeCallableAttribute(string method)
+        /// <summary>
+        /// Generates an attribute indicating that the method can be called by
+        /// native code.
+        /// </summary>
+        /// <param name="method">The native name of the method.</param>
+        /// <returns>An attribute syntax.</returns>
+        internal static AttributeSyntax CreateNativeCallableAttribute(string method)
         {
             AttributeArgumentSyntax callingConvention = AttributeArgument(
                 NameEquals(IdentifierName("CallingConvention")),
