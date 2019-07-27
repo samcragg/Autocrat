@@ -15,14 +15,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Buildalyzer.Workspaces" Version="2.3.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.1.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.3" PrivateAssets="All" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="7.14.0.8411" PrivateAssets="All" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="3.1.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="3.1.0" />
     <ProjectReference Include="..\Autocrat.Abstractions\Autocrat.Abstractions.csproj" />
   </ItemGroup>
 
+  <!-- Internal code analysis dependencies -->
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.3" PrivateAssets="All" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="7.15.0.8572" PrivateAssets="All" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="All" />
     <AdditionalFiles Include="..\stylecop.json" Link="Properties\stylecop.json" />
     <Compile Include="..\GlobalSuppressions.cs" Link="Properties\GlobalSuppressions.cs" />
   </ItemGroup>
