@@ -11,12 +11,14 @@ namespace Autocrat.Compiler
     using Buildalyzer;
     using Buildalyzer.Workspaces;
     using Microsoft.CodeAnalysis;
+    using NLog;
 
     /// <summary>
     /// Loads the C# projects from disk.
     /// </summary>
     internal class ProjectLoader
     {
+        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
         private readonly AnalyzerManager analyzerManager = new AnalyzerManager();
 
         /// <summary>
@@ -31,6 +33,8 @@ namespace Autocrat.Compiler
             var tasks = new List<Task<Compilation>>();
             foreach (string path in paths)
             {
+                Logger.Info<string>("Loading project {path}", path);
+
                 IEnumerable<Project> projects = this.analyzerManager
                     .GetProject(path)
                     .GetWorkspace()
