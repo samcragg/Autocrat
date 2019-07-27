@@ -37,7 +37,7 @@
             private static void WriteProjectFile(string path)
             {
                 const string Template = @"<Project Sdk='Microsoft.NET.Sdk'>
-<PropertyGroup>
+  <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 </Project>";
@@ -48,12 +48,19 @@
 
         private sealed class TemporaryFile : IDisposable
         {
+            private readonly string tempDirectory;
+
             public TemporaryFile()
             {
-                // The file MUST end with "csproj" so the loader know what language
+                // The file MUST end with "csproj" so the loader knows what language
                 // the project is in
-                this.Filename = Path.Combine(
+                this.tempDirectory = Directory.CreateDirectory(Path.Combine(
                     Path.GetTempPath(),
+                    nameof(ProjectLoaderTests))
+                    ).FullName;
+
+                this.Filename = Path.Combine(
+                    this.tempDirectory,
                     Guid.NewGuid() + ".csproj");
             }
 
@@ -63,7 +70,7 @@
             {
                 try
                 {
-                    File.Delete(this.Filename);
+                    Directory.Delete(this.tempDirectory, recursive: true);
                 }
                 catch
                 {
