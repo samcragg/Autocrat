@@ -23,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Autocrat.Bootstrap", "src\Autocrat.Bootstrap\Autocrat.Bootstrap.vcxproj", "{55F7D27B-06C1-4208-8D56-CAE84902E1CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,9 @@ Global
 		{A9E398F6-7C31-4333-8EC9-7860E782607B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9E398F6-7C31-4333-8EC9-7860E782607B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9E398F6-7C31-4333-8EC9-7860E782607B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55F7D27B-06C1-4208-8D56-CAE84902E1CD}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{55F7D27B-06C1-4208-8D56-CAE84902E1CD}.Debug|Any CPU.Build.0 = Debug|x64
+		{55F7D27B-06C1-4208-8D56-CAE84902E1CD}.Release|Any CPU.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +59,7 @@ Global
 		{1178FE97-0C99-4E74-8977-B48FBA81E267} = {0AD2F87E-7081-4D98-907D-37DE3AF727D6}
 		{6511D618-BE95-4AD5-82A4-81D67AE86F3C} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
 		{A9E398F6-7C31-4333-8EC9-7860E782607B} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
+		{55F7D27B-06C1-4208-8D56-CAE84902E1CD} = {0AD2F87E-7081-4D98-907D-37DE3AF727D6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4EF8B246-D856-451C-AB5D-4C4821DBE8A4}

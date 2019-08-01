@@ -2,6 +2,7 @@
 .vs/
 [Bb]in/
 [Oo]bj/
+*.vcxproj.user
 
 # Cake
 build/tools/*
