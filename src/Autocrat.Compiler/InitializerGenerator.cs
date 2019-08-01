@@ -67,10 +67,20 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="InitializerGenerator"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected InitializerGenerator()
+        {
+        }
+
+        /// <summary>
         /// Registers the class for invoking during initialization.
         /// </summary>
         /// <param name="type">The type information.</param>
-        public void AddClass(INamedTypeSymbol type)
+        public virtual void AddClass(INamedTypeSymbol type)
         {
             IMethodSymbol method = type.GetMembers(nameof(IInitializer.OnConfigurationLoaded))
                 .OfType<IMethodSymbol>()
@@ -86,7 +96,7 @@ namespace Autocrat.Compiler
         /// Generates the initialization code.
         /// </summary>
         /// <returns>A new compilation unit.</returns>
-        public CompilationUnitSyntax Generate()
+        public virtual CompilationUnitSyntax Generate()
         {
             if (this.methods.Count == 0)
             {
