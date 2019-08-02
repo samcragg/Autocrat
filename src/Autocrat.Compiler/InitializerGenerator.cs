@@ -77,6 +77,11 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Gets a value indicating whether any code exists to generate.
+        /// </summary>
+        public virtual bool HasCode => this.methods.Count != 0;
+
+        /// <summary>
         /// Registers the class for invoking during initialization.
         /// </summary>
         /// <param name="type">The type information.</param>
@@ -98,7 +103,7 @@ namespace Autocrat.Compiler
         /// <returns>A new compilation unit.</returns>
         public virtual CompilationUnitSyntax Generate()
         {
-            if (this.methods.Count == 0)
+            if (!this.HasCode)
             {
                 throw new InvalidOperationException("No initialization classes were found.");
             }

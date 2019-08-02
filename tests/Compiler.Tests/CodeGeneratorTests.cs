@@ -18,9 +18,6 @@
         private CodeGeneratorTests()
         {
             this.factory = Substitute.For<ServiceFactory>(new object[] { null });
-            this.factory.CreateInitializerGenerator()
-                    .Generate().Returns(SyntaxFactory.ParseCompilationUnit("namespace X {}"));
-
             CodeGenerator.ServiceFactory = _ => this.factory;
             this.generator = new CodeGenerator();
         }
@@ -54,8 +51,9 @@
     {
     }
 }");
-                this.factory.CreateInitializerGenerator()
-                    .Generate().Returns(unit);
+                InitializerGenerator initializer = this.factory.CreateInitializerGenerator();
+                initializer.HasCode.Returns(true);
+                initializer.Generate().Returns(unit);
 
                 Assembly assembly = this.EmitCode();
 
@@ -66,7 +64,8 @@
             {
                 using (var stream = new MemoryStream())
                 {
-                    this.generator.Emit(stream, CompilationHelper.CompileCode(originalCode));
+                    this.generator.Add(CompilationHelper.CompileCode(originalCode));
+                    this.generator.Emit(stream);
                     return Assembly.Load(stream.ToArray());
                 }
             }
