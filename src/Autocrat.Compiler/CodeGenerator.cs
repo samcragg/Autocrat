@@ -32,7 +32,7 @@ namespace Autocrat.Compiler
         /// Adds code for the specified compilation.
         /// </summary>
         /// <param name="compilation">Contains the compiled information.</param>
-        public void Add(Compilation compilation)
+        public virtual void Add(Compilation compilation)
         {
             ServiceFactory factory = ServiceFactory(compilation);
 
@@ -45,7 +45,7 @@ namespace Autocrat.Compiler
         /// Generates the code for the specified compilation.
         /// </summary>
         /// <param name="destination">Where to save the code to.</param>
-        public void Emit(Stream destination)
+        public virtual void Emit(Stream destination)
         {
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
