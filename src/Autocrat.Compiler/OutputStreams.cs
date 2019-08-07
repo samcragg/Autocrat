@@ -25,8 +25,8 @@ namespace Autocrat.Compiler
         /// <param name="source">The filename of the generated native source code.</param>
         public OutputStreams(string assembly, string source)
         {
-            this.assembly = new Lazy<Stream>(() => File.OpenWrite(assembly));
-            this.source = new Lazy<Stream>(() => File.OpenWrite(source));
+            this.assembly = new Lazy<Stream>(() => OpenWrite(assembly));
+            this.source = new Lazy<Stream>(() => OpenWrite(source));
         }
 
         /// <summary>
@@ -61,6 +61,12 @@ namespace Autocrat.Compiler
             {
                 this.source.Value.Dispose();
             }
+        }
+
+        private static Stream OpenWrite(string path)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            return File.OpenWrite(path);
         }
     }
 }
