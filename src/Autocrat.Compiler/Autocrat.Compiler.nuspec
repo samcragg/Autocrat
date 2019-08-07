@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <authors>Samuel Cragg</authors>
+    <description>Compiles code for use with the Autocrat framework.</description>
+    <developmentDependency>true</developmentDependency>
+    <id>$id$</id>
+    <license type="expression">MIT</license>
+    <version>$version$</version>
+  </metadata>
+
+  <files>
+    <file src="bin\Publish\*.config" target="tasks/netcoreapp2.1" />
+    <file src="bin\Publish\*.dll" target="tasks/netcoreapp2.1" />
+    <file src="bin\Publish\*.json" target="tasks/netcoreapp2.1" />
+    <file src="bin\Publish\runtimes\**" target="tasks/netcoreapp2.1/runtimes" />
+    <file src="PackageFiles\Package.props" target="build/$id$.props" />
+    <file src="PackageFiles\Package.targets" target="build/$id$.targets" />
+  </files>
+</package>

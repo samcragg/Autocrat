@@ -1,0 +1,7 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <AutocratCompiler>$(MSBuildThisFileDirectory)../tasks/netcoreapp2.1/Autocrat.Compiler.dll</AutocratCompiler>
+    <AutocratOutputAssembly>obj/autocrat/assembly.dll</AutocratOutputAssembly>
+    <AutocratOutputSource>obj/autocrat/source.cpp</AutocratOutputSource>
+  </PropertyGroup>
+</Project>

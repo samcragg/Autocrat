@@ -7,11 +7,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-
-    <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Version>0.0.1</Version>
+    
+    <NuspecFile>Autocrat.Compiler.nuspec</NuspecFile>
+    <NuspecProperties>id=$(AssemblyName);version=$(Version)</NuspecProperties>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,11 +38,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="Package.targets">
-      <Pack>true</Pack>
-      <PackagePath>build/$(PackageId).targets</PackagePath>
-      <Visible>true</Visible>
-    </Content>
-  </ItemGroup>
 </Project>
