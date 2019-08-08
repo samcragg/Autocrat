@@ -60,6 +60,19 @@
                 assembly.GetType("Initialization.Test").Should().NotBeNull();
             }
 
+            [Fact]
+            public void ShouldThrowIfTheCodeFailsToCompile()
+            {
+                this.generator.Add(CompilationHelper.CompileCode(@"
+public class Test
+{
+    public UnknownType Invalid { get; set; }
+}"));
+
+                this.generator.Invoking(g => g.Emit(Stream.Null))
+                    .Should().Throw<InvalidOperationException>();
+            }
+
             private Assembly EmitCode(string originalCode = "namespace X {}")
             {
                 using (var stream = new MemoryStream())
