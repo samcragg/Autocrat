@@ -121,11 +121,13 @@ namespace Autocrat.Compiler
             MethodDeclarationSyntax onConfigurationChanged = MethodDeclaration(
                 PredefinedType(Token(SyntaxKind.VoidKeyword)),
                 Identifier(GeneratedMethod))
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
                 .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
                     ManagedCallbackGenerator.CreateNativeCallableAttribute(GeneratedMethod)))))
                 .WithBody(this.CreateInitializeMethodBody());
 
             return ClassDeclaration(GeneratedClassName)
+                .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .AddMembers(onConfigurationChanged);
         }
 
