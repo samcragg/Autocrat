@@ -19,7 +19,7 @@
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <IntDir>$(BaseIntermediateOutputPath)$(Configuration)\</IntDir>
-    <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)bin\</OutDir>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -37,10 +37,14 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
+    <Lib>
+      <SubSystem>Console</SubSystem>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -50,6 +54,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -70,4 +75,8 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+
+  <Target Name="CopyMainObj" AfterTargets="Build">
+    <Copy SourceFiles="$(IntDir)main.obj" DestinationFolder="$(OutDir)" />
+  </Target>
 </Project>
