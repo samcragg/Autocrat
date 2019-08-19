@@ -1,7 +1,22 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="AutocratTarget"
           AfterTargets="Publish">
-    
+    <ItemGroup>
+      <AdditionalProjectOptions Include="/p:AutocratFilesDirectory=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
+      <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
+      <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName).exe&quot;" />
+    </ItemGroup>
+
+    <Message Importance="high" Text="@(RuntimeLibraries)"/>
+
     <Exec Command="dotnet $(AutocratCompiler) --assembly $(AutocratOutputAssembly) --source $(AutocratOutputSource) $(ProjectPath)" />
+
+    <Copy SourceFiles="@(AucocratProjectFiles)"
+          DestinationFolder="$(AutocratOutputDirectory)" />
+
+    <!-- There are so many issues around trying to get a MSBuild task to restore -->
+    <!-- and work correctly, we'll just cheat and start a new process to do it all -->
+    <Exec Command="dotnet publish -c $(ConfigurationName) -r win-x64 $(AutocratManagedProject) -o publish @(AdditionalProjectOptions, ' ')"
+          WorkingDirectory="$(AutocratOutputDirectory)" />
   </Target>
 </Project>

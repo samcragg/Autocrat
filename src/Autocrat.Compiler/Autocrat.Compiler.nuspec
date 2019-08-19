@@ -10,10 +10,14 @@
   </metadata>
 
   <files>
+    <file src="..\Autocrat.Bootstrap\bin\*.lib" target="content" />
+    <file src="..\Autocrat.Bootstrap\bin\*.obj" target="content" />
     <file src="bin\Publish\*.config" target="tasks/netcoreapp2.1" />
     <file src="bin\Publish\*.dll" target="tasks/netcoreapp2.1" />
     <file src="bin\Publish\*.json" target="tasks/netcoreapp2.1" />
     <file src="bin\Publish\runtimes\**" target="tasks/netcoreapp2.1/runtimes" />
+    <file src="PackageFiles\ManagedToNative.csproj" target="content" />
+    <file src="PackageFiles\nuget.config" target="content" />
     <file src="PackageFiles\Package.props" target="build/$id$.props" />
     <file src="PackageFiles\Package.targets" target="build/$id$.targets" />
   </files>

@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <ILCompilerVersion>1.0.0-alpha-28010-01</ILCompilerVersion>
+    <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+    <IlcDisableReflection>true</IlcDisableReflection>
+    <NativeLib>Static</NativeLib>
+    <NoWarn>CS2008</NoWarn>
+    <Optimize>true</Optimize>
+    <RootAllApplicationAssemblies>true</RootAllApplicationAssemblies>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="$(ILCompilerVersion)" />
+    <Reference Include="assembly">
+      <HintPath>$(AutocratOutputAssembly)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Ensure the types in our generated assembly are sent to the IL compiler too -->
+  <ItemGroup>
+    <IlcArg Include="assembly.dll" />
+  </ItemGroup>
+
+  <Target Name="AutocratLink" AfterTargets="Publish">
+    <PropertyGroup>
+      <RuntimeLibraryFolder>$(NuGetPackageFolders.Split(';')[0])/runtime.win-x64.microsoft.dotnet.ilcompiler/$(ILCompilerVersion)/sdk/</RuntimeLibraryFolder>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <AutocratFiles Include="$(AutocratFilesDirectory)Autocrat.Bootstrap.lib" />
+      <AutocratFiles Include="$(AutocratFilesDirectory)main.obj" />
+      <AutocratFiles Include="$(PublishDir)ManagedToNative.lib" />
+      <LinkerOptions Include="/DYNAMICBASE" />
+      <LinkerOptions Include="/MACHINE:X64" />
+      <LinkerOptions Include="/MANIFEST:NO" />
+      <LinkerOptions Include="/NOLOGO" />
+      <LinkerOptions Include="/NXCOMPAT" />
+      <LinkerOptions Include="/OPT:ICF" />
+      <LinkerOptions Include="/OPT:REF" />
+      <LinkerOptions Include="/OUT:&quot;$(OutputName)&quot;" />
+      <LinkerOptions Include="/SUBSYSTEM:CONSOLE" />
+      <LinkerOptions Include="@(AdditionalNativeLibraryDirectories -> '/LIBPATH:&quot;%(Identity)&quot;', ' ')" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)bootstrapperdll.lib" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)Runtime.lib" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)System.Private.TypeLoader.Native.lib" />
+    </ItemGroup>
+    <Message Importance="high" Text="Linking executable"/>
+    <Exec Command="$(CppLinker) @(LinkerOptions, ' ') @(NativeLibrary, ' ') @(RuntimeLibraries, ' ') @(AutocratFiles, ' ')"/>
+    <Message Importance="high" Text="Generated $(OutputName)"/>
+  </Target>
+</Project>
