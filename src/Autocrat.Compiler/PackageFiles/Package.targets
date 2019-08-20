@@ -5,12 +5,16 @@
       <AdditionalProjectOptions Include="/p:AutocratFilesDirectory=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
       <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName).exe&quot;" />
-    </ItemGroup>
 
-    <Message Importance="high" Text="@(RuntimeLibraries)"/>
+      <!-- Make sure all the dependencies are available -->
+      <PublishedFiles Include="$(PublishDir)*.*" />
+    </ItemGroup>
 
     <Exec Command="dotnet $(AutocratCompiler) --assembly $(AutocratOutputAssembly) --source $(AutocratOutputSource) $(ProjectPath)" />
 
+    <Move SourceFiles="@(PublishedFiles)"
+          DestinationFolder="$(AutocratOutputDirectory)" />
+    
     <Copy SourceFiles="@(AucocratProjectFiles)"
           DestinationFolder="$(AutocratOutputDirectory)" />
 
@@ -18,5 +22,8 @@
     <!-- and work correctly, we'll just cheat and start a new process to do it all -->
     <Exec Command="dotnet publish -c $(ConfigurationName) -r win-x64 $(AutocratManagedProject) -o publish @(AdditionalProjectOptions, ' ')"
           WorkingDirectory="$(AutocratOutputDirectory)" />
+    
+    <!-- Do a little cleaning -->
+    <RemoveDir Directories="$(AutocratOutputDirectory)bin;$(AutocratOutputDirectory)publish" />
   </Target>
 </Project>
