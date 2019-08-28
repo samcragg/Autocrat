@@ -18,19 +18,16 @@ namespace Autocrat.Compiler
             new Dictionary<ITypeSymbol, HashSet<INamedTypeSymbol>>();
 
         /// <summary>
-        /// Adds the specified class types as candidates when resolving
-        /// interface types.
+        /// Initializes a new instance of the <see cref="InterfaceResolver"/> class.
         /// </summary>
-        /// <param name="classes">The collection of classes to add.</param>
-        public virtual void AddKnownClasses(IEnumerable<ITypeSymbol> classes)
+        /// <param name="knownTypes">Contains the discovered types.</param>
+        public InterfaceResolver(IKnownTypes knownTypes)
         {
-            foreach (ITypeSymbol classType in classes)
+            foreach (INamedTypeSymbol classType in knownTypes)
             {
-                if (!classType.IsAbstract &&
-                    classType.IsReferenceType &&
-                    (classType is INamedTypeSymbol namedType))
+                if (!classType.IsAbstract && classType.IsReferenceType)
                 {
-                    this.RegisterClass(namedType, namedType);
+                    this.RegisterClass(classType, classType);
                 }
             }
         }

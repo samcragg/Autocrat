@@ -50,7 +50,7 @@ public class SimpleClass
             this.simpleClass = this.compilation.GetTypeByMetadataName("SimpleClass");
 
             this.constructorResolver = Substitute.For<ConstructorResolver>(new object[] { null, null });
-            this.interfaceResolver = Substitute.For<InterfaceResolver>();
+            this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<IKnownTypes>());
             this.builder = new InstanceBuilder(this.constructorResolver, this.interfaceResolver);
         }
 

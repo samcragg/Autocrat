@@ -68,7 +68,7 @@ class SingleDependency
             this.multipleDependencies = compilation.GetTypeByMetadataName("MultipleDependencies");
             this.singleDependency = compilation.GetTypeByMetadataName("SingleDependency");
 
-            this.interfaceResolver = Substitute.For<InterfaceResolver>();
+            this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<IKnownTypes>());
             this.interfaceResolver.FindClasses(null)
                 .ReturnsForAnyArgs(ci => new[] { (INamedTypeSymbol)ci.Args()[0] });
 

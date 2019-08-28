@@ -1,19 +1,22 @@
 ﻿namespace Compiler.Tests
 {
+    using System;
     using System.Collections.Generic;
     using Autocrat.Compiler;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
+    using NSubstitute;
     using Xunit;
 
     public class InterfaceResolverTests
     {
-        private readonly ITypeSymbol abstractClass;
-        private readonly ITypeSymbol derivedClass;
-        private readonly ITypeSymbol fakeClass1;
-        private readonly ITypeSymbol fakeClass2;
-        private readonly ITypeSymbol fakeInterface;
-        private readonly InterfaceResolver resolver;
+        private readonly INamedTypeSymbol abstractClass;
+        private readonly INamedTypeSymbol derivedClass;
+        private readonly INamedTypeSymbol fakeClass1;
+        private readonly INamedTypeSymbol fakeClass2;
+        private readonly INamedTypeSymbol fakeInterface;
+        private readonly IKnownTypes knownTypes;
+        private readonly Lazy<InterfaceResolver> resolver;
 
         private InterfaceResolverTests()
         {
@@ -42,7 +45,15 @@ class FakeClass2 : IFakeInterface
             this.fakeClass1 = compilation.GetTypeByMetadataName("FakeClass1");
             this.fakeClass2 = compilation.GetTypeByMetadataName("FakeClass2");
             this.fakeInterface = compilation.GetTypeByMetadataName("IFakeInterface");
-            this.resolver = new InterfaceResolver();
+            this.knownTypes = Substitute.For<IKnownTypes>();
+            this.resolver = new Lazy<InterfaceResolver>(() => new InterfaceResolver(this.knownTypes));
+        }
+
+        private InterfaceResolver Resolver => this.resolver.Value;
+
+        private void SetKnownTypes(params INamedTypeSymbol[] types)
+        {
+            this.knownTypes.GetEnumerator().Returns(types.GetEnumerator());
         }
 
         public class FindClassesTests : InterfaceResolverTests
@@ -50,9 +61,9 @@ class FakeClass2 : IFakeInterface
             [Fact]
             public void ShouldNotReturnAbstractClasses()
             {
-                this.resolver.AddKnownClasses(new[] { this.abstractClass });
+                this.SetKnownTypes(this.abstractClass);
 
-                IReadOnlyCollection<INamedTypeSymbol> result = this.resolver.FindClasses(
+                IReadOnlyCollection<INamedTypeSymbol> result = this.Resolver.FindClasses(
                     this.fakeInterface);
 
                 result.Should().BeEmpty();
@@ -61,15 +72,15 @@ class FakeClass2 : IFakeInterface
             [Fact]
             public void ShouldReturnAllClassesImplementingAnInterface()
             {
-                ITypeSymbol[] classes = new[]
+                INamedTypeSymbol[] classes = new[]
                 {
                     this.fakeClass1,
                     this.fakeClass2,
                 };
 
-                this.resolver.AddKnownClasses(classes);
+                this.SetKnownTypes(classes);
 
-                IReadOnlyCollection<INamedTypeSymbol> result = this.resolver.FindClasses(
+                IReadOnlyCollection<INamedTypeSymbol> result = this.Resolver.FindClasses(
                     this.fakeInterface);
 
                 result.Should().BeEquivalentTo(classes);
@@ -78,7 +89,7 @@ class FakeClass2 : IFakeInterface
             [Fact]
             public void ShouldReturnAnEmptyListForUnknownInterfaces()
             {
-                IReadOnlyCollection<INamedTypeSymbol> result = this.resolver.FindClasses(
+                IReadOnlyCollection<INamedTypeSymbol> result = this.Resolver.FindClasses(
                     this.fakeInterface);
 
                 result.Should().BeEmpty();
@@ -87,9 +98,9 @@ class FakeClass2 : IFakeInterface
             [Fact]
             public void ShouldReturnClassesForAbstractBaseClasses()
             {
-                this.resolver.AddKnownClasses(new[] { this.derivedClass });
+                this.SetKnownTypes(this.derivedClass);
 
-                IReadOnlyCollection<INamedTypeSymbol> result = this.resolver.FindClasses(
+                IReadOnlyCollection<INamedTypeSymbol> result = this.Resolver.FindClasses(
                     this.abstractClass);
 
                 result.Should().ContainSingle().Which.Should().Be(this.derivedClass);
@@ -98,9 +109,9 @@ class FakeClass2 : IFakeInterface
             [Fact]
             public void ShouldReturnClassesForBaseInterfaces()
             {
-                this.resolver.AddKnownClasses(new[] { this.derivedClass });
+                this.SetKnownTypes(this.derivedClass);
 
-                IReadOnlyCollection<INamedTypeSymbol> result = this.resolver.FindClasses(
+                IReadOnlyCollection<INamedTypeSymbol> result = this.Resolver.FindClasses(
                     this.fakeInterface);
 
                 result.Should().ContainSingle().Which.Should().Be(this.derivedClass);
@@ -109,9 +120,9 @@ class FakeClass2 : IFakeInterface
             [Fact]
             public void ShouldReturnConcreteClasses()
             {
-                this.resolver.AddKnownClasses(new[] { this.fakeClass1 });
+                this.SetKnownTypes(this.fakeClass1);
 
-                IReadOnlyCollection<INamedTypeSymbol> result = this.resolver.FindClasses(
+                IReadOnlyCollection<INamedTypeSymbol> result = this.Resolver.FindClasses(
                     this.fakeClass1);
 
                 result.Should().ContainSingle().Which.Should().Be(this.fakeClass1);

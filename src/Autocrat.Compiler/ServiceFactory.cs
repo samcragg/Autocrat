@@ -15,6 +15,7 @@ namespace Autocrat.Compiler
         private readonly Compilation compilation;
         private ConstructorResolver constructorResolver;
         private InterfaceResolver interfaceResolver;
+        private IKnownTypes knownTypes;
         private ManagedCallbackGenerator managedCallbackGenerator;
         private NativeImportGenerator nativeImportGenerator;
 
@@ -49,6 +50,19 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Creates a new <see cref="NativeRegisterRewriter"/> instance.
+        /// </summary>
+        /// <param name="model">Contains the semantic information.</param>
+        /// <returns>A new instance of the <see cref="NativeRegisterRewriter"/> class.</returns>
+        public virtual NativeRegisterRewriter CreateNativeRegisterRewriter(SemanticModel model)
+        {
+            return new NativeRegisterRewriter(
+                model,
+                this.GetManagedCallbackGenerator(),
+                new SignatureGenerator());
+        }
+
+        /// <summary>
         /// Gets a <see cref="ConstructorResolver"/> instance.
         /// </summary>
         /// <returns>An instance of the <see cref="ConstructorResolver"/> class.</returns>
@@ -72,11 +86,8 @@ namespace Autocrat.Compiler
         {
             if (this.interfaceResolver == null)
             {
-                var typeVisitor = new NamedTypeVisitor();
-                typeVisitor.Visit(this.compilation.GlobalNamespace);
-
-                this.interfaceResolver = new InterfaceResolver();
-                this.interfaceResolver.AddKnownClasses(typeVisitor.Types);
+                this.interfaceResolver = new InterfaceResolver(
+                    this.GetKnownTypes());
             }
 
             return this.interfaceResolver;
@@ -110,6 +121,18 @@ namespace Autocrat.Compiler
             }
 
             return this.nativeImportGenerator;
+        }
+
+        private IKnownTypes GetKnownTypes()
+        {
+            if (this.knownTypes == null)
+            {
+                var typeVisitor = new NamedTypeVisitor();
+                typeVisitor.Visit(this.compilation.GlobalNamespace);
+                this.knownTypes = typeVisitor.Types;
+            }
+
+            return this.knownTypes;
         }
     }
 }

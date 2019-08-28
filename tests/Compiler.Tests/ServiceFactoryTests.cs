@@ -37,6 +37,18 @@
             }
         }
 
+        public sealed class CreateNativeRegisterRewriterTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnANewInstance()
+            {
+                NativeRegisterRewriter result1 = this.factory.CreateNativeRegisterRewriter(null);
+                NativeRegisterRewriter result2 = this.factory.CreateNativeRegisterRewriter(null);
+
+                result1.Should().NotBeSameAs(result2);
+            }
+        }
+
         public sealed class GetConstructorResolverTests : ServiceFactoryTests
         {
             [Fact]
