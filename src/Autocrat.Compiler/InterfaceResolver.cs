@@ -33,6 +33,16 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="InterfaceResolver"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected InterfaceResolver()
+        {
+        }
+
+        /// <summary>
         /// Finds the classes that implement the specified interface.
         /// </summary>
         /// <param name="interfaceType">The type of the interface.</param>

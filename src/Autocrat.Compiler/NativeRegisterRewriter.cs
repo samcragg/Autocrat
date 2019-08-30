@@ -24,14 +24,15 @@ namespace Autocrat.Compiler
         // to:
         //// ExportedNativeMethods.Register_Method1(arguments, 0);
         //// ExportedNativeMethods.Register_Method2(arguments, 1);
-        private readonly TypeSyntax adapterType;
         private readonly ManagedCallbackGenerator callbackGenerator;
-        private readonly string classToReplace;
         private readonly SemanticModel model;
-        private readonly SignatureGenerator signatureGenerator;
-
         private readonly List<(SyntaxNode original, SyntaxNode[] replacements)> nodesToReplace =
             new List<(SyntaxNode, SyntaxNode[])>();
+
+        private readonly SignatureGenerator signatureGenerator;
+
+        private readonly Dictionary<string, TypeSyntax> typesToReplace =
+            new Dictionary<string, TypeSyntax>(StringComparer.Ordinal);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NativeRegisterRewriter"/> class.
@@ -43,24 +44,40 @@ namespace Autocrat.Compiler
         /// <param name="signatureGenerator">
         /// Generates the native method signatures.
         /// </param>
+        public NativeRegisterRewriter(
+            SemanticModel model,
+            ManagedCallbackGenerator callbackGenerator,
+            SignatureGenerator signatureGenerator)
+        {
+            this.model = model;
+            this.callbackGenerator = callbackGenerator;
+            this.signatureGenerator = signatureGenerator;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NativeRegisterRewriter"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected NativeRegisterRewriter()
+        {
+        }
+
+        /// <summary>
+        /// Adds the specified class to the list of types that will be replaced.
+        /// </summary>
         /// <param name="classType">
         /// The class type to replace the static calls from.
         /// </param>
         /// <param name="adapterType">
         /// The adapter type to replace the calls to.
         /// </param>
-        public NativeRegisterRewriter(
-            SemanticModel model,
-            ManagedCallbackGenerator callbackGenerator,
-            SignatureGenerator signatureGenerator,
-            Type classType,
-            Type adapterType)
+        public virtual void AddReplacement(ITypeSymbol classType, ITypeSymbol adapterType)
         {
-            this.model = model;
-            this.callbackGenerator = callbackGenerator;
-            this.signatureGenerator = signatureGenerator;
-            this.adapterType = ParseTypeName(adapterType.FullName.Replace('+', '.'));
-            this.classToReplace = classType.FullName.Replace('+', '.');
+            this.typesToReplace.Add(
+                classType.ToDisplayString(),
+                ParseTypeName(adapterType.ToDisplayString()));
         }
 
         /// <inheritdoc />
@@ -74,15 +91,14 @@ namespace Autocrat.Compiler
 
                 string containingType = method.ContainingType.ToDisplayString();
                 if (method.IsGenericMethod &&
-                    this.classToReplace.Equals(containingType, StringComparison.Ordinal))
+                    this.typesToReplace.TryGetValue(containingType, out TypeSyntax adapterType))
                 {
                     SyntaxNode[] replacements =
-                        this.ReplaceNode(node, method)
-                        .Select(n => ExpressionStatement(n).WithTriviaFrom(node.Parent))
-                        .ToArray();
+                        this.ReplaceNode(node, method, adapterType)
+                            .Select(n => ExpressionStatement(n).WithTriviaFrom(node.Parent))
+                            .ToArray();
 
                     this.nodesToReplace.Add((node.Parent, replacements));
-                    this.ReplaceNode(node, method);
                 }
             }
 
@@ -119,7 +135,8 @@ namespace Autocrat.Compiler
 
         private IEnumerable<InvocationExpressionSyntax> ReplaceNode(
             InvocationExpressionSyntax invocation,
-            IMethodSymbol originalMethod)
+            IMethodSymbol originalMethod,
+            TypeSyntax adapterType)
         {
             foreach (IMethodSymbol method in GetMethodsToExport(originalMethod))
             {
@@ -131,7 +148,7 @@ namespace Autocrat.Compiler
 
                 ExpressionSyntax adapterMethod = MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
-                    this.adapterType,
+                    adapterType,
                     IdentifierName(method.Name));
 
                 ArgumentListSyntax arguments = invocation.ArgumentList

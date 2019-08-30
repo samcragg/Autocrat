@@ -57,9 +57,11 @@ class TestClass{ " + code + "}");
             var rewriter = new NativeRegisterRewriter(
                 model,
                 this.callbackGenerator,
-                this.signatureGenerator,
-                interfaceType,
-                typeof(TestNativeAdapter));
+                this.signatureGenerator);
+
+            rewriter.AddReplacement(
+                compilation.GetTypeByMetadataName(interfaceType.FullName),
+                compilation.GetTypeByMetadataName(typeof(TestNativeAdapter).FullName));
 
             return rewriter.Visit(tree.GetRoot()).ToFullString();
         }

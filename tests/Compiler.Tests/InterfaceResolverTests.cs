@@ -53,7 +53,8 @@ class FakeClass2 : IFakeInterface
 
         private void SetKnownTypes(params INamedTypeSymbol[] types)
         {
-            this.knownTypes.GetEnumerator().Returns(types.GetEnumerator());
+            this.knownTypes.GetEnumerator()
+                .Returns(((IEnumerable<INamedTypeSymbol>)types).GetEnumerator());
         }
 
         public class FindClassesTests : InterfaceResolverTests
