@@ -11,6 +11,30 @@
     {
         private readonly NativeImportGenerator generator = new NativeImportGenerator();
 
+        private string WriteToOutput()
+        {
+            using (var stream = new MemoryStream())
+            {
+                this.generator.WriteTo(stream);
+                return Encoding.UTF8.GetString(stream.ToArray());
+            }
+        }
+
+        public sealed class MergeWithTests : NativeImportGeneratorTests
+        {
+            [Fact]
+            public void ShouldIncludeAllTheMethods()
+            {
+                var otherGenerator = new NativeImportGenerator();
+                otherGenerator.RegisterMethod("", "OtherMethod");
+
+                this.generator.MergeWith(otherGenerator);
+                string result = this.WriteToOutput();
+
+                result.Should().Contain("OtherMethod");
+            }
+        }
+
         public sealed class RegisterMethodTests : NativeImportGeneratorTests
         {
             [Fact]
@@ -62,15 +86,6 @@
             {
                 Regex.Matches(input, Regex.Escape(toMatch))
                     .Should().ContainSingle();
-            }
-
-            private string WriteToOutput()
-            {
-                using (var stream = new MemoryStream())
-                {
-                    this.generator.WriteTo(stream);
-                    return Encoding.UTF8.GetString(stream.ToArray());
-                }
             }
         }
     }

@@ -37,13 +37,13 @@
             }
         }
 
-        public sealed class CreateNativeRegisterRewriterTests : ServiceFactoryTests
+        public sealed class CreateSyntaxTreeRewriterTests : ServiceFactoryTests
         {
             [Fact]
             public void ShouldReturnANewInstance()
             {
-                NativeRegisterRewriter result1 = this.factory.CreateNativeRegisterRewriter(null);
-                NativeRegisterRewriter result2 = this.factory.CreateNativeRegisterRewriter(null);
+                SyntaxTreeRewriter result1 = this.factory.CreateSyntaxTreeRewriter();
+                SyntaxTreeRewriter result2 = this.factory.CreateSyntaxTreeRewriter();
 
                 result1.Should().NotBeSameAs(result2);
             }

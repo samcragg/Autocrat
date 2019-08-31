@@ -2,9 +2,11 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Reflection;
     using Autocrat.Compiler;
     using FluentAssertions;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using NSubstitute;
@@ -20,6 +22,9 @@
             this.factory = Substitute.For<ServiceFactory>(new object[] { null });
             CodeGenerator.ServiceFactory = _ => this.factory;
             this.generator = new CodeGenerator();
+
+            SyntaxTreeRewriter rewriter = this.factory.CreateSyntaxTreeRewriter();
+            rewriter.Generate(null).ReturnsForAnyArgs(ci => ci.Arg<SyntaxTree>());
         }
 
         public void Dispose()
@@ -27,7 +32,7 @@
             CodeGenerator.ServiceFactory = null;
         }
 
-        public sealed class EmitTests : CodeGeneratorTests
+        public sealed class EmitAssemblyTests : CodeGeneratorTests
         {
             [Fact]
             public void ShouldIncludeTheOriginalCode()
@@ -61,6 +66,21 @@
             }
 
             [Fact]
+            public void ShouldRewriteTheSytnaxTrees()
+            {
+                SyntaxTree tree = CompilationHelper.CompileCode(@"public class Rewritten { }")
+                    .SyntaxTrees
+                    .Single();
+
+                SyntaxTreeRewriter rewriter = this.factory.CreateSyntaxTreeRewriter();
+                rewriter.Generate(null).ReturnsForAnyArgs(tree);
+
+                Assembly assembly = this.EmitCode();
+
+                assembly.GetType("Rewritten").Should().NotBeNull();
+            }
+
+            [Fact]
             public void ShouldThrowIfTheCodeFailsToCompile()
             {
                 this.generator.Add(CompilationHelper.CompileCode(@"
@@ -69,7 +89,7 @@ public class Test
     public UnknownType Invalid { get; set; }
 }"));
 
-                this.generator.Invoking(g => g.Emit(Stream.Null))
+                this.generator.Invoking(g => g.EmitAssembly(Stream.Null))
                     .Should().Throw<InvalidOperationException>();
             }
 
@@ -78,9 +98,27 @@ public class Test
                 using (var stream = new MemoryStream())
                 {
                     this.generator.Add(CompilationHelper.CompileCode(originalCode));
-                    this.generator.Emit(stream);
+                    this.generator.EmitAssembly(stream);
                     return Assembly.Load(stream.ToArray());
                 }
+            }
+        }
+
+        public sealed class EmitNativeCodeTests : CodeGeneratorTests
+        {
+            [Fact]
+            public void ShouldWriteTheNativeImportCode()
+            {
+                SyntaxTreeRewriter treeRewriter = this.factory.CreateSyntaxTreeRewriter();
+                NativeImportGenerator nativeGenerator = this.factory.GetNativeImportGenerator();
+                this.generator.Add(CompilationHelper.CompileCode(@"
+public class Test
+{
+}"));
+                this.generator.EmitNativeCode(Stream.Null);
+
+                nativeGenerator.Received().WriteTo(Stream.Null);
+                treeRewriter.ReceivedWithAnyArgs().Generate(null);
             }
         }
     }

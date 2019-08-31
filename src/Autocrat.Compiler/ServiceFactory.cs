@@ -50,16 +50,15 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
-        /// Creates a new <see cref="NativeRegisterRewriter"/> instance.
+        /// Creates a new <see cref="SyntaxTreeRewriter"/> instance.
         /// </summary>
-        /// <param name="model">Contains the semantic information.</param>
-        /// <returns>A new instance of the <see cref="NativeRegisterRewriter"/> class.</returns>
-        public virtual NativeRegisterRewriter CreateNativeRegisterRewriter(SemanticModel model)
+        /// <returns>A new instance of the <see cref="SyntaxTreeRewriter"/> class.</returns>
+        public virtual SyntaxTreeRewriter CreateSyntaxTreeRewriter()
         {
-            return new NativeRegisterRewriter(
-                model,
-                this.GetManagedCallbackGenerator(),
-                new SignatureGenerator());
+            return new SyntaxTreeRewriter(
+                this.compilation,
+                this.CreateNativeRegisterRewriter,
+                this.GetKnownTypes());
         }
 
         /// <summary>
@@ -121,6 +120,14 @@ namespace Autocrat.Compiler
             }
 
             return this.nativeImportGenerator;
+        }
+
+        private NativeRegisterRewriter CreateNativeRegisterRewriter(SemanticModel model)
+        {
+            return new NativeRegisterRewriter(
+                model,
+                this.GetManagedCallbackGenerator(),
+                new SignatureGenerator());
         }
 
         private IKnownTypes GetKnownTypes()

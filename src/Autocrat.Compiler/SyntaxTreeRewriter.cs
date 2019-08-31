@@ -51,11 +51,21 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="SyntaxTreeRewriter"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected SyntaxTreeRewriter()
+        {
+        }
+
+        /// <summary>
         /// Create the syntax tree for the specified source.
         /// </summary>
         /// <param name="tree">The source document.</param>
         /// <returns>The transformed tree.</returns>
-        public SyntaxTree Generate(SyntaxTree tree)
+        public virtual SyntaxTree Generate(SyntaxTree tree)
         {
             SemanticModel model = this.compilation.GetSemanticModel(tree);
             NativeRegisterRewriter rewriter = this.createRewriter(model);

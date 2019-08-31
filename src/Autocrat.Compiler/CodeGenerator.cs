@@ -38,7 +38,16 @@ namespace System.Runtime.InteropServices
 
         private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
         private readonly List<SyntaxTree> generatedCode = new List<SyntaxTree>();
+        private readonly NativeImportGenerator nativeCode;
         private readonly HashSet<MetadataReference> references = new HashSet<MetadataReference>();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeGenerator"/> class.
+        /// </summary>
+        public CodeGenerator()
+        {
+            this.nativeCode = ServiceFactory(null).GetNativeImportGenerator();
+        }
 
         /// <summary>
         /// Gets or sets the function to call to create a
@@ -57,14 +66,16 @@ namespace System.Runtime.InteropServices
 
             this.generatedCode.AddRange(compilation.SyntaxTrees);
             this.RewriteInitializers(factory, compilation);
+            this.RewriteNativeAdapters(factory);
             this.SaveCompilationMetadata(compilation);
+            this.SaveNativeGeneratedCode(factory);
         }
 
         /// <summary>
-        /// Generates the code for the specified compilation.
+        /// Generates the managed assembly.
         /// </summary>
-        /// <param name="destination">Where to save the code to.</param>
-        public virtual void Emit(Stream destination)
+        /// <param name="destination">Where to save the assembly to.</param>
+        public virtual void EmitAssembly(Stream destination)
         {
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
@@ -86,6 +97,15 @@ namespace System.Runtime.InteropServices
             }
         }
 
+        /// <summary>
+        /// Generates the native source code.
+        /// </summary>
+        /// <param name="destination">Where to save the source code to.</param>
+        public virtual void EmitNativeCode(Stream destination)
+        {
+            this.nativeCode.WriteTo(destination);
+        }
+
         private static CSharpCompilation EnsureNativeCallableAttributeIsPresent(CSharpCompilation compilation)
         {
             if (compilation.GetTypeByMetadataName("System.Runtime.InteropServices.NativeCallableAttribute") == null)
@@ -100,6 +120,7 @@ namespace System.Runtime.InteropServices
 
         private void RewriteInitializers(ServiceFactory factory, Compilation compilation)
         {
+            Logger.Info("Rewriting " + nameof(IInitializer) + "s");
             INamedTypeSymbol initializer = compilation.GetTypeByMetadataName(
                 "Autocrat.Abstractions." + nameof(IInitializer));
 
@@ -117,12 +138,27 @@ namespace System.Runtime.InteropServices
             }
         }
 
+        private void RewriteNativeAdapters(ServiceFactory factory)
+        {
+            Logger.Info("Rewriting native adapters");
+            SyntaxTreeRewriter rewriter = factory.CreateSyntaxTreeRewriter();
+            for (int i = 0; i < this.generatedCode.Count; i++)
+            {
+                this.generatedCode[i] = rewriter.Generate(this.generatedCode[i]);
+            }
+        }
+
         private void SaveCompilationMetadata(Compilation compilation)
         {
             foreach (MetadataReference reference in compilation.References)
             {
                 this.references.Add(reference);
             }
+        }
+
+        private void SaveNativeGeneratedCode(ServiceFactory factory)
+        {
+            this.nativeCode.MergeWith(factory.GetNativeImportGenerator());
         }
     }
 }

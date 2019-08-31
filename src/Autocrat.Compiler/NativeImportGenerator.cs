@@ -36,6 +36,16 @@ namespace Autocrat.Compiler
         private readonly ISet<string> methodTypes = new HashSet<string>();
 
         /// <summary>
+        /// Merges the contents of this instance with the specified instance.
+        /// </summary>
+        /// <param name="other">Contains the data to add to this instance.</param>
+        public virtual void MergeWith(NativeImportGenerator other)
+        {
+            this.exports.AddRange(other.exports);
+            this.methodTypes.UnionWith(other.methodTypes);
+        }
+
+        /// <summary>
         /// Registers the method as being exported from the managed code.
         /// </summary>
         /// <param name="signature">the format of the C++ signature.</param>
