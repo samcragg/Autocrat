@@ -5,6 +5,7 @@
 
 namespace Autocrat.Compiler
 {
+    using System;
     using Microsoft.CodeAnalysis;
 
     /// <summary>
@@ -12,12 +13,12 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class ServiceFactory
     {
+        private static readonly Lazy<NativeImportGenerator> NativeImportGenerator = new Lazy<NativeImportGenerator>();
         private readonly Compilation compilation;
         private ConstructorResolver constructorResolver;
         private InterfaceResolver interfaceResolver;
         private IKnownTypes knownTypes;
         private ManagedCallbackGenerator managedCallbackGenerator;
-        private NativeImportGenerator nativeImportGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceFactory"/> class.
@@ -114,12 +115,7 @@ namespace Autocrat.Compiler
         /// <returns>An instance of the <see cref="NativeImportGenerator"/> class.</returns>
         public virtual NativeImportGenerator GetNativeImportGenerator()
         {
-            if (this.nativeImportGenerator == null)
-            {
-                this.nativeImportGenerator = new NativeImportGenerator();
-            }
-
-            return this.nativeImportGenerator;
+            return NativeImportGenerator.Value;
         }
 
         private NativeRegisterRewriter CreateNativeRegisterRewriter(SemanticModel model)

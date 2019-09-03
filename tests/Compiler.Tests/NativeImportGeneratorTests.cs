@@ -20,21 +20,6 @@
             }
         }
 
-        public sealed class MergeWithTests : NativeImportGeneratorTests
-        {
-            [Fact]
-            public void ShouldIncludeAllTheMethods()
-            {
-                var otherGenerator = new NativeImportGenerator();
-                otherGenerator.RegisterMethod("", "OtherMethod");
-
-                this.generator.MergeWith(otherGenerator);
-                string result = this.WriteToOutput();
-
-                result.Should().Contain("OtherMethod");
-            }
-        }
-
         public sealed class RegisterMethodTests : NativeImportGeneratorTests
         {
             [Fact]
