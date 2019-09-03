@@ -26,6 +26,7 @@ namespace Autocrat.Compiler
         //// ExportedNativeMethods.Register_Method2(arguments, 1);
         private readonly ManagedCallbackGenerator callbackGenerator;
         private readonly SemanticModel model;
+
         private readonly List<(SyntaxNode original, SyntaxNode[] replacements)> nodesToReplace =
             new List<(SyntaxNode, SyntaxNode[])>();
 
@@ -83,23 +84,15 @@ namespace Autocrat.Compiler
         /// <inheritdoc />
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            if (node.Expression is MemberAccessExpressionSyntax member)
+            if ((node.Expression is MemberAccessExpressionSyntax member) &&
+                this.TryGetAdapterType(member, out TypeSyntax adapterType, out IMethodSymbol method))
             {
-                var method = (IMethodSymbol)this.model
-                    .GetMemberGroup(member.Name)
-                    .Single();
+                SyntaxNode[] replacements =
+                    this.ReplaceNode(node, method, adapterType)
+                        .Select(n => ExpressionStatement(n).WithTriviaFrom(node.Parent))
+                        .ToArray();
 
-                string containingType = method.ContainingType.ToDisplayString();
-                if (method.IsGenericMethod &&
-                    this.typesToReplace.TryGetValue(containingType, out TypeSyntax adapterType))
-                {
-                    SyntaxNode[] replacements =
-                        this.ReplaceNode(node, method, adapterType)
-                            .Select(n => ExpressionStatement(n).WithTriviaFrom(node.Parent))
-                            .ToArray();
-
-                    this.nodesToReplace.Add((node.Parent, replacements));
-                }
+                this.nodesToReplace.Add((node.Parent, replacements));
             }
 
             return base.VisitInvocationExpression(node);
@@ -124,13 +117,15 @@ namespace Autocrat.Compiler
 
         private static IEnumerable<IMethodSymbol> GetMethodsToExport(IMethodSymbol methodInfo)
         {
+            ITypeSymbol concreteType = methodInfo.TypeArguments.Single();
             return methodInfo
                 .OriginalDefinition
                 .TypeParameters
                 .SelectMany(t => t.ConstraintTypes)
                 .SelectMany(c => c.GetMembers())
                 .OfType<IMethodSymbol>()
-                .Where(m => m.MethodKind == MethodKind.Ordinary);
+                .Where(m => m.MethodKind == MethodKind.Ordinary)
+                .Select(m => (IMethodSymbol)concreteType.FindImplementationForInterfaceMember(m));
         }
 
         private IEnumerable<InvocationExpressionSyntax> ReplaceNode(
@@ -159,6 +154,22 @@ namespace Autocrat.Compiler
                     .WithArgumentList(arguments)
                     .WithTriviaFrom(invocation);
             }
+        }
+
+        private bool TryGetAdapterType(MemberAccessExpressionSyntax member, out TypeSyntax adapterType, out IMethodSymbol method)
+        {
+            adapterType = default;
+            method = default;
+            IReadOnlyList<ISymbol> methods = this.model.GetMemberGroup(member.Name);
+            if (methods.Count != 1)
+            {
+                return false;
+            }
+
+            method = (IMethodSymbol)methods[0];
+            string containingType = method.ContainingType.ToDisplayString();
+            return method.IsGenericMethod &&
+                   this.typesToReplace.TryGetValue(containingType, out adapterType);
         }
     }
 }

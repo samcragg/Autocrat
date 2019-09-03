@@ -87,7 +87,7 @@ class TestClass{ " + code + "}");
                 const string original = @"void Method(ITestInterface instance)
 {
     int other = 123;
-    instance.SingleArgument<TestClass>(other);
+    instance.SingleArgument<MethodsToCall>(other);
 }";
                 string result = this.VisitCode(typeof(ITestInterface), original);
 
@@ -103,7 +103,7 @@ class TestClass{ " + code + "}");
             {
                 const string original = @"void Method(ITestInterface instance)
 {
-    instance.MultipleMethods<TestClass>();
+    instance.MultipleMethods<MethodsToCall>();
 }";
 
                 string result = this.VisitCode(typeof(ITestInterface), original);
@@ -118,6 +118,21 @@ class TestClass{ " + code + "}");
 
         private static class TestNativeAdapter
         {
+        }
+
+        public class MethodsToCall : ISingleMethod, IMultipleMethods
+        {
+            public void InterfaceMethod()
+            {
+            }
+
+            public void Method1()
+            {
+            }
+
+            public void Method2()
+            {
+            }
         }
     }
 }
