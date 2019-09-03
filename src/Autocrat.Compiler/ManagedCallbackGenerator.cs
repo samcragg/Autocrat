@@ -51,10 +51,9 @@ namespace Autocrat.Compiler
         ////         return instance.Method();
         ////     }
         //// }
-        private const string AdapterClassName = "NativeCallableMethods";
         private readonly Func<InstanceBuilder> instanceBuilder;
+        private readonly List<MethodDeclarationSyntax> methods = new List<MethodDeclarationSyntax>();
         private readonly NativeImportGenerator nativeGenerator;
-        private ClassDeclarationSyntax nativeClass;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ManagedCallbackGenerator"/> class.
@@ -68,9 +67,23 @@ namespace Autocrat.Compiler
             NativeImportGenerator nativeGenerator)
         {
             this.instanceBuilder = instanceBuilder;
-            this.nativeClass = ClassDeclaration(AdapterClassName);
             this.nativeGenerator = nativeGenerator;
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ManagedCallbackGenerator"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected ManagedCallbackGenerator()
+        {
+        }
+
+        /// <summary>
+        /// Gets the created methods.
+        /// </summary>
+        public virtual IReadOnlyCollection<MethodDeclarationSyntax> Methods => this.methods;
 
         /// <summary>
         /// Generates a native callable method for the specified type.
@@ -80,32 +93,27 @@ namespace Autocrat.Compiler
         /// <returns>The name of the generated method.</returns>
         public virtual int CreateMethod(string nativeSignature, IMethodSymbol method)
         {
-            TypeSyntax returnType = ParseTypeName(method.ReturnType.ToDisplayString());
+            TypeSyntax returnType;
+            if (method.ReturnType.SpecialType == SpecialType.System_Void)
+            {
+                returnType = PredefinedType(Token(SyntaxKind.VoidKeyword));
+            }
+            else
+            {
+                returnType = ParseTypeName(method.ReturnType.ToDisplayString());
+            }
+
             string methodName = method.ContainingType.Name + "_" + method.Name;
             MethodDeclarationSyntax declaration = MethodDeclaration(returnType, methodName)
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
                 .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
                     CreateNativeCallableAttribute(methodName)))))
                 .WithBody(this.CreateBody(method))
                 .WithParameterList(ParameterList(SeparatedList(
                     CreateParameters(method))));
 
-            this.nativeClass = this.nativeClass.AddMembers(declaration);
+            this.methods.Add(declaration);
             return this.nativeGenerator.RegisterMethod(nativeSignature, methodName);
-        }
-
-        /// <summary>
-        /// Creates a compilation unit with a class containing the generated
-        /// adapter methods.
-        /// </summary>
-        /// <returns>A new compilation unit.</returns>
-        public virtual CompilationUnitSyntax GetCompilationUnit()
-        {
-            UsingDirectiveSyntax nativeInterop = UsingDirective(
-                ParseName("System.Runtime.InteropServices"));
-
-            return CompilationUnit()
-                .WithUsings(SingletonList(nativeInterop))
-                .WithMembers(SingletonList<MemberDeclarationSyntax>(this.nativeClass));
         }
 
         /// <summary>

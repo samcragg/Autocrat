@@ -20,6 +20,7 @@ namespace Autocrat.Compiler
         private readonly Dictionary<string, string> typeMappings =
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
+                { "byte[]", "void*" },
                 { "double", "double" },
                 { "float", "float" },
                 { "int", "std::int32_t" },

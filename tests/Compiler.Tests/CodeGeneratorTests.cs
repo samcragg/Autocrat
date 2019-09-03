@@ -109,7 +109,6 @@ public class Test
             [Fact]
             public void ShouldWriteTheNativeImportCode()
             {
-                SyntaxTreeRewriter treeRewriter = this.factory.CreateSyntaxTreeRewriter();
                 NativeImportGenerator nativeGenerator = this.factory.GetNativeImportGenerator();
                 this.generator.Add(CompilationHelper.CompileCode(@"
 public class Test
@@ -118,7 +117,6 @@ public class Test
                 this.generator.EmitNativeCode(Stream.Null);
 
                 nativeGenerator.Received().WriteTo(Stream.Null);
-                treeRewriter.ReceivedWithAnyArgs().Generate(null);
             }
         }
     }

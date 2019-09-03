@@ -67,6 +67,11 @@ namespace Autocrat.Compiler
         /// <returns>The transformed tree.</returns>
         public virtual SyntaxTree Generate(SyntaxTree tree)
         {
+            if (!this.compilation.ContainsSyntaxTree(tree))
+            {
+                return tree;
+            }
+
             SemanticModel model = this.compilation.GetSemanticModel(tree);
             NativeRegisterRewriter rewriter = this.createRewriter(model);
             foreach ((ITypeSymbol adapter, ITypeSymbol interfaceType) in this.adapters)

@@ -11,8 +11,10 @@ namespace Autocrat.Compiler
     using Autocrat.Abstractions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Emit;
     using NLog;
+    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
     /// Creates the generated code for the managed and native parts of the
@@ -20,6 +22,8 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class CodeGenerator
     {
+        private const string CallbackAdapterClassName = "NativeCallableMethods";
+
         private const string NativeCallableAttributeDeclaration = @"// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
@@ -37,17 +41,9 @@ namespace System.Runtime.InteropServices
 ";
 
         private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
+        private readonly List<MethodDeclarationSyntax> callbackMethods = new List<MethodDeclarationSyntax>();
         private readonly List<SyntaxTree> generatedCode = new List<SyntaxTree>();
-        private readonly NativeImportGenerator nativeCode;
         private readonly HashSet<MetadataReference> references = new HashSet<MetadataReference>();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CodeGenerator"/> class.
-        /// </summary>
-        public CodeGenerator()
-        {
-            this.nativeCode = ServiceFactory(null).GetNativeImportGenerator();
-        }
 
         /// <summary>
         /// Gets or sets the function to call to create a
@@ -62,13 +58,16 @@ namespace System.Runtime.InteropServices
         /// <param name="compilation">Contains the compiled information.</param>
         public virtual void Add(Compilation compilation)
         {
+            compilation = compilation.AddReferences(
+                MetadataReference.CreateFromFile(typeof(CodeGenerator).Assembly.Location));
+
             ServiceFactory factory = ServiceFactory(compilation);
 
             this.generatedCode.AddRange(compilation.SyntaxTrees);
             this.RewriteInitializers(factory, compilation);
             this.RewriteNativeAdapters(factory);
             this.SaveCompilationMetadata(compilation);
-            this.SaveNativeGeneratedCode(factory);
+            this.SaveCallbacks(factory);
         }
 
         /// <summary>
@@ -84,7 +83,9 @@ namespace System.Runtime.InteropServices
                 .AddReferences(this.references)
                 .AddSyntaxTrees(this.generatedCode);
 
+            compilation = this.AddCallbackAdapters(compilation);
             compilation = EnsureNativeCallableAttributeIsPresent(compilation);
+
             EmitResult result = compilation.Emit(destination);
             if (!result.Success)
             {
@@ -103,7 +104,8 @@ namespace System.Runtime.InteropServices
         /// <param name="destination">Where to save the source code to.</param>
         public virtual void EmitNativeCode(Stream destination)
         {
-            this.nativeCode.WriteTo(destination);
+            NativeImportGenerator nativeGenerator = ServiceFactory(null).GetNativeImportGenerator();
+            nativeGenerator.WriteTo(destination);
         }
 
         private static CSharpCompilation EnsureNativeCallableAttributeIsPresent(CSharpCompilation compilation)
@@ -112,10 +114,28 @@ namespace System.Runtime.InteropServices
             {
                 compilation = compilation.AddSyntaxTrees(
                     CSharpSyntaxTree.Create(
-                        SyntaxFactory.ParseCompilationUnit(NativeCallableAttributeDeclaration)));
+                        ParseCompilationUnit(NativeCallableAttributeDeclaration)));
             }
 
             return compilation;
+        }
+
+        private CSharpCompilation AddCallbackAdapters(CSharpCompilation compilation)
+        {
+            ClassDeclarationSyntax nativeClass =
+                ClassDeclaration(CallbackAdapterClassName)
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+                .WithMembers(List<MemberDeclarationSyntax>(this.callbackMethods));
+
+            UsingDirectiveSyntax nativeInterop = UsingDirective(
+                ParseName("System.Runtime.InteropServices"));
+
+            SyntaxTree tree = SyntaxTree(
+                CompilationUnit()
+                .WithUsings(SingletonList(nativeInterop))
+                .WithMembers(SingletonList<MemberDeclarationSyntax>(nativeClass)));
+
+            return compilation.AddSyntaxTrees(tree);
         }
 
         private void RewriteInitializers(ServiceFactory factory, Compilation compilation)
@@ -148,17 +168,18 @@ namespace System.Runtime.InteropServices
             }
         }
 
+        private void SaveCallbacks(ServiceFactory factory)
+        {
+            ManagedCallbackGenerator callbacks = factory.GetManagedCallbackGenerator();
+            this.callbackMethods.AddRange(callbacks.Methods);
+        }
+
         private void SaveCompilationMetadata(Compilation compilation)
         {
             foreach (MetadataReference reference in compilation.References)
             {
                 this.references.Add(reference);
             }
-        }
-
-        private void SaveNativeGeneratedCode(ServiceFactory factory)
-        {
-            this.nativeCode.MergeWith(factory.GetNativeImportGenerator());
         }
     }
 }

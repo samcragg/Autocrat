@@ -1,6 +1,5 @@
 ﻿namespace Compiler.Tests
 {
-    using System.Collections.Generic;
     using System.Linq;
     using Autocrat.Compiler;
     using FluentAssertions;
@@ -107,31 +106,8 @@
                 this.nativeGenerator.RegisterMethod("native", Arg.Do<string>(s => name = s));
                 this.generator.CreateMethod("native", method);
 
-                return this.generator.GetCompilationUnit()
-                    .DescendantNodes()
-                    .OfType<MethodDeclarationSyntax>()
+                return this.generator.Methods
                     .FirstOrDefault(m => m.Identifier.ValueText.Equals(name));
-            }
-        }
-
-        public sealed class GetCompilationUnitTests : ManagedCallbackGeneratorTests
-        {
-            [Fact]
-            public void ShouldReturnAllTheAddedMethods()
-            {
-                var names = new List<string>();
-                this.nativeGenerator.RegisterMethod(Arg.Any<string>(), Arg.Do<string>(names.Add));
-
-                this.generator.CreateMethod("", CompilationHelper.CreateMethodSymbol("Method1"));
-                this.generator.CreateMethod("", CompilationHelper.CreateMethodSymbol("Method2"));
-
-                CompilationUnitSyntax result = this.generator.GetCompilationUnit();
-                string[] methods = result.DescendantNodes()
-                    .OfType<MethodDeclarationSyntax>()
-                    .Select(m => m.Identifier.ValueText)
-                    .ToArray();
-
-                methods.Should().BeEquivalentTo(names);
             }
         }
     }
