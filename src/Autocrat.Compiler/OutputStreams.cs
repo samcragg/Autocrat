@@ -66,7 +66,7 @@ namespace Autocrat.Compiler
         private static Stream OpenWrite(string path)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            return File.OpenWrite(path);
+            return File.Open(path, FileMode.Create);
         }
     }
 }

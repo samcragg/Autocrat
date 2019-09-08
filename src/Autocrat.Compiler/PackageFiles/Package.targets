@@ -4,6 +4,7 @@
     <ItemGroup>
       <AdditionalProjectOptions Include="/p:AutocratFilesDirectory=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
+      <AdditionalProjectOptions Include="/p:AutocratOutputSource=&quot;$(AutocratOutputSource)&quot;" />
       <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName).exe&quot;" />
 
       <!-- Make sure all the dependencies are available -->
@@ -15,7 +16,10 @@
     <Move SourceFiles="@(PublishedFiles)"
           DestinationFolder="$(AutocratOutputDirectory)" />
     
-    <Copy SourceFiles="@(AucocratProjectFiles)"
+    <Copy SourceFiles="@(AutocratProjectFiles)"
+          DestinationFolder="$(AutocratOutputDirectory)" />
+    
+    <Copy SourceFiles="$(AutocratCompiler)"
           DestinationFolder="$(AutocratOutputDirectory)" />
 
     <!-- There are so many issues around trying to get a MSBuild task to restore -->

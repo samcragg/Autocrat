@@ -8,6 +8,7 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Text;
     using Autocrat.Abstractions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -106,6 +107,16 @@ namespace System.Runtime.InteropServices
         {
             NativeImportGenerator nativeGenerator = ServiceFactory(null).GetNativeImportGenerator();
             nativeGenerator.WriteTo(destination);
+
+            const string MainStub = @"
+extern int autocrat_main();
+
+int main()
+{
+    return autocrat_main();
+}";
+            byte[] bytes = Encoding.UTF8.GetBytes(MainStub);
+            destination.Write(bytes);
         }
 
         private static CSharpCompilation EnsureNativeCallableAttributeIsPresent(CSharpCompilation compilation)

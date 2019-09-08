@@ -2,13 +2,13 @@
   <PropertyGroup>
     <AutocratCompiler>$(MSBuildThisFileDirectory)../tasks/netcoreapp2.1/Autocrat.Compiler.dll</AutocratCompiler>
     <AutocratManagedProject>ManagedToNative.csproj</AutocratManagedProject>
-    <AutocratOutputDirectory>obj/autocrat/</AutocratOutputDirectory>
+    <AutocratOutputDirectory>$(MSBuildProjectDirectory)/obj/autocrat/</AutocratOutputDirectory>
     <AutocratOutputAssembly>$(AutocratOutputDirectory)assembly.dll</AutocratOutputAssembly>
     <AutocratOutputSource>$(AutocratOutputDirectory)source.cpp</AutocratOutputSource>
   </PropertyGroup>
 
   <ItemGroup>
-    <AucocratProjectFiles Include="$(MSBuildThisFileDirectory)../content/$(AutocratManagedProject)"/>
-    <AucocratProjectFiles Include="$(MSBuildThisFileDirectory)../content/nuget.config"/>
+    <AutocratProjectFiles Include="$(MSBuildThisFileDirectory)../content/$(AutocratManagedProject)"/>
+    <AutocratProjectFiles Include="$(MSBuildThisFileDirectory)../content/nuget.config"/>
   </ItemGroup>
 </Project>
