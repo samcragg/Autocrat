@@ -3,8 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Autocrat.Abstractions;
     using Autocrat.Compiler;
-    using Autocrat.Compiler.NativeAdapters;
     using Microsoft.CodeAnalysis;
     using NSubstitute;
     using Xunit;

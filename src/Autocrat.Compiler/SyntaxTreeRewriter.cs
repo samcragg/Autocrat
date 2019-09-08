@@ -8,7 +8,7 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Autocrat.Compiler.NativeAdapters;
+    using Autocrat.Abstractions;
     using Microsoft.CodeAnalysis;
 
     /// <summary>
@@ -17,7 +17,7 @@ namespace Autocrat.Compiler
     internal class SyntaxTreeRewriter
     {
         private const string NativeAdapterAttributeName =
-            "Autocrat.Compiler.NativeAdapters." + nameof(NativeAdapterAttribute);
+            "Autocrat.Abstractions." + nameof(NativeAdapterAttribute);
 
         private readonly List<(ITypeSymbol, ITypeSymbol)> adapters = new List<(ITypeSymbol, ITypeSymbol)>();
         private readonly Compilation compilation;
