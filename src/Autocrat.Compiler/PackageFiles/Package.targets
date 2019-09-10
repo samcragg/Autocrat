@@ -2,7 +2,7 @@
   <Target Name="AutocratTarget"
           AfterTargets="Publish">
     <ItemGroup>
-      <AdditionalProjectOptions Include="/p:AutocratFilesDirectory=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
+      <AdditionalProjectOptions Include="/p:AutocratBootstrapDir=&quot;$(MSBuildThisFileDirectory)../content/bootstrap/&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputSource=&quot;$(AutocratOutputSource)&quot;" />
       <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName).exe&quot;" />

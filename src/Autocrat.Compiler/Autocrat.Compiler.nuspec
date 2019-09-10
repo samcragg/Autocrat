@@ -10,7 +10,7 @@
   </metadata>
 
   <files>
-    <file src="..\Autocrat.Bootstrap\bin\*.lib" target="content" />
+    <file src="..\Autocrat.Bootstrap\bin\*" target="content/bootstrap" />
     <file src="bin\Publish\*.config" target="tasks/netcoreapp2.1" />
     <file src="bin\Publish\*.dll" target="tasks/netcoreapp2.1" />
     <file src="bin\Publish\*.json" target="tasks/netcoreapp2.1" />

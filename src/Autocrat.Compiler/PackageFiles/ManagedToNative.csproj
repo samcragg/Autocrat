@@ -59,6 +59,7 @@
       <CompilerOptions Include="/Fo&quot;main.obj&quot;" />
       <CompilerOptions Include="/Gd" />
       <CompilerOptions Include="/GS" />
+      <CompilerOptions Include="/I&quot;$(AutocratBootstrapDir)&quot;" />
       <CompilerOptions Include="/MT" />
       <CompilerOptions Include="/nologo" />
       <CompilerOptions Include="/O2" />
@@ -83,7 +84,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <AutocratFiles Include="$(AutocratFilesDirectory)Autocrat.Bootstrap.lib" />
+      <AutocratFiles Include="$(AutocratBootstrapDir)Autocrat.Bootstrap.lib" />
       <AutocratFiles Include="main.obj" />
       <AutocratFiles Include="$(PublishDir)ManagedToNative.lib" />
       <LinkerOptions Include="/DYNAMICBASE" />
