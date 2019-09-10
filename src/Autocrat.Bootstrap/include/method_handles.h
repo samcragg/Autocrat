@@ -1,6 +1,9 @@
 #ifndef METHOD_HANDLES_H
 #define METHOD_HANDLES_H
 
+// This file is also shared with the generated code file (i.e. gets included
+// in the NuGet package)
+
 #include <cstddef>
 #include <cstdint>
 #include <variant>

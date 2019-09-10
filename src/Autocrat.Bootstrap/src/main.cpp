@@ -2,7 +2,7 @@
 
 extern "C" void __cdecl OnConfigurationLoaded();
 
-int main()
+int autocrat_main()
 {
     std::printf("Calling managed code...\n");
     OnConfigurationLoaded();

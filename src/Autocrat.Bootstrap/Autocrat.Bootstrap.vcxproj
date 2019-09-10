@@ -32,6 +32,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -71,13 +72,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="network_service.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\network_service.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="method_handles.h" />
+    <ClInclude Include="include\method_handles.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="CleanOutput" BeforeTargets="ClCompile">
+    <RemoveDir Directories="$(OutDir)" />
+  </Target>
+  <Target Name="CopyHeaders" AfterTargets="Build">
+    <Copy SourceFiles="include\method_handles.h" DestinationFolder="$(OutDir)" />
+  </Target>
 </Project>
