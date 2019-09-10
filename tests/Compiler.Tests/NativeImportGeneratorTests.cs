@@ -56,17 +56,6 @@
                 ShouldMatchOnce(result, "&Method");
             }
 
-            [Fact]
-            public void ShouldWriteTheUniqueMethodTypes()
-            {
-                this.generator.RegisterMethod("int {0}(parameter_type)", "1");
-                this.generator.RegisterMethod("int {0}(parameter_type)", "2");
-
-                string result = this.WriteToOutput();
-
-                ShouldMatchOnce(result, "(*)(parameter_type)");
-            }
-
             private static void ShouldMatchOnce(string input, string toMatch)
             {
                 Regex.Matches(input, Regex.Escape(toMatch))

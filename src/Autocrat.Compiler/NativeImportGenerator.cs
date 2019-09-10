@@ -20,25 +20,22 @@ namespace Autocrat.Compiler
         //// extern "C" int managed_method_1(int);
         //// extern "C" int managed_method_2(int, int);
         ////
-        //// typedef std::variant<
-        ////     int (*)(int),
-        ////     int (*)(int, int)
-        //// > method_types;
-        ////
-        //// std::array<method_types, 2> known_methods =
+        //// method_types& get_known_method(std::size_t handle)
         //// {
-        ////     &managed_method_1,
-        ////     &managed_method_2,
-        //// };
+        ////     static std::array<method_types, 2> known_methods =
+        ////     {
+        ////         &managed_method_1,
+        ////         &managed_method_2,
+        ////     };
+        ////     return known_methods.at(handle);
+        //// }
         private readonly List<(string name, string declaration)> exports =
             new List<(string, string)>();
-
-        private readonly ISet<string> methodTypes = new HashSet<string>();
 
         /// <summary>
         /// Registers the method as being exported from the managed code.
         /// </summary>
-        /// <param name="signature">the format of the C++ signature.</param>
+        /// <param name="signature">The format of the C++ signature.</param>
         /// <param name="name">The name of the exported method.</param>
         /// <returns>The index of the method in the registration table.</returns>
         /// <remarks>
@@ -47,7 +44,6 @@ namespace Autocrat.Compiler
         /// </remarks>
         public virtual int RegisterMethod(string signature, string name)
         {
-            this.AddMethodType(signature);
             int index = this.exports.Count;
             this.AddExport(signature, name);
             return index;
@@ -67,10 +63,7 @@ namespace Autocrat.Compiler
                 this.WriteExterns(writer);
                 writer.WriteLine();
 
-                this.WriteMethodTypes(writer);
-                writer.WriteLine();
-
-                this.WriteKnownMethods(writer);
+                this.WriteGetKnownMethod(writer);
             }
         }
 
@@ -79,7 +72,7 @@ namespace Autocrat.Compiler
             writer.WriteLine("#include <array>");
             writer.WriteLine("#include <cstddef>");
             writer.WriteLine("#include <cstdint>");
-            writer.WriteLine("#include <variant>");
+            writer.WriteLine("#include \"method_handles.h\"");
         }
 
         private void AddExport(string signature, string name)
@@ -92,15 +85,6 @@ namespace Autocrat.Compiler
             this.exports.Add((name, declaration));
         }
 
-        private void AddMethodType(string signature)
-        {
-            this.methodTypes.Add(
-                string.Format(
-                    CultureInfo.InvariantCulture,
-                    signature,
-                    "(*)"));
-        }
-
         private void WriteExterns(StreamWriter writer)
         {
             foreach ((_, string declaration) in this.exports)
@@ -109,27 +93,20 @@ namespace Autocrat.Compiler
             }
         }
 
-        private void WriteKnownMethods(StreamWriter writer)
+        private void WriteGetKnownMethod(StreamWriter writer)
         {
-            writer.WriteLine("std::array<method_types, {0}> known_methods =", this.exports.Count);
+            writer.WriteLine("method_types& get_known_method(std::size_t handle)");
             writer.WriteLine('{');
+            writer.WriteLine("    static std::array<method_types, {0}> known_methods =", this.exports.Count);
+            writer.WriteLine("    {");
             foreach ((string name, _) in this.exports)
             {
-                writer.WriteLine("    &{0},", name);
+                writer.WriteLine("        &{0},", name);
             }
 
-            writer.WriteLine("};");
-        }
-
-        private void WriteMethodTypes(StreamWriter writer)
-        {
-            writer.WriteLine("typedef std::variant<");
-            foreach (string method in this.methodTypes)
-            {
-                writer.WriteLine("    {0},", method);
-            }
-
-            writer.WriteLine("> method_types;");
+            writer.WriteLine("    };");
+            writer.WriteLine("    return known_methods.at(handle);");
+            writer.WriteLine('}');
         }
     }
 }

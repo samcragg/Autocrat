@@ -118,18 +118,19 @@ following gets compiled and linked with the native executable:
 
     extern "C" void UdpHandler_OnDataReceived(std::int32_t, void*);
 
-    typedef std::variant<
-        void (*)(std::int32_t, void*),
-    > method_types;
-
-    std::array<method_types, 1> known_methods =
+    method_types& get_known_method(std::size_t handle)
     {
-        &UdpHandler_OnDataReceived,
-    };
+        static std::array<method_types, 1> known_methods =
+        {
+            &UdpHandler_OnDataReceived,
+        };
 
-This `known_methods` array is what's used when a `NetworkServic.OnDataReceived`
-is called to find the method to register - the implementation of it will get
-the method from `known_arrays` and cast it to the expected type.
+        return known_methods.at(handle);
+    }
+
+This method is what's used when a `NetworkServic.OnDataReceived` is called to
+find the method to register, where `method_types` is defined in the bootstrap
+library with all the expected method types inside a `std::variant`.
 
 Although the above is quite complicated, the user code is relatively simple and
 intuitive. The generated code looks more involved, however, most of it is to
