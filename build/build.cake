@@ -28,16 +28,17 @@ Task("Restore")
         {
             NoLogo = true,
         },
+        NoDependencies = true,
     };
 
     IEnumerable<FilePath> projects =
         GetFiles("../src/**/*.csproj").Concat(
             GetFiles("../test/**/*.csproj"));
 
-    foreach (FilePath project in projects)
+    Parallel.ForEach(projects, (FilePath project) =>
     {
         DotNetCoreRestore(project.FullPath, restoreSettings);
-    }
+    });
 });
 
 Task("RestoreGoogleTest")
