@@ -72,10 +72,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="src\array_pool.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\network_service.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\array_pool.h" />
+    <ClInclude Include="include\managed_exports.h" />
     <ClInclude Include="include\method_handles.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

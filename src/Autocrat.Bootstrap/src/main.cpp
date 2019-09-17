@@ -1,11 +1,10 @@
 #include <cstdio>
-
-extern "C" void __cdecl OnConfigurationLoaded();
+#include "managed_exports.h"
 
 int autocrat_main()
 {
-    std::printf("Calling managed code...\n");
-    OnConfigurationLoaded();
+    std::printf("Calling configuration loaded...\n");
+    managed_exports::OnConfigurationLoaded();
     std::printf("Done.\n");
     return 0;
 }
