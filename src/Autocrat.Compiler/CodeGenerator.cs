@@ -24,23 +24,6 @@ namespace Autocrat.Compiler
     internal class CodeGenerator
     {
         private const string CallbackAdapterClassName = "NativeCallableMethods";
-
-        private const string NativeCallableAttributeDeclaration = @"// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
-namespace System.Runtime.InteropServices
-{
-    [AttributeUsage(AttributeTargets.Method)]
-    public sealed class NativeCallableAttribute : Attribute
-    {
-        public string EntryPoint;
-        public CallingConvention CallingConvention;
-        public NativeCallableAttribute() { }
-    }
-}
-";
-
         private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
         private readonly List<MethodDeclarationSyntax> callbackMethods = new List<MethodDeclarationSyntax>();
         private readonly List<SyntaxTree> generatedCode = new List<SyntaxTree>();
@@ -85,7 +68,6 @@ namespace System.Runtime.InteropServices
                 .AddSyntaxTrees(this.generatedCode);
 
             compilation = this.AddCallbackAdapters(compilation);
-            compilation = EnsureNativeCallableAttributeIsPresent(compilation);
 
             EmitResult result = compilation.Emit(destination);
             if (!result.Success)
@@ -117,18 +99,6 @@ int main()
 }";
             byte[] bytes = Encoding.UTF8.GetBytes(MainStub);
             destination.Write(bytes);
-        }
-
-        private static CSharpCompilation EnsureNativeCallableAttributeIsPresent(CSharpCompilation compilation)
-        {
-            if (compilation.GetTypeByMetadataName("System.Runtime.InteropServices.NativeCallableAttribute") == null)
-            {
-                compilation = compilation.AddSyntaxTrees(
-                    CSharpSyntaxTree.Create(
-                        ParseCompilationUnit(NativeCallableAttributeDeclaration)));
-            }
-
-            return compilation;
         }
 
         private CSharpCompilation AddCallbackAdapters(CSharpCompilation compilation)
