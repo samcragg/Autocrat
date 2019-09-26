@@ -31,5 +31,11 @@
     <ClCompile Include="tests\ManagedArrayTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\pal_win32.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\PalWin32SocketTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

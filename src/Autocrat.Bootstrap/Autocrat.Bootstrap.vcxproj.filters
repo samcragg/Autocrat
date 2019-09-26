@@ -20,6 +20,9 @@
     <ClCompile Include="src\array_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\pal_win32.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\method_handles.h">
@@ -29,6 +32,12 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\array_pool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pal_win32.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pal.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

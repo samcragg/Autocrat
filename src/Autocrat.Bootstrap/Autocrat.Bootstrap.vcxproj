@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../../libs</AdditionalIncludeDirectories>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -75,11 +75,14 @@
     <ClCompile Include="src\array_pool.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\network_service.cpp" />
+    <ClCompile Include="src\pal_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\array_pool.h" />
     <ClInclude Include="include\managed_exports.h" />
     <ClInclude Include="include\method_handles.h" />
+    <ClInclude Include="include\pal.h" />
+    <ClInclude Include="include\pal_win32.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
