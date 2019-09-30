@@ -80,6 +80,7 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\pal_win32.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />
+    <ClCompile Include="tests\BoundedQueueTests.cpp" />
     <ClCompile Include="tests\ManagedArrayTests.cpp" />
     <ClCompile Include="tests\PalWin32SocketTests.cpp" />
   </ItemGroup>

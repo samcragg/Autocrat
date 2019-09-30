@@ -37,5 +37,8 @@
     <ClCompile Include="tests\PalWin32SocketTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\BoundedQueueTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

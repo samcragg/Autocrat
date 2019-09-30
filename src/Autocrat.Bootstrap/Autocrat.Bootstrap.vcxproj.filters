@@ -40,5 +40,11 @@
     <ClInclude Include="include\pal.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\network_service.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\collections.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
