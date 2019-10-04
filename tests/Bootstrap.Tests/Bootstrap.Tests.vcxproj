@@ -83,5 +83,6 @@
     <ClCompile Include="tests\BoundedQueueTests.cpp" />
     <ClCompile Include="tests\ManagedArrayTests.cpp" />
     <ClCompile Include="tests\PalWin32SocketTests.cpp" />
+    <ClCompile Include="tests\PalWin32ThreadTests.cpp" />
   </ItemGroup>
 </Project>

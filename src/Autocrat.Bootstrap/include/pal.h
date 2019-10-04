@@ -2,6 +2,7 @@
 #define PAL_H
 
 #include <cstddef>
+#include <thread>
 
 namespace pal
 {
@@ -49,6 +50,12 @@ namespace pal
     socket_handle create_udp_socket();
 
     /**
+     * Gets the index of the CPU the current thread is running on.
+     * @retuns The current CPU index.
+     */
+    std::size_t get_current_processor();
+
+    /**
      * Receives a datagram and stores the source address.
      * @param socket The socket to receive on.
      * @param buffer The buffer for the incoming data.
@@ -57,6 +64,13 @@ namespace pal
      *               the source address upon return.
      */
     int recv_from(const socket_handle& socket, char* buffer, std::size_t length, socket_address* from);
+
+    /**
+     * Sets the index of the CPU the specified thread should run on.
+     * @param thread The thread to set the affinity of.
+     * @param index  The index of the CPU to run on.
+     */
+    void set_affinity(std::thread& thread, std::size_t index);
 }
 
 #if defined(UNIT_TESTS)

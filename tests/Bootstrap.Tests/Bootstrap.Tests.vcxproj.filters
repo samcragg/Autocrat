@@ -40,5 +40,8 @@
     <ClCompile Include="tests\BoundedQueueTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\PalWin32ThreadTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

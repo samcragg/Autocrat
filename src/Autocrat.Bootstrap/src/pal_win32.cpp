@@ -228,10 +228,14 @@ namespace pal
         }
     }
 
-
     socket_handle create_udp_socket()
     {
         return socket_handle(SOCK_DGRAM, IPPROTO_UDP);
+    }
+
+    std::size_t get_current_processor()
+    {
+        return static_cast<std::size_t>(GetCurrentProcessorNumber());
     }
 
     int recv_from(const socket_handle& socket, char* buffer, std::size_t length, socket_address* from)
@@ -261,5 +265,14 @@ namespace pal
             *from = socket_address::from_native(address_ptr);
         }
         return result;
+    }
+
+    void set_affinity(std::thread& thread, std::size_t index)
+    {
+        DWORD_PTR result = SetThreadAffinityMask(thread.native_handle(), static_cast<DWORD_PTR>(1) << index);
+        if (result == 0)
+        {
+            // TODO: Log
+        }
     }
 }
