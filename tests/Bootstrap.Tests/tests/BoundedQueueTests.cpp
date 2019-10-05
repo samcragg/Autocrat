@@ -1,8 +1,5 @@
 #include "collections.h"
-#include <future>
 #include <gtest/gtest.h>
-
-using namespace std::chrono_literals;
 
 struct QueueItem
 {
@@ -40,15 +37,15 @@ protected:
     autocrat::bounded_queue<QueueItem, ArraySize> _queue;
 };
 
-TEST_F(BoundedQueueTests, ShouldNotWaitForNewDataIfTheFlagIsFalse)
+TEST_F(BoundedQueueTests, PopShouldReturnFalseWhenEmpty)
 {
-    auto pop_result = std::async(std::launch::async, [this] { return _queue.pop(false); });
+    QueueItem item(1);
 
-    std::future_status status = pop_result.wait_for(1ms);
+    bool result = _queue.pop(&item);
 
-    EXPECT_EQ(std::future_status::ready, status);
+    EXPECT_FALSE(result);
+    EXPECT_EQ(1, item.value);
 }
-
 
 TEST_F(BoundedQueueTests, ShouldReturnTheItemsInOrder)
 {
@@ -56,9 +53,15 @@ TEST_F(BoundedQueueTests, ShouldReturnTheItemsInOrder)
     _queue.emplace(QueueItem(2));
     _queue.emplace(QueueItem(3));
 
-    EXPECT_EQ(1, _queue.pop(false).value);
-    EXPECT_EQ(2, _queue.pop(false).value);
-    EXPECT_EQ(3, _queue.pop(false).value);
+    QueueItem item;
+    EXPECT_TRUE(_queue.pop(&item));
+    EXPECT_EQ(1, item.value);
+
+    EXPECT_TRUE(_queue.pop(&item));
+    EXPECT_EQ(2, item.value);
+
+    EXPECT_TRUE(_queue.pop(&item));
+    EXPECT_EQ(3, item.value);
 }
 
 TEST_F(BoundedQueueTests, ShouldThrowWhenFull)
@@ -69,16 +72,4 @@ TEST_F(BoundedQueueTests, ShouldThrowWhenFull)
     }
 
     EXPECT_THROW(_queue.emplace(), std::bad_alloc);
-}
-
-TEST_F(BoundedQueueTests, ShouldWaitForNewDataIfTheFlagIsTrue)
-{
-    auto pop_result = std::async(std::launch::async, [this] { return _queue.pop(true); });
-
-    std::future_status status = pop_result.wait_for(1ms);
-    EXPECT_EQ(std::future_status::timeout, status);
-
-    _queue.emplace();
-    status = pop_result.wait_for(1ms);
-    EXPECT_EQ(std::future_status::ready, status);
 }

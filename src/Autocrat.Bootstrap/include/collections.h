@@ -7,7 +7,6 @@
 #include <new>
 #include <type_traits>
 #include <utility>
-#include <immintrin.h>
 
 namespace autocrat
 {
@@ -75,10 +74,11 @@ namespace autocrat
 
         /**
          * Removes the element from the beginning of the queue.
-         * @param keep_checking Wait for data to arrive whilst this flag is true.
-         * @return The element from the beginning of the queue.
+         * @param value Stores the element removed from the queue, if any.
+         * @return \c true if an element was removed from the queue; otherwise,
+         *         \c false.
          */
-        T pop(const std::atomic_bool& keep_checking)
+        bool pop(T* value)
         {
             cell_t* cell;
             std::size_t position = _dequeue_position.load(std::memory_order_relaxed);
@@ -96,12 +96,7 @@ namespace autocrat
                 }
                 else if (delta < 0)
                 {
-                    if (!keep_checking.load(std::memory_order_relaxed))
-                    {
-                        return T();
-                    }
-
-                    _mm_pause();
+                    return false;
                 }
                 else
                 {
@@ -110,10 +105,10 @@ namespace autocrat
             }
 
             T* item = std::launder(reinterpret_cast<T*>(&cell->storage));
-            T copy(std::move(*item));
+            *value = std::move(*item);
             item->~T();
             cell->sequence.store(position + Sz + 1, std::memory_order_release);
-            return copy;
+            return true;
         }
 
     private:
