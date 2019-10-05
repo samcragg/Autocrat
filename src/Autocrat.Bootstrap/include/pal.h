@@ -71,6 +71,20 @@ namespace pal
      * @param index  The index of the CPU to run on.
      */
     void set_affinity(std::thread& thread, std::size_t index);
+
+    /**
+     * Blocks the current thread until the specified memory has changed.
+     * @param address A pointer to the integer to watch.
+     * @remarks This function may spuriously wake (i.e. unblock when the value
+     *          has not changed)
+     */
+    void wait_on(std::uint32_t* address);
+
+    /**
+     * Wakes all the threads that are waiting on the specified address to change.
+     * @param address A pointer to the address to notify.
+     */
+    void wake_all(std::uint32_t* address);
 }
 
 #if defined(UNIT_TESTS)

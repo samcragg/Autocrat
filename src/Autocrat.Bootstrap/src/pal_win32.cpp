@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <system_error>
 
+#pragma comment (lib, "Synchronization.lib")
 #pragma comment (lib, "Ws2_32.lib")
 
 namespace
@@ -274,5 +275,17 @@ namespace pal
         {
             // TODO: Log
         }
+    }
+
+    void wait_on(std::uint32_t* address)
+    {
+        std::uint32_t current = *address;
+        WaitOnAddress(address, &current, sizeof(std::uint32_t), INFINITE);
+    }
+
+    void wake_all(std::uint32_t* address)
+    {
+        InterlockedIncrement(address);
+        WakeByAddressAll(address);
     }
 }
