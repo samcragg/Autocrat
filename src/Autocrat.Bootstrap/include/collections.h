@@ -75,8 +75,8 @@ namespace autocrat
         /**
          * Removes the element from the beginning of the queue.
          * @param value Stores the element removed from the queue, if any.
-         * @return \c true if an element was removed from the queue; otherwise,
-         *         \c false.
+         * @returns `true` if an element was removed from the queue; otherwise,
+         *          `false`.
          */
         bool pop(T* value)
         {

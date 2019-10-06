@@ -24,25 +24,25 @@ namespace pal
         /**
          * Represents an IPv4 address where the application does not care which
          * local address gets assigned.
-         * @returns A new \c socket_address.
+         * @returns A new `socket_address`.
          */
         static socket_address any_ipv4();
 
         /**
          * Represents an IPv6 address where the application does not care which
          * local address gets assigned.
-         * @returns A new \c socket_address.
+         * @returns A new `socket_address`.
          */
         static socket_address any_ipv6();
 
         /**
          * Constructs an address from a native handle.
-         * @returns A new \c socket_address.
+         * @returns A new `socket_address`.
          */
         static socket_address from_native(const sockaddr* native);
 
         /**
-         * Converts an IPv4 or IPv6 address text to a \c socket_address.
+         * Converts an IPv4 or IPv6 address text to a `socket_address`.
          * @returns The parsed address.
          */
         static socket_address from_string(const std::string& value);
@@ -115,7 +115,7 @@ namespace pal
 
         /**
          * Checks if the container has no elements.
-         * @returns \c true if the container is empty; otherwise, \c false.
+         * @returns `true` if the container is empty; otherwise, `false`.
          */
         [[nodiscard]]
         bool empty() const noexcept;

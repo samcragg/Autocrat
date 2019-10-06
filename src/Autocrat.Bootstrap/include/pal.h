@@ -60,7 +60,7 @@ namespace pal
      * @param socket The socket to receive on.
      * @param buffer The buffer for the incoming data.
      * @param length The length, in bytes, of the buffer.
-     * @param from   An optional pointer to a \c socket_address that will hold
+     * @param from   An optional pointer to a `socket_address` that will hold
      *               the source address upon return.
      */
     int recv_from(const socket_handle& socket, char* buffer, std::size_t length, socket_address* from);
