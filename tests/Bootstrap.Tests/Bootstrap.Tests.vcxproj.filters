@@ -43,5 +43,11 @@
     <ClCompile Include="tests\PalWin32ThreadTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\ThreadPoolTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\thread_pool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

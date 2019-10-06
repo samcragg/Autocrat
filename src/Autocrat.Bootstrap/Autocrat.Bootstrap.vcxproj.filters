@@ -23,6 +23,9 @@
     <ClCompile Include="src\pal_win32.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread_pool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\method_handles.h">
@@ -44,6 +47,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\collections.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread_pool.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

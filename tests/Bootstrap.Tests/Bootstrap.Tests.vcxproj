@@ -78,11 +78,13 @@
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\array_pool.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\pal_win32.cpp" />
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\thread_pool.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />
     <ClCompile Include="tests\BoundedQueueTests.cpp" />
     <ClCompile Include="tests\ManagedArrayTests.cpp" />
     <ClCompile Include="tests\PalWin32SocketTests.cpp" />
     <ClCompile Include="tests\PalWin32ThreadTests.cpp" />
+    <ClCompile Include="tests\ThreadPoolTests.cpp" />
   </ItemGroup>
 </Project>
