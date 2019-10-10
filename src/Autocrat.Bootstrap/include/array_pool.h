@@ -2,7 +2,7 @@
 #define ARRAY_POOL_H
 
 #include <array>
-#include <cstddef>
+#include <atomic>
 #include <cstdint>
 #include <deque>
 #include <stack>
@@ -82,25 +82,110 @@ namespace autocrat
         storage_type _data;
     };
 
+    class array_pool;
+
+    namespace detail
+    {
+        struct array_pool_block
+        {
+            array_pool* owner;
+            std::atomic_size_t usage;
+            managed_byte_array array;
+        };
+    }
+
+    /**
+     * Manages the lifetime of a `managed_byte_array` that has been obtained
+     * from `array_pool`.
+     */
+    class managed_byte_array_ptr
+    {
+    public:
+        using element_type = managed_byte_array;
+
+        managed_byte_array_ptr() noexcept = default;
+        managed_byte_array_ptr(std::nullptr_t) noexcept;
+        managed_byte_array_ptr(const managed_byte_array_ptr& other) noexcept;
+        managed_byte_array_ptr(managed_byte_array_ptr&& other) noexcept;
+        ~managed_byte_array_ptr();
+        explicit operator bool() const noexcept;
+
+        managed_byte_array_ptr& operator=(const managed_byte_array_ptr& other) noexcept;
+        managed_byte_array_ptr& operator=(managed_byte_array_ptr&& other) noexcept;
+
+        element_type& operator*() const noexcept;
+        element_type* operator->() const noexcept;
+
+        /**
+         * Returns the stored pointer.
+         * @returns The stored pointer.
+         */
+        element_type* get() const noexcept;
+
+        /**
+         * Exchanges the contents of this instance and `other`.
+         * @param other The instance to exchange contents with.
+         */
+        void swap(managed_byte_array_ptr& other) noexcept;
+
+        friend array_pool;
+        friend bool operator==(const managed_byte_array_ptr&, const managed_byte_array_ptr&);
+    private:
+        managed_byte_array_ptr(detail::array_pool_block* block) noexcept;
+
+        detail::array_pool_block* _block { nullptr };
+    };
+
+    /**
+     * Represents a pool of byte array resources.
+     */
     class array_pool
     {
     public:
-        using value_type = managed_byte_array;
-        using storage_type = std::deque<value_type>;
+        using element_type = detail::array_pool_block;
+        using storage_type = std::deque<element_type>;
 
         /**
          * Gets a byte array from the pool.
+         * @returns A pointer to a `mnaged_byte_array`.
          */
-        value_type& aquire();
+        managed_byte_array_ptr aquire();
 
         /**
-         * Returns the byte array to the pool.
+         * Gets the number of arrays that the pool has currently allocated
+         * space for. 
+         * @returns The number of arrays that have allocated space.
          */
-        void release(value_type& value);
+        std::size_t capacity() const noexcept;
+
+        /**
+         * Gets the number of arrays that have been allocated.
+         * @returns The number of arrays in use.
+         */
+        std::size_t size() const noexcept;
+
+        friend managed_byte_array_ptr;
     private:
-        std::stack<value_type*> _available;
+        void release(element_type* value);
+
+        std::stack<element_type*> _available;
         storage_type _pool;
     };
+
+    /**
+     * Determines whether two `managed_byte_array_ptr` instances are equal.
+     * @param a The value to compare.
+     * @param b The value to compare.
+     * @returns `true` if the instances point to the same value; otherwise, `false`.
+     */
+    bool operator==(const managed_byte_array_ptr& a, const managed_byte_array_ptr& b);
+    
+    /**
+     * Exchanges the given values.
+     * @param lhs The value to swap.
+     * @param rhs The value to swap.
+     */
+    void swap(managed_byte_array_ptr& lhs, managed_byte_array_ptr& rhs) noexcept;
 }
 
 #endif

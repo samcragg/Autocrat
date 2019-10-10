@@ -10,10 +10,17 @@ protected:
 
 TEST_F(ArrayPoolTests, ShouldReuseReleasedItems)
 {
-    autocrat::managed_byte_array& original = _pool.aquire();
-    
-    _pool.release(original);
-    autocrat::managed_byte_array& result = _pool.aquire();
+    autocrat::managed_byte_array* first;
+    {
+        autocrat::managed_byte_array_ptr ptr = _pool.aquire();
+        first = ptr.get();
+    }
 
-    EXPECT_EQ(&original, &result);
+    autocrat::managed_byte_array* second;
+    {
+        autocrat::managed_byte_array_ptr ptr = _pool.aquire();
+        second = ptr.get();
+    }
+    
+    EXPECT_EQ(first, second);
 }

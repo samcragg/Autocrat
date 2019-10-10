@@ -82,6 +82,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />
     <ClCompile Include="tests\BoundedQueueTests.cpp" />
+    <ClCompile Include="tests\ManagedArrayPtrTests.cpp" />
     <ClCompile Include="tests\ManagedArrayTests.cpp" />
     <ClCompile Include="tests\PalWin32SocketTests.cpp" />
     <ClCompile Include="tests\PalWin32ThreadTests.cpp" />
