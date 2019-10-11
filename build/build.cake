@@ -71,7 +71,7 @@ Task("RestoreGoogleTest")
     CheckoutGitRepo(
         "googletest",
         "https://github.com/google/googletest",
-        "release-1.8.1",
+        "release-1.10.0",
         "googletest/include/gtest",
         "googletest/scripts",
         "googletest/src");
