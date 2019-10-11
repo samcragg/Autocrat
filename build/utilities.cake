@@ -17,8 +17,16 @@ void CheckoutGitRepo(string repo, string url, string tag, params string[] subDir
     }
 
     Information("Fetching '{0}'", url);
-    Run(repo, "git", "fetch", "-q", "--depth 1", "origin", "tag", tag);
-    Run(repo, "git", "checkout", tag, "-q");
+    if (string.IsNullOrEmpty(tag))
+    {
+        Run(repo, "git", "fetch", "-q", "--depth 1", "origin");
+        Run(repo, "git", "checkout", "master", "-q");
+    }
+    else
+    {
+        Run(repo, "git", "fetch", "-q", "--depth 1", "origin", "tag", tag);
+        Run(repo, "git", "checkout", tag, "-q");
+    }
 }
 
 int Run(string workingDirectory, string command, params string[] arguments)

@@ -80,6 +80,20 @@ Task("RestoreGoogleTest")
     Run("repos/googletest/googletest/scripts", "python", "fuse_gtest_files.py", outputDir);
 });
 
+Task("RestoreGSL")
+    .Does(() =>
+{
+    string outputDir = MakeAbsolute(Directory("..")).FullPath + "/libs";
+    
+    CheckoutGitRepo(
+        "gsl",
+        "https://github.com/microsoft/GSL",
+        "",
+        "include/gsl");
+
+    CopyDirectory("repos/gsl/include", outputDir);
+});
+
 Task("RunManagedTests")
     .Does(() =>
 {
