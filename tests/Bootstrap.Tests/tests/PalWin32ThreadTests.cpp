@@ -1,3 +1,4 @@
+#define PAL_MOCK_H
 #include "pal.h"
 #include "pal_win32.h"
 #include <chrono>

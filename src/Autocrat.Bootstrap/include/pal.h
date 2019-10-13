@@ -88,7 +88,7 @@ namespace pal
 }
 
 #if defined(UNIT_TESTS)
-#  include "pal_mock.h"
+#  include <pal_mock.h>
 #elif defined(_WIN32)
 #  include "pal_win32.h"
 #elif defined(__linux__)

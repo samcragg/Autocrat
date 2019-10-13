@@ -1,5 +1,6 @@
 #include "pal.h"
-#include "pal_win32.h"
+#ifdef PAL_WIN32_H
+
 #include <cstdlib>
 #include <system_error>
 
@@ -289,3 +290,5 @@ namespace pal
         WakeByAddressAll(address);
     }
 }
+
+#endif

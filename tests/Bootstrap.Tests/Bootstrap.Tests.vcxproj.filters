@@ -16,6 +16,7 @@
     <ClInclude Include="..\..\libs\gtest\gtest.h">
       <Filter>gtest</Filter>
     </ClInclude>
+    <ClInclude Include="pal_mock.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc">
@@ -52,5 +53,12 @@
     <ClCompile Include="tests\ManagedArrayPtrTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\NetworkServiceTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\network_service.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="pal_mock.cpp" />
   </ItemGroup>
 </Project>
