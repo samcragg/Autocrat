@@ -44,7 +44,10 @@ namespace autocrat
         /**
          * Returns the number of elements that the container has allocated space for.
          */
-        constexpr std::size_t capacity() const noexcept;
+        constexpr std::size_t capacity() const noexcept
+        {
+            return buffer_size;
+        }
 
         /**
          * Erases all elements from the container.

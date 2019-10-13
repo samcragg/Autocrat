@@ -22,11 +22,6 @@ namespace autocrat
         return _data.begin();
     }
 
-    constexpr std::size_t managed_byte_array::capacity() const noexcept
-    {
-        return buffer_size;
-    }
-
     void managed_byte_array::clear() noexcept
     {
         std::fill_n(_data.begin(), _length, value_type{});
