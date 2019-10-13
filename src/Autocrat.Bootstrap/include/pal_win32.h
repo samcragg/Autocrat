@@ -121,7 +121,7 @@ namespace pal
         bool empty() const noexcept;
 
         /**
-         * Removes specified elements from the container.
+         * Removes the specified element from the container.
          * @param value The value to remove.
          */
         void erase(const value_type& value);
