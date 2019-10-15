@@ -61,6 +61,7 @@ namespace pal
         void push_back(value_type&& value);
 
         const std::vector<value_type>& handles() const;
+        std::size_t size() const noexcept;
     private:
         std::vector<value_type> _sockets;
     };

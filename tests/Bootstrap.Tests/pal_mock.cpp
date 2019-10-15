@@ -85,6 +85,11 @@ namespace pal
         return _sockets;
     }
 
+    std::size_t test_socket_list::size() const noexcept
+    {
+        return _sockets.size();
+    }
+
     void bind(const test_socket_handle& socket, const test_socket_address& address)
     {
         active_mock->bind(socket, address);
