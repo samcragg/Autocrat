@@ -29,6 +29,11 @@ void CheckoutGitRepo(string repo, string url, string tag, params string[] subDir
     }
 }
 
+string GetLibsFolder()
+{
+    return MakeAbsolute(Directory("..")).FullPath + "/libs";
+}
+
 int Run(string workingDirectory, string command, params string[] arguments)
 {
     var builder = new ProcessArgumentBuilder();
