@@ -1,4 +1,5 @@
 #include "network_service.h"
+#include <spdlog/spdlog.h>
 #include <cstdlib>
 #include <functional>
 #include <tuple>
@@ -37,7 +38,7 @@ namespace autocrat
         auto existing = _callbacks.find(port);
         if (existing == _callbacks.end())
         {
-            // TODO: Log
+            spdlog::info("Creating socket on port {}", port);
             pal::socket_handle socket = pal::create_udp_socket();
             pal::bind(socket, pal::socket_address::any_ipv4());
             _sockets.push_back(std::move(socket));
@@ -55,7 +56,7 @@ namespace autocrat
     {
         if (event != pal::poll_event::read)
         {
-            // TODO: Log
+            spdlog::error("Error received during socket polling");
             // TODO: What should we do here? Reconnect?
             return;
         }

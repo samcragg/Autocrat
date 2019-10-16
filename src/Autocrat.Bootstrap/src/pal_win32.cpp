@@ -1,6 +1,7 @@
 #include "pal.h"
 #ifdef PAL_WIN32_H
 
+#include <spdlog/spdlog.h>
 #include <cstdlib>
 #include <system_error>
 
@@ -16,7 +17,7 @@ namespace
             int result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
             if (result != 0)
             {
-                // TODO: Log
+                spdlog::error("Unable to initialize WinSocks (Error {})", result);
                 std::exit(result);
             }
         }
@@ -274,7 +275,7 @@ namespace pal
         DWORD_PTR result = SetThreadAffinityMask(thread.native_handle(), static_cast<DWORD_PTR>(1) << index);
         if (result == 0)
         {
-            // TODO: Log
+            spdlog::error("Unable to set the thread's affinity to {}", index);
         }
     }
 
