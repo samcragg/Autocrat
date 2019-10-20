@@ -51,7 +51,7 @@ namespace pal
 
     /**
      * Gets the index of the CPU the current thread is running on.
-     * @retuns The current CPU index.
+     * @returns The current CPU index.
      */
     std::size_t get_current_processor();
 
