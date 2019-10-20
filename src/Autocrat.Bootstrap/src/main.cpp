@@ -1,8 +1,14 @@
 #include "managed_exports.h"
+#include "services.h"
 #include <spdlog/spdlog.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <cstdio>
+
+namespace autocrat
+{
+    global_services_type global_services;
+}
 
 namespace
 {
@@ -19,11 +25,18 @@ namespace
             std::exit(1);
         }
     }
+
+    void setup_services()
+    {
+        autocrat::global_services.initialize_thread_pool(0, 1);
+        autocrat::global_services.initialize();
+    }
 }
 
 int autocrat_main()
 {
     initialize_logging();
+    setup_services();
 
     spdlog::info("Loading configuration");
     managed_exports::OnConfigurationLoaded();
