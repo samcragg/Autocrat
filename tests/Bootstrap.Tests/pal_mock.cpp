@@ -92,18 +92,18 @@ namespace pal
 
     void bind(const test_socket_handle& socket, const test_socket_address& address)
     {
-        active_mock->bind(socket, address);
+        active_socket_mock->bind(socket, address);
     }
 
     test_socket_handle test_create_udp_socket()
     {
-        return active_mock->create_udp_socket();
+        return active_socket_mock->create_udp_socket();
     }
 
     int recv_from(const test_socket_handle& socket, char* buffer, std::size_t length, test_socket_address* from)
     {
-        return active_mock->recv_from(socket, buffer, length, from);
+        return active_socket_mock->recv_from(socket, buffer, length, from);
     }
 }
 
-pal_socket* active_mock = nullptr;
+pal_socket* active_socket_mock = nullptr;

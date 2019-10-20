@@ -84,14 +84,14 @@ public:
     virtual int recv_from(const pal::socket_handle& socket, char* buffer, std::size_t length, pal::socket_address* from) = 0;
 };
 
-extern pal_socket* active_mock;
+extern pal_socket* active_socket_mock;
 
 namespace pal
 {
     template <typename Fn>
     void poll(const socket_list& sockets, Fn callback)
     {
-        active_mock->poll(sockets, callback);
+        active_socket_mock->poll(sockets, callback);
     }
 }
 

@@ -1,6 +1,7 @@
-#include "thread_pool.h"
-#include "pal.h"
 #include <immintrin.h>
+#include <spdlog/spdlog.h>
+#include "pal.h"
+#include "thread_pool.h"
 
 namespace autocrat
 {
@@ -11,6 +12,8 @@ namespace autocrat
         _thread_count(threads),
         _wait_handle(0)
     {
+        spdlog::info("Creating {} threads with affinity starting from {}", threads, cpu_id);
+
         for (std::size_t i = 0; i != _thread_count; ++i)
         {
             _threads[i] = std::thread(&thread_pool::perform_work, this);

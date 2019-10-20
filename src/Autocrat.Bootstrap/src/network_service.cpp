@@ -1,19 +1,12 @@
-#include "network_service.h"
-#include <spdlog/spdlog.h>
 #include <cstdlib>
 #include <functional>
 #include <tuple>
+#include <spdlog/spdlog.h>
+#include "network_service.h"
+#include "services.h"
+#include "thread_pool.h"
 
 using namespace std::placeholders;
-
-// Autocrat.NativeAdapters.NetworkService::OnDataReceived
-extern "C" void __cdecl register_udp_data_received(std::int32_t port, std::int32_t handle)
-{
-    ((void)port);
-    ((void)handle);
-    // TODO:
-    // std::get<udp_register_method>(get_known_method(handle))(port, nullptr);
-}
 
 namespace
 {
@@ -28,8 +21,8 @@ namespace
 
 namespace autocrat
 {
-    network_service::network_service(enqueue_work_function enqueue_work) :
-        _enqueue_work(enqueue_work)
+    network_service::network_service(thread_pool* pool) :
+        _thread_pool(pool)
     {
     }
 
@@ -69,7 +62,7 @@ namespace autocrat
         auto range = _callbacks.equal_range(address.port());
         for (auto it = range.first; it != range.second; ++it)
         {
-            _enqueue_work(&invoke_callback, std::make_tuple(address, it->second, array));
+            _thread_pool->enqueue(&invoke_callback, std::make_tuple(address, it->second, array));
         }
     }
 }

@@ -1,10 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS
+
 #include "network_service.h"
-#include "pal_mock.h"
+
 #include <cstring>
 #include <functional>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "pal_mock.h"
+#include "thread_pool.h"
 
 using testing::_;
 using testing::InvokeArgument;
@@ -19,13 +22,17 @@ public:
     MOCK_METHOD(int, recv_from, (const pal::socket_handle&, char*, std::size_t, pal::socket_address*), (override));
 };
 
-namespace
+class MockThreadPool : public autocrat::thread_pool
 {
-    void invoke_callback(void(*callback)(std::any&), std::any&& data)
+public:
+    void enqueue(callback_function callback, std::any&& data) override
     {
         callback(data);
     }
+};
 
+namespace
+{
     std::function<void(std::int32_t, void*)> on_udp_callback;
 
     void udp_callback(std::int32_t port, void* data)
@@ -38,19 +45,20 @@ class NetworkServiceTests : public testing::Test
 {
 protected:
     NetworkServiceTests() :
-        _service(invoke_callback)
+        _service(&_thread_pool)
     {
-        active_mock = &_socket;
+        active_socket_mock = &_socket;
     }
 
     ~NetworkServiceTests()
     {
-        active_mock = nullptr;
+        active_socket_mock = nullptr;
         on_udp_callback = nullptr;
     }
 
     autocrat::network_service _service;
     testing::NiceMock<MockSocket> _socket;
+    MockThreadPool _thread_pool;
 };
 
 TEST_F(NetworkServiceTests, ShouldInvokeTheHandlerWithTheReadData)

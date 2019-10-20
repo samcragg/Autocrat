@@ -7,6 +7,7 @@
 #include <thread>
 #include <tuple>
 #include "collections.h"
+#include "defines.h"
 
 namespace autocrat
 {
@@ -22,6 +23,8 @@ namespace autocrat
          */
         using callback_function = void(*)(std::any& param);
 
+        MOCKABLE_CONSTRUCTOR(thread_pool)
+
         /**
          * Constructs a new instance of the `thread_pool` class.
          * @param cpu_id  The index of the first core to bind to.
@@ -35,7 +38,7 @@ namespace autocrat
          * @param function The function to invoke.
          * @param arg      The data to pass to the function.
          */
-        void enqueue(callback_function function, std::any&& arg);
+        MOCKABLE_METHOD void enqueue(callback_function function, std::any&& arg);
     private:
         using work_item = std::tuple<callback_function, std::any>;
         void perform_work();
