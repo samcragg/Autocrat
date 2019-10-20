@@ -26,6 +26,9 @@
     <ClCompile Include="src\thread_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\native_exports.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\method_handles.h">
@@ -50,6 +53,15 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\thread_pool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\services.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\defines.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\native_exports.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
