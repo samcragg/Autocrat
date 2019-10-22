@@ -72,5 +72,8 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\native_exports.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="tests\PalWin32ServicesTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

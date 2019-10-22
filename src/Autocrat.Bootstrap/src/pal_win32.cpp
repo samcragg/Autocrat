@@ -1,12 +1,15 @@
+#include <chrono>
+#include <cstdlib>
+#include <system_error>
+#include <spdlog/spdlog.h>
+
 #include "pal.h"
 #ifdef PAL_WIN32_H
 
-#include <spdlog/spdlog.h>
-#include <cstdlib>
-#include <system_error>
-
 #pragma comment (lib, "Synchronization.lib")
 #pragma comment (lib, "Ws2_32.lib")
+
+using namespace std::chrono_literals;
 
 namespace
 {
@@ -30,7 +33,28 @@ namespace
         WSADATA wsa_data;
     };
 
+    volatile void (*close_signal_handler)();
     win_sock_initializer win_sock;
+
+    BOOL WINAPI CtrlHandlerRoutine(DWORD)
+    {
+        auto handler = close_signal_handler;
+        if (handler == nullptr)
+        {
+            return FALSE;
+        }
+
+        handler();
+
+        // We're running in a separate thread and as soon as we return then
+        // ExitProcess will be called. Block this thread so that the main
+        // application can exit properly, which in turn will clean up this
+        // thread and end the sleep.
+        // Five seconds was chosen to match the timeouts on
+        // https://docs.microsoft.com/en-us/windows/console/handlerroutine
+        std::this_thread::sleep_for(5s);
+        return TRUE;
+    }
 }
 
 namespace pal
@@ -275,7 +299,16 @@ namespace pal
         DWORD_PTR result = SetThreadAffinityMask(thread.native_handle(), static_cast<DWORD_PTR>(1) << index);
         if (result == 0)
         {
-            spdlog::error("Unable to set the thread's affinity to {}", index);
+            spdlog::error("Unable to set the thread's affinity to {} (code: {})", index, GetLastError());
+        }
+    }
+
+    void set_close_signal_handler(void(*callback)())
+    {
+        close_signal_handler = callback;
+        if (!SetConsoleCtrlHandler(&CtrlHandlerRoutine, close_signal_handler != nullptr))
+        {
+            spdlog::error("Unable to set the console control handler (code: {})", GetLastError());
         }
     }
 

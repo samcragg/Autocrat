@@ -73,6 +73,12 @@ namespace pal
     void set_affinity(std::thread& thread, std::size_t index);
 
     /**
+     * Sets the function for handling the console close signal.
+     * @param callback The pointer to the method to invoke.
+     */
+    void set_close_signal_handler(void(*callback)());
+
+    /**
      * Blocks the current thread until the specified memory has changed.
      * @param address A pointer to the integer to watch.
      * @remarks This function may spuriously wake (i.e. unblock when the value

@@ -95,6 +95,7 @@
     <ClCompile Include="tests\ManagedArrayTests.cpp" />
     <ClCompile Include="tests\NativeExportsTests.cpp" />
     <ClCompile Include="tests\NetworkServiceTests.cpp" />
+    <ClCompile Include="tests\PalWin32ServicesTests.cpp" />
     <ClCompile Include="tests\PalWin32SocketTests.cpp" />
     <ClCompile Include="tests\PalWin32ThreadTests.cpp" />
     <ClCompile Include="tests\ServicesTests.cpp" />
