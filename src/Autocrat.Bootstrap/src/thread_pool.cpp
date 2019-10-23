@@ -1,6 +1,6 @@
-#include <immintrin.h>
 #include <spdlog/spdlog.h>
 #include "pal.h"
+#include "pause.h"
 #include "thread_pool.h"
 
 namespace autocrat
@@ -68,7 +68,7 @@ namespace autocrat
             else if (spin_count < maximum_spins)
             {
                 ++spin_count;
-                _mm_pause();
+                pause();
             }
             else
             {

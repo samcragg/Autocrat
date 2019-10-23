@@ -64,5 +64,8 @@
     <ClInclude Include="include\native_exports.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\pause.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

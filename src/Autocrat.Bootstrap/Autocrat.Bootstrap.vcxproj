@@ -89,6 +89,7 @@
     <ClInclude Include="include\network_service.h" />
     <ClInclude Include="include\pal.h" />
     <ClInclude Include="include\pal_win32.h" />
+    <ClInclude Include="include\pause.h" />
     <ClInclude Include="include\services.h" />
     <ClInclude Include="include\thread_pool.h" />
   </ItemGroup>
