@@ -36,6 +36,8 @@ namespace pal
     class socket_handle;
     class socket_list;
 
+    using close_signal_method = void (*)();
+
     /**
      * Associates a local address with a socket.
      * @param socket  The socket to bind.
@@ -76,7 +78,7 @@ namespace pal
      * Sets the function for handling the console close signal.
      * @param callback The pointer to the method to invoke.
      */
-    void set_close_signal_handler(void(*callback)());
+    void set_close_signal_handler(close_signal_method callback);
 
     /**
      * Blocks the current thread until the specified memory has changed.

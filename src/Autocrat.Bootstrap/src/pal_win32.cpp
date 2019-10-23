@@ -33,7 +33,7 @@ namespace
         WSADATA wsa_data;
     };
 
-    volatile void (*close_signal_handler)();
+    volatile pal::close_signal_method close_signal_handler;
     win_sock_initializer win_sock;
 
     BOOL WINAPI CtrlHandlerRoutine(DWORD)
@@ -303,7 +303,7 @@ namespace pal
         }
     }
 
-    void set_close_signal_handler(void(*callback)())
+    void set_close_signal_handler(close_signal_method callback)
     {
         close_signal_handler = callback;
         if (!SetConsoleCtrlHandler(&CtrlHandlerRoutine, close_signal_handler != nullptr))
