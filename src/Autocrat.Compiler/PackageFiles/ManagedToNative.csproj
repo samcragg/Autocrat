@@ -27,6 +27,7 @@
   <!-- Ensure the types in our generated assembly are sent to the IL compiler too -->
   <ItemGroup>
     <IlcArg Include="assembly.dll" />
+    <IlcArg Include="Autocrat.NativeAdapters.dll" />
   </ItemGroup>
 
   <Target Name="VCEnvironment">
