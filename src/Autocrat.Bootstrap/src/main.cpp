@@ -1,9 +1,13 @@
-#include "managed_exports.h"
-#include "services.h"
+#include <atomic>
+#include <cstdio>
+#include <thread>
 #include <spdlog/spdlog.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <cstdio>
+#include "managed_exports.h"
+#include "pal.h"
+#include "pause.h"
+#include "services.h"
 
 namespace autocrat
 {
@@ -12,6 +16,8 @@ namespace autocrat
 
 namespace
 {
+    std::atomic_bool program_running;
+
     void initialize_logging()
     {
         try
@@ -23,6 +29,20 @@ namespace
         {
             std::fprintf(stderr, "Unable to initialize logging: %s\n", ex.what());
             std::exit(1);
+        }
+    }
+
+    void on_close_callback()
+    {
+        program_running = false;
+    }
+
+    void run_program_loop()
+    {
+        while (program_running)
+        {
+            autocrat::global_services.check_and_dispatch();
+            autocrat::pause();
         }
     }
 
@@ -40,6 +60,11 @@ int autocrat_main()
 
     spdlog::info("Loading configuration");
     managed_exports::OnConfigurationLoaded();
+
+    program_running = true;
+    pal::set_close_signal_handler(&on_close_callback);
+    std::printf("Press ctrl-c to exit\n");
+    run_program_loop();
 
     spdlog::info("Exiting");
     spdlog::shutdown();
