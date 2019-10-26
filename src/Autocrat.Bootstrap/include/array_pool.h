@@ -33,16 +33,20 @@ namespace autocrat
 
         /**
          * Returns an iterator to the first element of the container.
-         */
-        const_iterator begin() const noexcept;
-
-        /**
-         * Returns an iterator to the first element of the container.
+         * @returns An iterator to the first element.
          */
         iterator begin() noexcept;
 
         /**
-         * Returns the number of elements that the container has allocated space for.
+         * Returns an iterator to the first element of the container.
+         * @returns An iterator to the first element.
+         */
+        const_iterator begin() const noexcept;
+
+        /**
+         * Returns the number of elements that the container has allocated
+         * space for.
+         * @returns Capacity of the currently allocated storage.
          */
         constexpr std::size_t capacity() const noexcept
         {
@@ -60,14 +64,18 @@ namespace autocrat
         value_type* data() noexcept;
 
         /**
-         * Returns an iterator to the element following the last element of the container. 
-         */
-        const_iterator end() const noexcept;
-
-        /**
-         * Returns an iterator to the element following the last element of the container.
+         * Returns an iterator to the element following the last element of the
+         * container.
+         * @returns An iterator to the element following the last element. 
          */
         iterator end() noexcept;
+
+        /**
+         * Returns an iterator to the element following the last element of the
+         * container.
+         * @returns An iterator to the element following the last element.
+         */
+        const_iterator end() const noexcept;
 
         /**
          * Resizes the container to contain count elements.
@@ -77,6 +85,7 @@ namespace autocrat
 
         /**
          * Returns the number of elements in the container.
+         * @returns The number of elements in the container.
          */
         std::size_t size() const noexcept;
     private:
