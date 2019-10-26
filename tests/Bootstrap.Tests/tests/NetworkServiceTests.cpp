@@ -10,7 +10,7 @@
 #include "thread_pool.h"
 
 using testing::_;
-using testing::InvokeArgument;
+using testing::Return;
 using testing::SizeIs;
 
 class MockSocket : public pal_socket
@@ -18,7 +18,7 @@ class MockSocket : public pal_socket
 public:
     MOCK_METHOD(void, bind, (const pal::socket_handle&, const pal::socket_address&), (override));
     MOCK_METHOD(pal::socket_handle, create_udp_socket, (), (override));
-    MOCK_METHOD(void, poll, (const pal::socket_list&, std::function<void(const pal::socket_handle&, pal::poll_event)>), (override));
+    MOCK_METHOD(std::optional<pal::poll_event>, get_poll_event, (const pal::socket_handle&), (override));
     MOCK_METHOD(int, recv_from, (const pal::socket_handle&, char*, std::size_t, pal::socket_address*), (override));
 };
 
@@ -63,14 +63,13 @@ protected:
 
 TEST_F(NetworkServiceTests, ShouldInvokeTheHandlerWithTheReadData)
 {
-    pal::socket_handle handle;
-    ON_CALL(_socket, poll)
-        .WillByDefault(InvokeArgument<1>(handle, pal::poll_event::read));
+    ON_CALL(_socket, get_poll_event)
+        .WillByDefault(Return(pal::poll_event::read));
 
     ON_CALL(_socket, recv_from(_, _, _, _))
         .WillByDefault([](auto, char* buffer, auto, pal::socket_address* address)
             {
-                address->port(123);
+                address->port(456);
                 std::strcpy(buffer, "test");
                 return 4;
             });
@@ -92,19 +91,16 @@ TEST_F(NetworkServiceTests, ShouldInvokeTheHandlerWithTheReadData)
 TEST_F(NetworkServiceTests, ShouldListenOnASingleSocketForTheSamePort)
 {
     EXPECT_CALL(_socket, bind(_, _)).Times(1);
-    EXPECT_CALL(_socket, poll(SizeIs(1), _));
 
     _service.add_udp_callback(123, &udp_callback);
     _service.add_udp_callback(123, &udp_callback);
-
-    _service.check_and_dispatch();
 }
 
 TEST_F(NetworkServiceTests, ShouldNotReadFromSocketErrors)
 {
     pal::socket_handle handle;
-    ON_CALL(_socket, poll)
-        .WillByDefault(InvokeArgument<1>(handle, pal::poll_event::error));
+    ON_CALL(_socket, get_poll_event)
+        .WillByDefault(Return(pal::poll_event::error));
 
     EXPECT_CALL(_socket, recv_from(_, _, _, _)).Times(0);
 

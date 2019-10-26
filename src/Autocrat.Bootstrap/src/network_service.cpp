@@ -28,24 +28,36 @@ namespace autocrat
 
     void network_service::add_udp_callback(std::uint16_t port, udp_register_method callback)
     {
-        auto existing = _callbacks.find(port);
-        if (existing == _callbacks.end())
+        for (auto& kvp : _sockets)
         {
-            spdlog::info("Creating socket on port {}", port);
-            pal::socket_handle socket = pal::create_udp_socket();
-            pal::bind(socket, pal::socket_address::any_ipv4());
-            _sockets.push_back(std::move(socket));
+            if (kvp.second.port == port)
+            {
+                kvp.second.callbacks.push_back(callback);
+                return;
+            }
         }
 
-        _callbacks.emplace_hint(existing, port, callback);
+        spdlog::info("Creating socket on port {}", port);
+        pal::socket_handle socket = pal::create_udp_socket();
+        pal::socket_address address = pal::socket_address::any_ipv4();
+        address.port(port);
+        pal::bind(socket, address);
+
+        socket_data data = {};
+        data.port = port;
+        data.callbacks.push_back(callback);
+        _sockets.insert({ std::move(socket), std::move(data) });
     }
 
     void network_service::check_and_dispatch()
     {
-        pal::poll(_sockets, std::bind(&network_service::handle_poll, this, _1, _2));
+        pal::poll(_sockets, std::bind(&network_service::handle_poll, this, _1, _2, _3));
     }
 
-    void network_service::handle_poll(const pal::socket_handle& handle, pal::poll_event event)
+    void network_service::handle_poll(
+        const pal::socket_handle& handle,
+        const socket_data& data,
+        pal::poll_event event)
     {
         if (event != pal::poll_event::read)
         {
@@ -59,10 +71,11 @@ namespace autocrat
         int size = pal::recv_from(handle, reinterpret_cast<char*>(array->data()), array->capacity(), &address);
         array->resize(size);
 
-        auto range = _callbacks.equal_range(address.port());
-        for (auto it = range.first; it != range.second; ++it)
+        SPDLOG_DEBUG("{} bytes received on port {}", size, data.port);
+
+        for (auto callback : data.callbacks)
         {
-            _thread_pool->enqueue(&invoke_callback, std::make_tuple(address, it->second, array));
+            _thread_pool->enqueue(&invoke_callback, std::make_tuple(address, callback, array));
         }
     }
 }

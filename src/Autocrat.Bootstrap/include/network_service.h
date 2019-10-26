@@ -3,7 +3,7 @@
 
 #include <any>
 #include <cstdint>
-#include <unordered_map>
+#include <vector>
 #include "array_pool.h"
 #include "defines.h"
 #include "method_handles.h"
@@ -12,6 +12,12 @@
 namespace autocrat
 {
     class thread_pool;
+
+    struct socket_data
+    {
+        std::vector<udp_register_method> callbacks;
+        std::uint16_t port;
+    };
 
     /**
      * Exposes functionality for dealing with the network.
@@ -39,11 +45,13 @@ namespace autocrat
          */
         MOCKABLE_METHOD void check_and_dispatch();
     private:
-        void handle_poll(const pal::socket_handle& handle, pal::poll_event event);
+        void handle_poll(
+            const pal::socket_handle& handle,
+            const socket_data& data,
+            pal::poll_event event);
 
         array_pool _array_pool;
-        std::unordered_multimap<std::uint16_t, udp_register_method> _callbacks;
-        pal::socket_list _sockets;
+        pal::socket_map<socket_data> _sockets;
         thread_pool* _thread_pool;
     };
 }
