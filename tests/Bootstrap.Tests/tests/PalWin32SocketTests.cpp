@@ -96,10 +96,10 @@ TEST_F(PalWin32SocketTests, BindShouldThrowForErrors)
 
 TEST_F(PalWin32SocketTests, PollShouldHandleEmptyLists)
 {
-    pal::socket_list list;
+    pal::socket_map<int> list;
     bool called = false;
 
-    pal::poll(list, [&](auto&, auto) { called = true; });
+    pal::poll(list, [&](auto&, auto, auto) { called = true; });
 
     EXPECT_FALSE(called);
 }
@@ -112,12 +112,13 @@ TEST_F(PalWin32SocketTests, PollShouldInvokeTheCallbackIfDataIsAvailable)
 
     SendData(port, "test");
 
-    pal::socket_list list;
-    list.push_back(std::move(server));
-    int called = 0;
-    pal::poll(list, [&](auto&, auto) { called++; });
+    pal::socket_map<int> list;
+    list.insert({ std::move(server), 123 });
 
-    EXPECT_EQ(1, called);
+    int called_value = 0;
+    pal::poll(list, [&](auto&, int value, auto) { called_value = value; });
+
+    EXPECT_EQ(123, called_value);
 }
 
 TEST_F(PalWin32SocketTests, PollShouldThrowForErrors)
@@ -125,10 +126,10 @@ TEST_F(PalWin32SocketTests, PollShouldThrowForErrors)
     pal::socket_handle closed = pal::create_udp_socket();
     closed.~socket_handle();
 
-    pal::socket_list list;
-    list.push_back(std::move(closed));
+    pal::socket_map<int> list;
+    list.insert({ std::move(closed), 0 });
 
-    EXPECT_THROW(pal::poll(list, [](auto&, auto) {}), std::system_error);
+    EXPECT_THROW(pal::poll(list, [](auto&, auto, auto) {}), std::system_error);
 }
 
 TEST_F(PalWin32SocketTests, RecvFromShouldReturnZeroIfThereIsNoDataReady)

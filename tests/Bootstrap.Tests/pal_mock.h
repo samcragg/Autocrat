@@ -2,14 +2,14 @@
 #define PAL_MOCK_H
 
 #include <cstdint>
-#include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
 #define create_udp_socket test_create_udp_socket
 #define socket_address test_socket_address
 #define socket_handle test_socket_handle
-#define socket_list test_socket_list
+#define socket_map test_socket_map
 
 namespace pal
 {
@@ -48,20 +48,49 @@ namespace pal
 
     bool operator==(const test_socket_handle& a, const test_socket_handle& b);
 
-    class test_socket_list
+    template <class T>
+    class test_socket_map
     {
     public:
-        using value_type = test_socket_handle;
+        using key_type = test_socket_handle;
+        using mapped_type = T;
+        using value_type = std::pair<key_type, mapped_type>;
+
+        using storage_type = std::vector<value_type>;
+        using iterator = typename storage_type::iterator;
+
+        iterator begin() noexcept
+        {
+            return _sockets.begin();
+        }
 
         [[nodiscard]]
-        bool empty() const noexcept;
+        bool empty() const noexcept
+        {
+            return _sockets.empty();
+        }
 
-        void erase(const value_type& value);
+        iterator end() noexcept
+        {
+            return _sockets.end();
+        }
 
-        void push_back(value_type&& value);
+        void erase(const key_type& key)
+        {
+            std::ptrdiff_t index = &value - _sockets.data();
+            _sockets.at(index);
+            _sockets.erase(_sockets.begin() + index);
+        }
 
-        const std::vector<value_type>& handles() const;
-        std::size_t size() const noexcept;
+        void insert(value_type&& value)
+        {
+            _sockets.push_back(std::move(value));
+        }
+
+        std::size_t size() const noexcept
+        {
+            return _sockets.size();
+        }
     private:
         std::vector<value_type> _sockets;
     };
@@ -80,7 +109,7 @@ public:
 
     virtual void bind(const pal::socket_handle& socket, const pal::socket_address& address) = 0;
     virtual pal::socket_handle create_udp_socket() = 0;
-    virtual void poll(const pal::socket_list& sockets, std::function<void(const pal::socket_handle&, pal::poll_event)> callback) = 0;
+    virtual std::optional<pal::poll_event> get_poll_event(const pal::socket_handle& handle) = 0;
     virtual int recv_from(const pal::socket_handle& socket, char* buffer, std::size_t length, pal::socket_address* from) = 0;
 };
 
@@ -88,10 +117,17 @@ extern pal_socket* active_socket_mock;
 
 namespace pal
 {
-    template <typename Fn>
-    void poll(const socket_list& sockets, Fn callback)
+    template <typename T, typename Fn>
+    void poll(const socket_map<T>& sockets, Fn callback)
     {
-        active_socket_mock->poll(sockets, callback);
+        for (auto& pair : const_cast<socket_map<T>&>(sockets))
+        {
+            auto event = active_socket_mock->get_poll_event(pair.first);
+            if (event.has_value())
+            {
+                callback(pair.first, pair.second, event.value());
+            }
+        }
     }
 }
 

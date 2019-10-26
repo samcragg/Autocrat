@@ -226,26 +226,6 @@ namespace pal
         return _handle;
     }
 
-    bool socket_list::empty() const noexcept
-    {
-        return _sockets.empty();
-    }
-
-    void socket_list::erase(const value_type& value)
-    {
-        std::ptrdiff_t index = &value - _sockets.data();
-        _sockets.erase(_sockets.begin() + index);
-    }
-
-    void socket_list::push_back(value_type&& value)
-    {
-        pollfd descriptor = {};
-        descriptor.fd = value.handle();
-
-        _sockets.push_back(std::move(value));
-        _poll_descriptors.push_back(descriptor);
-    }
-
     void bind(const socket_handle& socket, const socket_address& address)
     {
         int result = ::bind(socket.handle(), address.native_handle(), sizeof(address));

@@ -58,38 +58,6 @@ namespace pal
         return _address;
     }
 
-    bool test_socket_list::empty() const noexcept
-    {
-        return _sockets.empty();
-    }
-
-    void test_socket_list::erase(const value_type& value)
-    {
-        for (auto it = _sockets.begin(); it != _sockets.end(); ++it)
-        {
-            if (it->address() == value.address())
-            {
-                _sockets.erase(it);
-                return;
-            }
-        }
-    }
-
-    void test_socket_list::push_back(value_type&& value)
-    {
-        _sockets.emplace_back(std::move(value));
-    }
-
-    auto test_socket_list::handles() const -> const std::vector<value_type>&
-    {
-        return _sockets;
-    }
-
-    std::size_t test_socket_list::size() const noexcept
-    {
-        return _sockets.size();
-    }
-
     void bind(const test_socket_handle& socket, const test_socket_address& address)
     {
         active_socket_mock->bind(socket, address);

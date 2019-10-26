@@ -1,6 +1,7 @@
 #ifndef PAL_WIN32_H
 #define PAL_WIN32_H
 
+#include <cassert>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -107,35 +108,75 @@ namespace pal
 
     /**
      * Represents a group of socket_handles.
+     * @tparam T The type to store with the socket handle.
      */
-    class socket_list
+    template <class T>
+    class socket_map
     {
     public:
-        using value_type = socket_handle;
+        using key_type = socket_handle;
+        using mapped_type = T;
+        using value_type = std::pair<key_type, mapped_type>;
+
+        using storage_type = std::vector<value_type>;
+        using iterator = typename storage_type::iterator;
+
+        /**
+         * Returns an iterator to the first element of the container.
+         * @returns An iterator to the first element.
+         */
+        iterator begin() noexcept
+        {
+            return _sockets.begin();
+        }
 
         /**
          * Checks if the container has no elements.
          * @returns `true` if the container is empty; otherwise, `false`.
          */
         [[nodiscard]]
-        bool empty() const noexcept;
+        bool empty() const noexcept
+        {
+            return _sockets.empty();
+        }
+
+        /**
+         * Returns an iterator to the element following the last element of the
+         * container.
+         * @returns An iterator to the element following the last element.
+         */
+        iterator end() noexcept
+        {
+            return _sockets.end();
+        }
 
         /**
          * Removes the specified element from the container.
-         * @param value The value to remove.
+         * @param key The key value of the element to remove.
          */
-        void erase(const value_type& value);
+        void erase(const key_type& key)
+        {
+            std::ptrdiff_t index = &value - _sockets.data();
+            assert((index >= 0) && (index < _sockets.size()));
+            _sockets.erase(_sockets.begin() + index);
+        }
 
         /**
          * Appends the given element value to the end of the container.
          * @param value The value of the element to append.
          */
-        void push_back(value_type&& value);
+        void insert(value_type&& value)
+        {
+            pollfd& descriptor = _poll_descriptors.emplace_back();
+            descriptor.fd = value.first.handle();
 
-        template <typename Fn>
-        friend void poll(const socket_list&, Fn);
+            _sockets.push_back(std::move(value));
+        }
+
+        template <class T, class Fn>
+        friend void poll(const socket_map<T>&, Fn);
     private:
-        std::vector<socket_handle> _sockets;
+        storage_type _sockets;
         mutable std::vector<pollfd> _poll_descriptors;
     };
 
@@ -149,12 +190,13 @@ namespace pal
 
     /**
      * Polls the specified handles to see if any data is waiting to be read.
-     * @tparam Fn A callback with the signature of void(const socket_handle&, poll_event)
+     * @tparam T  The element type of the `socket_map`.
+     * @tparam Fn A callback with the signature of void(const socket_handle&, T&, poll_event)
      * @param sockets  The list of sockets to poll.
      * @param callback The function to invoke when an event has been received.
      */
-    template <typename Fn>
-    void poll(const socket_list& sockets, Fn callback)
+    template <class T, class Fn>
+    void poll(const socket_map<T>& sockets, Fn callback)
     {
         if (sockets.empty())
         {
@@ -166,7 +208,11 @@ namespace pal
             fd.events = POLLIN;
         }
 
-        int result = WSAPoll(sockets._poll_descriptors.data(), static_cast<ULONG>(sockets._poll_descriptors.size()), 0);
+        int result = WSAPoll(
+            sockets._poll_descriptors.data(),
+            static_cast<ULONG>(sockets._poll_descriptors.size()),
+            0);
+
         if (result == SOCKET_ERROR)
         {
             detail::throw_socket_error();
@@ -177,9 +223,14 @@ namespace pal
             for (std::size_t i = 0; i != count; ++i)
             {
                 short revents = sockets._poll_descriptors[i].revents;
+                auto& pair = sockets._sockets[i];
                 if (revents != 0)
                 {
-                    std::invoke(callback, sockets._sockets[i], detail::translate_event(revents));
+                    std::invoke(
+                        callback,
+                        std::as_const(pair.first),
+                        pair.second,
+                        detail::translate_event(revents));
                 }
             }
         }
