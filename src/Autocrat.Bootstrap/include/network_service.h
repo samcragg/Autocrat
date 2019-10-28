@@ -3,8 +3,8 @@
 
 #include <any>
 #include <cstdint>
-#include <vector>
 #include "array_pool.h"
+#include "collections.h"
 #include "defines.h"
 #include "method_handles.h"
 #include "pal.h"
@@ -15,7 +15,7 @@ namespace autocrat
 
     struct socket_data
     {
-        std::vector<udp_register_method> callbacks;
+        small_vector<udp_register_method> callbacks;
         std::uint16_t port;
     };
 
