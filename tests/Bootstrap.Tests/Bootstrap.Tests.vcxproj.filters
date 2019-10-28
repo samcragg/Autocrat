@@ -75,5 +75,8 @@
     <ClCompile Include="tests\PalWin32ServicesTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\SmallVectorTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

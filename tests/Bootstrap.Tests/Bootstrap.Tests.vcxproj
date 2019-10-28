@@ -99,6 +99,7 @@
     <ClCompile Include="tests\PalWin32SocketTests.cpp" />
     <ClCompile Include="tests\PalWin32ThreadTests.cpp" />
     <ClCompile Include="tests\ServicesTests.cpp" />
+    <ClCompile Include="tests\SmallVectorTests.cpp" />
     <ClCompile Include="tests\ThreadPoolTests.cpp" />
   </ItemGroup>
 </Project>
