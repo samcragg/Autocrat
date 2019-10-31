@@ -63,7 +63,7 @@ namespace Autocrat.Compiler
 
         private ITypeSymbol GetArrayDependencyType(ITypeSymbol type)
         {
-            bool ContainsSingleGenericArgument(INamedTypeSymbol classType)
+            static bool ContainsSingleGenericArgument(INamedTypeSymbol classType)
             {
                 return classType.IsGenericType && (classType.TypeArguments.Length == 1);
             }
@@ -101,19 +101,16 @@ namespace Autocrat.Compiler
             IReadOnlyCollection<ITypeSymbol> classes = this.interfaceResolver.FindClasses(
                 parameter.Type);
 
-            switch (classes.Count)
+            return classes.Count switch
             {
-                case 0:
-                    throw new InvalidOperationException(
-                        "Unable to find a class for the dependency " + parameter.Type.ToDisplayString());
+                0 => throw new InvalidOperationException(
+                       "Unable to find a class for the dependency " + parameter.Type.ToDisplayString()),
 
-                case 1:
-                    return classes.First();
+                1 => classes.First(),
 
-                default:
-                    throw new InvalidOperationException(
-                        "Multiple dependencies found for " + parameter.Type.ToDisplayString());
-            }
+                _ => throw new InvalidOperationException(
+                        "Multiple dependencies found for " + parameter.Type.ToDisplayString()),
+            };
         }
     }
 }

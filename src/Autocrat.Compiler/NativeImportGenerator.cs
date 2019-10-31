@@ -55,16 +55,14 @@ namespace Autocrat.Compiler
         /// <param name="stream">The stream to output to.</param>
         public virtual void WriteTo(Stream stream)
         {
-            using (var writer = new StreamWriter(stream, Encoding.UTF8, 4096, leaveOpen: true))
-            {
-                WriteHeaders(writer);
-                writer.WriteLine();
+            using var writer = new StreamWriter(stream, Encoding.UTF8, 4096, leaveOpen: true);
+            WriteHeaders(writer);
+            writer.WriteLine();
 
-                this.WriteExterns(writer);
-                writer.WriteLine();
+            this.WriteExterns(writer);
+            writer.WriteLine();
 
-                this.WriteGetKnownMethod(writer);
-            }
+            this.WriteGetKnownMethod(writer);
         }
 
         private static void WriteHeaders(StreamWriter writer)

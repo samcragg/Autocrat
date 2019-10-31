@@ -159,7 +159,7 @@ namespace Autocrat.Compiler
 
         private BlockSyntax CreateBody(IMethodSymbol method)
         {
-            ArgumentSyntax CreateArgument(IParameterSymbol symbol)
+            static ArgumentSyntax CreateArgument(IParameterSymbol symbol)
             {
                 return Argument(IdentifierName(symbol.Name));
             }

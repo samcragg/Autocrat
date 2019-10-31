@@ -27,14 +27,12 @@ namespace Autocrat.Compiler
         /// <returns>The exit code of the application.</returns>
         public static Task<int> Main(string assembly, string source, string[] args)
         {
-            using (var output = new OutputStreams(assembly, source))
-            {
-                return CompileCodeAsync(
-                    args,
-                    output,
-                    new ProjectLoader(),
-                    new CodeGenerator());
-            }
+            using var output = new OutputStreams(assembly, source);
+            return CompileCodeAsync(
+                args,
+                output,
+                new ProjectLoader(),
+                new CodeGenerator());
         }
 
         /// <summary>
