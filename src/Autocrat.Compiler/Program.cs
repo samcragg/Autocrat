@@ -65,7 +65,7 @@ namespace Autocrat.Compiler
                 }
 
                 Logger.Info("Emitting assembly");
-                generator.EmitAssembly(output.Assembly);
+                generator.EmitAssembly(output.Assembly, output.AssemblyPdb);
 
                 Logger.Info("Emitting native source");
                 generator.EmitNativeCode(output.Source);

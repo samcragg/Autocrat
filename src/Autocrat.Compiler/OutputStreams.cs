@@ -16,6 +16,7 @@ namespace Autocrat.Compiler
     internal class OutputStreams : IDisposable
     {
         private readonly Lazy<Stream> assembly;
+        private readonly Lazy<Stream> assemblyPdb;
         private readonly Lazy<Stream> source;
 
         /// <summary>
@@ -26,6 +27,7 @@ namespace Autocrat.Compiler
         public OutputStreams(string assembly, string source)
         {
             this.assembly = new Lazy<Stream>(() => OpenWrite(assembly));
+            this.assemblyPdb = new Lazy<Stream>(() => OpenWrite(GetPdbFileFor(assembly)));
             this.source = new Lazy<Stream>(() => OpenWrite(source));
         }
 
@@ -45,6 +47,11 @@ namespace Autocrat.Compiler
         public virtual Stream Assembly => this.assembly.Value;
 
         /// <summary>
+        /// Gets the output stream for the managed assembly PDB.
+        /// </summary>
+        public virtual Stream AssemblyPdb => this.assemblyPdb.Value;
+
+        /// <summary>
         /// Gets the output stream for the native source code.
         /// </summary>
         public virtual Stream Source => this.source.Value;
@@ -57,10 +64,25 @@ namespace Autocrat.Compiler
                 this.assembly.Value.Dispose();
             }
 
+            if (this.assemblyPdb.IsValueCreated)
+            {
+                this.assemblyPdb.Value.Dispose();
+            }
+
             if (this.source.IsValueCreated)
             {
                 this.source.Value.Dispose();
             }
+        }
+
+        private static string GetPdbFileFor(string path)
+        {
+            if (path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            {
+                path = path.Substring(0, path.Length - 4);
+            }
+
+            return path + ".pdb";
         }
 
         private static Stream OpenWrite(string path)

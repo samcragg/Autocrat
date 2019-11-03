@@ -58,7 +58,8 @@ namespace Autocrat.Compiler
         /// Generates the managed assembly.
         /// </summary>
         /// <param name="destination">Where to save the assembly to.</param>
-        public virtual void EmitAssembly(Stream destination)
+        /// <param name="pdb">Where to save the debug information.</param>
+        public virtual void EmitAssembly(Stream destination, Stream pdb)
         {
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
@@ -69,7 +70,7 @@ namespace Autocrat.Compiler
 
             compilation = this.AddCallbackAdapters(compilation);
 
-            EmitResult result = compilation.Emit(destination);
+            EmitResult result = compilation.Emit(destination, pdb);
             if (!result.Success)
             {
                 foreach (Diagnostic diagnostic in result.Diagnostics)

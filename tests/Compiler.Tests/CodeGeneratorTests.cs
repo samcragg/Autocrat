@@ -89,7 +89,7 @@ public class Test
     public UnknownType Invalid { get; set; }
 }"));
 
-                this.generator.Invoking(g => g.EmitAssembly(Stream.Null))
+                this.generator.Invoking(g => g.EmitAssembly(Stream.Null, Stream.Null))
                     .Should().Throw<InvalidOperationException>();
             }
 
@@ -98,7 +98,7 @@ public class Test
                 using (var stream = new MemoryStream())
                 {
                     this.generator.Add(CompilationHelper.CompileCode(originalCode));
-                    this.generator.EmitAssembly(stream);
+                    this.generator.EmitAssembly(stream, Stream.Null);
                     return Assembly.Load(stream.ToArray());
                 }
             }
