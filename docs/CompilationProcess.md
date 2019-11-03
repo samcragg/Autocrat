@@ -128,7 +128,7 @@ following gets compiled and linked with the native executable:
         return known_methods.at(handle);
     }
 
-This method is what's used when a `NetworkServic.OnDataReceived` is called to
+This method is what's used when a `NetworkService.OnDataReceived` is called to
 find the method to register, where `method_types` is defined in the bootstrap
 library with all the expected method types inside a `std::variant`.
 
