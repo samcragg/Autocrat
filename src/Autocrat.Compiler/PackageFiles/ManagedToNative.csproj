@@ -12,21 +12,21 @@
     <IlcDisableReflection>true</IlcDisableReflection>
     <NativeLib>Static</NativeLib>
     <NoWarn>CS2008</NoWarn>
-    <Optimize>true</Optimize>
+    <Optimize Condition="'$(Configuration)'!='Debug'">true</Optimize>
     <RootAllApplicationAssemblies>true</RootAllApplicationAssemblies>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="$(ILCompilerVersion)" />
-    <Reference Include="assembly">
+    <Reference Include="$([System.IO.Path]::GetFileNameWithoutExtension('$(AutocratOutputAssembly)'))">
       <HintPath>$(AutocratOutputAssembly)</HintPath>
     </Reference>
   </ItemGroup>
 
   <!-- Ensure the types in our generated assembly are sent to the IL compiler too -->
   <ItemGroup>
-    <IlcArg Include="assembly.dll" />
+    <IlcArg Include="$(AutocratOutputAssembly)" />
     <IlcArg Include="Autocrat.NativeAdapters.dll" />
   </ItemGroup>
 
@@ -55,7 +55,6 @@
     <ItemGroup>
       <CompilerOptions Include="/c" />
       <CompilerOptions Include="/D &quot;_MBCS&quot;" />
-      <CompilerOptions Include="/D &quot;NDEBUG&quot;" />
       <CompilerOptions Include="/EHsc" />
       <CompilerOptions Include="/Fo&quot;main.obj&quot;" />
       <CompilerOptions Include="/Gd" />
@@ -63,10 +62,18 @@
       <CompilerOptions Include="/I&quot;$(AutocratBootstrapDir)&quot;" />
       <CompilerOptions Include="/MT" />
       <CompilerOptions Include="/nologo" />
-      <CompilerOptions Include="/O2" />
       <CompilerOptions Include="/std:c++17" />
       <CompilerOptions Include="/w" />
       <CompilerOptions Include="/Zc:inline" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'=='Debug'">
+      <CompilerOptions Include="/Od" />
+      <CompilerOptions Include="/RTC1" />
+      <CompilerOptions Include="/Zi" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'!='Debug'">
+      <CompilerOptions Include="/D &quot;NDEBUG&quot;" />
+      <CompilerOptions Include="/O2" />
     </ItemGroup>
 
     <Message Importance="high" Text="Compiling native code"/>
@@ -93,13 +100,18 @@
       <LinkerOptions Include="/MANIFEST:NO" />
       <LinkerOptions Include="/NOLOGO" />
       <LinkerOptions Include="/NXCOMPAT" />
-      <LinkerOptions Include="/OPT:ICF" />
-      <LinkerOptions Include="/OPT:REF" />
       <LinkerOptions Include="/OUT:&quot;$(OutputName)&quot;" />
       <LinkerOptions Include="/SUBSYSTEM:CONSOLE" />
       <RuntimeLibraries Include="$(RuntimeLibraryFolder)bootstrapperdll.lib" />
       <RuntimeLibraries Include="$(RuntimeLibraryFolder)Runtime.lib" />
       <RuntimeLibraries Include="$(RuntimeLibraryFolder)System.Private.TypeLoader.Native.lib" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'=='Debug'">
+      <LinkerOptions Include="/DEBUG" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'!='Debug'">
+      <LinkerOptions Include="/OPT:ICF" />
+      <LinkerOptions Include="/OPT:REF" />
     </ItemGroup>
 
     <Message Importance="high" Text="Linking executable"/>

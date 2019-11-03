@@ -3,7 +3,7 @@
     <AutocratCompiler>$(MSBuildThisFileDirectory)../tasks/netcoreapp2.1/Autocrat.Compiler.dll</AutocratCompiler>
     <AutocratManagedProject>ManagedToNative.csproj</AutocratManagedProject>
     <AutocratOutputDirectory>$(MSBuildProjectDirectory)/obj/autocrat/</AutocratOutputDirectory>
-    <AutocratOutputAssembly>$(AutocratOutputDirectory)assembly.dll</AutocratOutputAssembly>
+    <AutocratOutputAssembly>$(AutocratOutputDirectory)AutocratGeneratedAssembly.dll</AutocratOutputAssembly>
     <AutocratOutputSource>$(AutocratOutputDirectory)source.cpp</AutocratOutputSource>
   </PropertyGroup>
 
