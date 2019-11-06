@@ -17,4 +17,10 @@
 
 #endif
 
+#if __GNUC__
+#define cdecl
+#else
+#define cdecl __cdecl
+#endif
+
 #endif
