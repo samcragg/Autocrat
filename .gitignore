@@ -3,6 +3,7 @@
 [Bb]in/
 [Oo]bj/
 *.vcxproj.user
+test_results.xml
 
 # Cake
 build/tools
