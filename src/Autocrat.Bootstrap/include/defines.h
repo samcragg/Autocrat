@@ -18,9 +18,10 @@
 #endif
 
 #if __GNUC__
-#define cdecl
+#define CDECL
 #else
-#define cdecl __cdecl
+#undef CDECL
+#define CDECL __cdecl
 #endif
 
 #endif

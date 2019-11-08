@@ -5,8 +5,8 @@
 
 namespace managed_exports
 {
-    extern "C" void* cdecl GetByteArrayType();
-    extern "C" void cdecl OnConfigurationLoaded();
+    extern "C" void* CDECL GetByteArrayType();
+    extern "C" void CDECL OnConfigurationLoaded();
 }
 
 #endif
