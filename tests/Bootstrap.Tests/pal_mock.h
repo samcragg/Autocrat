@@ -77,7 +77,7 @@ namespace pal
 
         void erase(const key_type& key)
         {
-            std::ptrdiff_t index = &value - _sockets.data();
+            std::ptrdiff_t index = &key - _sockets.data();
             _sockets.at(index);
             _sockets.erase(_sockets.begin() + index);
         }

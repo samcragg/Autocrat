@@ -1,12 +1,14 @@
 #include "array_pool.h"
+
 #include <gtest/gtest.h>
 #include <algorithm>
+#include "defines.h"
 
 namespace
 {
     void* managed_byte_array_type = reinterpret_cast<void*>(0x12345678);
 
-    extern "C" void* __cdecl GetByteArrayType()
+    extern "C" void* CDECL GetByteArrayType()
     {
         return managed_byte_array_type;
     }
@@ -31,10 +33,10 @@ TEST_F(ManagedArrayTests, ConstructorShouldSetTheEEType)
 TEST_F(ManagedArrayTests, ClearShouldChangeTheSize)
 {
     _array.resize(10);
-    EXPECT_EQ(10, _array.size());
+    EXPECT_EQ(10u, _array.size());
 
     _array.clear();
-    EXPECT_EQ(0, _array.size());
+    EXPECT_EQ(0u, _array.size());
 }
 
 TEST_F(ManagedArrayTests, ClearShouldZeroTheMemory)
@@ -55,6 +57,6 @@ TEST_F(ManagedArrayTests, ResizeShouldZeroTheMemory)
 
     _array.resize(5);
 
-    EXPECT_EQ(5, _array.size());
+    EXPECT_EQ(5u, _array.size());
     EXPECT_TRUE(std::all_of(_array.data() + 5, _array.data() + 10, [](std::uint8_t b) { return b == 0; }));
 }

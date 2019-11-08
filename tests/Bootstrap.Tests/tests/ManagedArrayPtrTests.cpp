@@ -33,20 +33,20 @@ TEST_F(ManagedArrayPtrTests, CopyShouldNotReturnTheArrayToThePool)
 
     {
         autocrat::managed_byte_array_ptr copy = original;
-        EXPECT_EQ(1, _pool.size());
+        EXPECT_EQ(1u, _pool.size());
     }
 
-    EXPECT_EQ(1, _pool.size());
+    EXPECT_EQ(1u, _pool.size());
 }
 
 TEST_F(ManagedArrayPtrTests, DestructorShouldReturnTheArrayToThePool)
 {
     {
         autocrat::managed_byte_array_ptr ptr = _pool.aquire();
-        EXPECT_EQ(1, _pool.size());
+        EXPECT_EQ(1u, _pool.size());
     }
 
-    EXPECT_EQ(0, _pool.size());
+    EXPECT_EQ(0u, _pool.size());
 }
 
 TEST_F(ManagedArrayPtrTests, MoveAssignmentShouldClearTheOriginal)
@@ -76,10 +76,10 @@ TEST_F(ManagedArrayPtrTests, MoveShouldReturnTheArrayToThePool)
 
     {
         autocrat::managed_byte_array_ptr move = std::move(original);
-        EXPECT_EQ(1, _pool.size());
+        EXPECT_EQ(1u, _pool.size());
     }
 
-    EXPECT_EQ(0, _pool.size());
+    EXPECT_EQ(0u, _pool.size());
 }
 
 TEST_F(ManagedArrayPtrTests, ShouldCompareToFalseForEmptyPointers)
