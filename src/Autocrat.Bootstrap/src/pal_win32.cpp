@@ -3,8 +3,8 @@
 #include <system_error>
 #include <spdlog/spdlog.h>
 
+#undef UNIT_TESTS
 #include "pal.h"
-#ifdef PAL_WIN32_H
 
 #pragma comment (lib, "Synchronization.lib")
 #pragma comment (lib, "Ws2_32.lib")
@@ -304,5 +304,3 @@ namespace pal
         WakeByAddressAll(address);
     }
 }
-
-#endif

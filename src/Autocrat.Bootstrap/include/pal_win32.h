@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -156,7 +157,7 @@ namespace pal
          */
         void erase(const key_type& key)
         {
-            std::ptrdiff_t index = &value - _sockets.data();
+            std::ptrdiff_t index = &key - _sockets.data();
             assert((index >= 0) && (index < _sockets.size()));
             _sockets.erase(_sockets.begin() + index);
         }
@@ -173,8 +174,8 @@ namespace pal
             _sockets.push_back(std::move(value));
         }
 
-        template <class T, class Fn>
-        friend void poll(const socket_map<T>&, Fn);
+        template <class U, class Fn>
+        friend void poll(const socket_map<U>&, Fn);
     private:
         storage_type _sockets;
         mutable std::vector<pollfd> _poll_descriptors;

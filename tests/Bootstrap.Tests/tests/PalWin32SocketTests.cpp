@@ -1,7 +1,6 @@
 #define PAL_MOCK_H
 #include "pal.h"
 #include "pal_win32.h"
-#include "../../../src/Autocrat.Bootstrap/src/pal_win32.cpp"
 
 #include <string_view>
 #include <system_error>
