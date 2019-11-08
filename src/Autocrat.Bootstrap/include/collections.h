@@ -10,8 +10,10 @@
 #include <type_traits>
 #include <utility>
 
+#ifdef _MSC_VER
 #pragma warning (push)
 #pragma warning (disable: 4324) // structure was padded due to alignment specifier
+#endif
 
 namespace autocrat
 {
@@ -120,9 +122,11 @@ namespace autocrat
             typename std::aligned_storage<sizeof(T), alignof(T)>::type storage;
         };
 
+        static constexpr std::size_t hardware_destructive_interference_size = 64;
+
         std::array<cell_t, Sz> _buffer;
-        alignas(std::hardware_destructive_interference_size) std::atomic_size_t _enqueue_position;
-        alignas(std::hardware_destructive_interference_size) std::atomic_size_t _dequeue_position;
+        alignas(hardware_destructive_interference_size) std::atomic_size_t _enqueue_position;
+        alignas(hardware_destructive_interference_size) std::atomic_size_t _dequeue_position;
     };
 
     /**
@@ -380,5 +384,8 @@ namespace autocrat
     };
 }
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
+
 #endif
