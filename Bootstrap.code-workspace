@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "src/Autocrat.Bootstrap"
+		},
+		{
+			"path": "tests/Bootstrap.Tests"
+		}
+	],
+	"settings": {}
+}
