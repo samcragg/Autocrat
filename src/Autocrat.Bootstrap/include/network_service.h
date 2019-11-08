@@ -25,7 +25,7 @@ namespace autocrat
     class network_service
     {
     public:
-        MOCKABLE_CONSTRUCTOR(network_service)
+        MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(network_service)
 
         /**
          * Constructs a new instance of the `network_service` class.

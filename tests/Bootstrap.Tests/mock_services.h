@@ -14,11 +14,16 @@ public:
 class mock_services : public autocrat::global_services_type
 {
 public:
-    mock_services()
+    void create_services()
     {
         _services = std::make_tuple(
             std::make_unique<mock_network_service>()
         );
+    }
+
+    void release_services()
+    {
+        _services = {};
     }
 
     mock_network_service& network_service()

@@ -31,7 +31,7 @@ namespace autocrat
          * @param threads The number of threads the pool should contain.
          */
         thread_pool(std::size_t cpu_id, std::size_t threads);
-        ~thread_pool() noexcept;
+        MOCKABLE_METHOD ~thread_pool() noexcept;
 
         /**
          * Enqueues the specified work to be performed in a background thread.
