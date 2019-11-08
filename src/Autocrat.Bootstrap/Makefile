@@ -1,7 +1,14 @@
 include variables.mk
 
+CXXFLAGS += -I include -isystem ../../libs
+
 SOURCES = \
- src/array_pool.cpp
+ src/array_pool.cpp \
+ src/main.cpp \
+ src/native_exports.cpp \
+ src/network_service.cpp \
+ src/pal_posix.cpp \
+ src/thread_pool.cpp
 
 OUTPUT_LIB = bin/$(mode)/Autocrat.Bootstrap.a
 build: $(OUTPUT_LIB);

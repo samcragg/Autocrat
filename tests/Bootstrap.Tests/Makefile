@@ -1,13 +1,27 @@
 include ../../src/Autocrat.Bootstrap/variables.mk
 
+CXXFLAGS += -DUNIT_TESTS -I . -I ../../src/Autocrat.Bootstrap/include -isystem ../../libs
+
 SRC_DIR = ../../src/Autocrat.Bootstrap/src
 SRCS = \
- $(SRC_DIR)/array_pool.cpp
+ $(SRC_DIR)/array_pool.cpp \
+ $(SRC_DIR)/native_exports.cpp \
+ $(SRC_DIR)/network_service.cpp \
+ $(SRC_DIR)/thread_pool.cpp \
+ $(SRC_DIR)/pal_posix.cpp
 
 TESTS = \
  tests/ArrayPoolTests.cpp \
+ tests/BoundedQueueTests.cpp \
+ tests/ManagedArrayPtrTests.cpp \
  tests/ManagedArrayTests.cpp \
- main.cpp
+ tests/NativeExportsTests.cpp \
+ tests/ServicesTests.cpp \
+ tests/SmallVectorTests.cpp \
+ tests/ThreadPoolTests.cpp \
+ main.cpp \
+ mock_method_handles.cpp \
+ pal_mock.cpp
 
 TEST_PROGRAM = bin/$(mode)/Bootstrap.Tests
 TEST_OUTPUT = test_results.xml
