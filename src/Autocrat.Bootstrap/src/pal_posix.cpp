@@ -270,7 +270,7 @@ namespace pal
         close_signal_handler = callback;
         struct sigaction action = {};
         action.sa_handler = &control_c_handler;
-        if (!sigaction(SIGINT, &action, nullptr))
+        if (sigaction(SIGINT, &action, nullptr) != 0)
         {
             spdlog::error("Unable to set the console control handler (code: {})", errno);
         }
