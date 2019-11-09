@@ -18,7 +18,7 @@ TESTS = \
  tests/NativeExportsTests.cpp \
  tests/PalPosixServicesTests.cpp \
  tests/PalPosixSocketTests.cpp \
- tests/PalPosixThreadTests.cpp \
+ tests/PalThreadTests.cpp \
  tests/ServicesTests.cpp \
  tests/SmallVectorTests.cpp \
  tests/ThreadPoolTests.cpp \

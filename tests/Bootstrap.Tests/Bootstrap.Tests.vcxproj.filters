@@ -43,9 +43,6 @@
     <ClCompile Include="tests\BoundedQueueTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="tests\PalWin32ThreadTests.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="tests\ThreadPoolTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -76,6 +73,9 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="tests\SmallVectorTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\PalThreadTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>

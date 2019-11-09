@@ -1,6 +1,6 @@
-#define PAL_MOCK_H
+#undef UNIT_TESTS
 #include "pal.h"
-#include "pal_win32.h"
+
 #include <chrono>
 #include <functional>
 #include <mutex>
@@ -10,7 +10,7 @@
 using std::chrono::high_resolution_clock;
 using namespace std::chrono_literals;
 
-class PalWin32ThreadTests : public testing::Test
+class PalThreadTests : public testing::Test
 {
 public:
 protected:
@@ -35,7 +35,7 @@ protected:
     }
 };
 
-TEST_F(PalWin32ThreadTests, ShouldSetTheThreadAffinity)
+TEST_F(PalThreadTests, ShouldSetTheThreadAffinity)
 {
     std::size_t cpu = 0;
     std::thread thread = run_in_background(
@@ -47,7 +47,7 @@ TEST_F(PalWin32ThreadTests, ShouldSetTheThreadAffinity)
     EXPECT_EQ(1, cpu);
 }
 
-TEST_F(PalWin32ThreadTests, ShouldWakeWaitingThreads)
+TEST_F(PalThreadTests, ShouldWakeWaitingThreads)
 {
     high_resolution_clock::time_point after_wait = {};
     high_resolution_clock::time_point before_wake = {};
