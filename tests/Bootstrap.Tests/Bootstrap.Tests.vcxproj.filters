@@ -69,7 +69,7 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\native_exports.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="tests\PalWin32ServicesTests.cpp">
+    <ClCompile Include="tests\PalServicesTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="tests\SmallVectorTests.cpp">

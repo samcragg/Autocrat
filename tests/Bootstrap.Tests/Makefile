@@ -16,7 +16,7 @@ TESTS = \
  tests/ManagedArrayPtrTests.cpp \
  tests/ManagedArrayTests.cpp \
  tests/NativeExportsTests.cpp \
- tests/PalPosixServicesTests.cpp \
+ tests/PalServicesTests.cpp \
  tests/PalPosixSocketTests.cpp \
  tests/PalThreadTests.cpp \
  tests/ServicesTests.cpp \
