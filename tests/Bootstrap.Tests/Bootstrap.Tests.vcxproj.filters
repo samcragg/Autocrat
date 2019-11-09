@@ -37,7 +37,7 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\pal_win32.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="tests\PalWin32SocketTests.cpp">
+    <ClCompile Include="tests\PalSocketTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="tests\BoundedQueueTests.cpp">
