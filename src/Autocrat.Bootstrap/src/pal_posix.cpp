@@ -10,6 +10,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <linux/futex.h>
+#include <sys/syscall.h>
 
 #undef UNIT_TESTS
 #include "pal.h"
@@ -27,6 +29,11 @@ namespace
         {
             handler();
         }
+    }
+
+    int futex(std::uint32_t* uaddr, int futex_op, std::uint32_t val, const struct timespec* timeout, int* uaddr2, int val3)
+    {
+        return syscall(SYS_futex, uaddr, futex_op, val, timeout, uaddr2, val3);
     }
 }
 
@@ -271,15 +278,13 @@ namespace pal
 
     void wait_on(std::uint32_t* address)
     {
-        ((void)address);
-        //std::uint32_t current = *address;
-        //WaitOnAddress(address, &current, sizeof(std::uint32_t), INFINITE);
+        std::uint32_t current = *address;
+        futex(address, FUTEX_WAIT_PRIVATE, current, nullptr, nullptr, 0);
     }
 
     void wake_all(std::uint32_t* address)
     {
-        ((void)address);
-        //InterlockedIncrement(address);
-        //WakeByAddressAll(address);
+        __sync_fetch_and_add(address, 1);
+        futex(address, FUTEX_WAKE_PRIVATE, std::numeric_limits<int>::max(), nullptr, nullptr, 0);
     }
 }

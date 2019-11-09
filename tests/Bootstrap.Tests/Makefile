@@ -16,6 +16,7 @@ TESTS = \
  tests/ManagedArrayPtrTests.cpp \
  tests/ManagedArrayTests.cpp \
  tests/NativeExportsTests.cpp \
+ tests/PalPosixThreadTests.cpp \
  tests/ServicesTests.cpp \
  tests/SmallVectorTests.cpp \
  tests/ThreadPoolTests.cpp \
