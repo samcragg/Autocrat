@@ -2,7 +2,7 @@
   <Target Name="AutocratTarget"
           AfterTargets="Publish">
     <ItemGroup>
-      <AdditionalProjectOptions Include="/p:AutocratBootstrapDir=&quot;$(MSBuildThisFileDirectory)../content/bootstrap/&quot;" />
+      <AdditionalProjectOptions Include="/p:AutocratContentDir=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputSource=&quot;$(AutocratOutputSource)&quot;" />
       <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName).exe&quot;" />
@@ -24,7 +24,7 @@
 
     <!-- There are so many issues around trying to get a MSBuild task to restore -->
     <!-- and work correctly, we'll just cheat and start a new process to do it all -->
-    <Exec Command="dotnet publish -c $(ConfigurationName) -r win-x64 $(AutocratManagedProject) -o publish @(AdditionalProjectOptions, ' ')"
+    <Exec Command="dotnet publish -c $(ConfigurationName) $(AutocratManagedProject) -o publish @(AdditionalProjectOptions, ' ')"
           WorkingDirectory="$(AutocratOutputDirectory)" />
     
     <!-- Do a little cleaning -->
