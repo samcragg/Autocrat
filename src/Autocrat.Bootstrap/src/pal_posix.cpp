@@ -49,11 +49,11 @@ namespace pal
 
         poll_event translate_event(short revents)
         {
-            if ((revents & (POLLRDBAND | POLLRDNORM)) != 0)
+            if ((revents & (POLLIN | POLLPRI | POLLRDBAND | POLLRDNORM)) != 0)
             {
                 return poll_event::read;
             }
-            else if ((revents & POLLWRNORM) != 0)
+            else if ((revents & (POLLOUT | POLLWRNORM)) != 0)
             {
                 return poll_event::write;
             }
@@ -63,6 +63,7 @@ namespace pal
             }
             else
             {
+                spdlog::warn("revents: {}", revents);
                 return poll_event::error;
             }
         }

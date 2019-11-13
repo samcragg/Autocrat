@@ -118,7 +118,7 @@ TEST_F(PalSocketTests, PollShouldHandleEmptyLists)
     EXPECT_FALSE(called);
 }
 
-TEST_F(PalSocketTests, PollShouldInvokeTheCallbackIfDataIsAvailable)
+TEST_F(PalSocketTests, PollShouldInvokeTheCallbackIfDataIsAvailableToRead)
 {
     pal::socket_handle server = pal::create_udp_socket();
     pal::bind(server, pal::socket_address::any_ipv4());
@@ -130,9 +130,15 @@ TEST_F(PalSocketTests, PollShouldInvokeTheCallbackIfDataIsAvailable)
     list.insert({ std::move(server), 123 });
 
     int called_value = 0;
-    pal::poll(list, [&](auto&, int value, auto) { called_value = value; });
+    pal::poll_event event_type;
+    pal::poll(list, [&](auto&, int value, auto type)
+    {
+        called_value = value;
+        event_type = type;
+    });
 
     EXPECT_EQ(123, called_value);
+    EXPECT_EQ(pal::poll_event::read, event_type);
 }
 
 #if defined(_WIN32)
