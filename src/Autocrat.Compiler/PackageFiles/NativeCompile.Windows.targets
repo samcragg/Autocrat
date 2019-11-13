@@ -73,7 +73,7 @@
       <LinkerOptions Include="/MANIFEST:NO" />
       <LinkerOptions Include="/NOLOGO" />
       <LinkerOptions Include="/NXCOMPAT" />
-      <LinkerOptions Include="/OUT:&quot;$(OutputName)&quot;" />
+      <LinkerOptions Include="/OUT:&quot;$(OutputName).exe&quot;" />
       <LinkerOptions Include="/SUBSYSTEM:CONSOLE" />
       <RuntimeLibraries Include="$(RuntimeLibraryFolder)bootstrapperdll.lib" />
       <RuntimeLibraries Include="$(RuntimeLibraryFolder)Runtime.lib" />
@@ -93,6 +93,6 @@
       <Output TaskParameter="ExitCode" PropertyName="LinkExitCode" />
     </Exec>
     <Error Condition="'$(LinkExitCode)' != '0'" Text="Linking failed." />
-    <Message Importance="high" Text="Generated $(OutputName)"/>
+    <Message Importance="high" Text="Generated $(OutputName).exe"/>
   </Target>
 </Project>

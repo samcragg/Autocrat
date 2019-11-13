@@ -5,7 +5,7 @@
       <AdditionalProjectOptions Include="/p:AutocratContentDir=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputSource=&quot;$(AutocratOutputSource)&quot;" />
-      <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName).exe&quot;" />
+      <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName)&quot;" />
 
       <!-- Make sure all the dependencies are available -->
       <PublishedFiles Include="$(PublishDir)*.*" />

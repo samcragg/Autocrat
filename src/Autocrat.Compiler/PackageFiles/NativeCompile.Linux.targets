@@ -1,0 +1,58 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <CppCompilerAndLinker>g++</CppCompilerAndLinker>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <Target Name="AutocratCompile"
+          AfterTargets="Publish">
+    <PropertyGroup>
+      <RuntimeLibraryFolder>$(NuGetPackageFolders.Split(';')[0])runtime.linux-x64.microsoft.dotnet.ilcompiler/$(ILCompilerVersion)/</RuntimeLibraryFolder>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <CompilerOptions Include="-I &quot;$(AutocratContentDir)bootstrap&quot;" />
+      <CompilerOptions Include="-march=x86-64" />
+      <CompilerOptions Include="-ldl" />
+      <CompilerOptions Include="-lgssapi_krb5" />
+      <CompilerOptions Include="-lm" />
+      <CompilerOptions Include="-lrt" />
+      <CompilerOptions Include="-lstdc++" />
+      <CompilerOptions Include="-lz" />
+      <CompilerOptions Include="-o &quot;$(OutputName)&quot;" />
+      <CompilerOptions Include="-pthread" />
+      <CompilerOptions Include="-std=c++17" />
+      <CompilerOptions Include="-Wl,-rpath,'$ORIGIN'" />
+      <CompilerOptions Include="-Wl,--as-needed" />
+
+      <RuntimeLibraries Include="$(PublishDir)ManagedToNative.a" />
+      <RuntimeLibraries Include="$(AutocratContentDir)bootstrap/Autocrat.Bootstrap.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)sdk/libbootstrapperdll.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)sdk/libRuntime.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)sdk/libSystem.Private.CoreLib.Native.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)sdk/libSystem.Private.TypeLoader.Native.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)framework/System.Native.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)framework/System.Globalization.Native.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)framework/System.IO.Compression.Native.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)framework/System.Net.Security.Native.a" />
+      <RuntimeLibraries Include="$(RuntimeLibraryFolder)framework/System.Security.Cryptography.Native.OpenSsl.a" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'=='Debug'">
+      <CompilerOptions Include="-g" />
+      <CompilerOptions Include="-Og" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'!='Debug'">
+      <CompilerOptions Include="-D NDEBUG" />
+      <CompilerOptions Include="-O3" />
+    </ItemGroup>
+
+    <Message Importance="high" Text="Compiling native code"/>
+    <Exec Command="g++ $(AutocratOutputSource) @(RuntimeLibraries, ' ') @(CompilerOptions, ' ')"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="CompilerExitCode" />
+    </Exec>
+    <Error Condition="'$(CompilerExitCode)' != '0'" Text="Native compilation failed." />
+    <Message Importance="high" Text="Generated $(OutputName)"/>
+  </Target>
+
+</Project>

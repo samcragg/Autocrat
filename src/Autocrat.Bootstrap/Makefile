@@ -10,7 +10,7 @@ SOURCES = \
  src/pal_posix.cpp \
  src/thread_pool.cpp
 
-OUTPUT_LIB = bin/$(mode)/Autocrat.Bootstrap.a
+OUTPUT_LIB = bin/Autocrat.Bootstrap.a
 build: $(OUTPUT_LIB);
 
 $(OBJ_DIR)/%.o: src/%.cpp

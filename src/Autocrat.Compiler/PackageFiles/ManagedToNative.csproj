@@ -30,6 +30,9 @@
     <IlcArg Include="Autocrat.NativeAdapters.dll" />
   </ItemGroup>
 
+  <Import Condition="'$([MSBuild]::IsOSPlatform(Linux))' == 'true'"
+          Project="$(AutocratContentDir)/NativeCompile.Linux.targets" />
+
   <Import Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'"
           Project="$(AutocratContentDir)/NativeCompile.Windows.targets" />
 </Project>
