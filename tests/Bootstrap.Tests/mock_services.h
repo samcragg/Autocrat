@@ -2,13 +2,13 @@
 #define MOCK_SERVICES_H
 
 #include "services.h"
-#include <gmock/gmock.h>
+#include <cpp_mock.h>
 
 class mock_network_service : public autocrat::network_service
 {
 public:
-    MOCK_METHOD(void, add_udp_callback, (std::uint16_t, udp_register_method), (override));
-    MOCK_METHOD(void, check_and_dispatch, (), (override));
+    MockMethod(void, add_udp_callback, (std::uint16_t, udp_register_method))
+    MockMethod(void, check_and_dispatch, ())
 };
 
 class mock_services : public autocrat::global_services_type

@@ -31,8 +31,8 @@ TEST_OUTPUT = test_results.xml
 test: $(TEST_PROGRAM)
 	$(TEST_PROGRAM) --gtest_output="xml:$(TEST_OUTPUT)"
 
-GTEST_OBJ = $(OBJ_DIR)/libs/gmock-gtest-all.o
-$(GTEST_OBJ): ../../libs/gmock-gtest-all.cc
+GTEST_OBJ = $(OBJ_DIR)/libs/gtest-all.o
+$(GTEST_OBJ): ../../libs/gtest/gtest-all.cc
 	$(call build_object,$<,$@)
 
 SRC_OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/src/%.o)

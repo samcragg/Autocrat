@@ -1,7 +1,7 @@
 #include "services.h"
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <cpp_mock.h>
 
 struct MockThreadPool
 {
@@ -20,7 +20,7 @@ struct MockService
     {
     }
 
-    MOCK_METHOD(void, check_and_dispatch, ());
+    MockMethod(void, check_and_dispatch, (), )
 
     MockThreadPool* thread_pool;
 };
@@ -34,9 +34,10 @@ protected:
 TEST_F(ServicesTests, CheckAndDispatchShouldCallTheServiceMethod)
 {
     _services.initialize();
-    EXPECT_CALL(*_services.get_service<MockService>(), check_and_dispatch());
 
     _services.check_and_dispatch();
+
+    Verify(_services.get_service<MockService>()->check_and_dispatch);
 }
 
 TEST_F(ServicesTests, InitializeShouldCreateNewInstances)
