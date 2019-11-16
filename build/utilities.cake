@@ -29,6 +29,14 @@ void CheckoutGitRepo(string repo, string url, string tag, params string[] subDir
     }
 }
 
+void VerifyCommandSucceeded(int returnCode)
+{
+    if (returnCode != 0)
+    {
+        throw new Exception("Command returned " + returnCode);
+    }
+}
+
 string GetLibsFolder()
 {
     return MakeAbsolute(Directory("..")).FullPath + "/libs";

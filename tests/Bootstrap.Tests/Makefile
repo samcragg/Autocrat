@@ -27,7 +27,10 @@ TESTS = \
  pal_mock.cpp
 
 TEST_PROGRAM = bin/$(mode)/Bootstrap.Tests
-TEST_OUTPUT = test_results.xml
+TEST_OUTPUT = bootstrap_results_linux.xml
+
+build: $(TEST_PROGRAM);
+
 test: $(TEST_PROGRAM)
 	$(TEST_PROGRAM) --gtest_output="xml:$(TEST_OUTPUT)"
 

@@ -25,7 +25,23 @@ Task("BuildManaged")
     }
 });
 
-Task("BuildNative")
+Task("BuildNativeLinux")
+    .Does(() =>
+{
+    VerifyCommandSucceeded(Run(
+        "../src/Autocrat.Bootstrap",
+        "wsl",
+        "make"
+    ));
+
+    VerifyCommandSucceeded(Run(
+        "../tests/Bootstrap.Tests",
+        "wsl",
+        "make"
+    ));
+});
+
+Task("BuildNativeWindows")
     .Does(() =>
 {
     var buildSettings = new MSBuildSettings
@@ -41,7 +57,7 @@ Task("BuildNative")
     MSBuild("../tests/Bootstrap.Tests/Bootstrap.Tests.vcxproj", buildSettings);
 });
 
-Task("Restore")
+Task("RestoreNuGet")
     .Does(() =>
 {
     var restoreSettings = new DotNetCoreRestoreSettings
@@ -131,25 +147,37 @@ Task("RunManagedTests")
     };
 });
 
-Task("RunNativeTests")
+Task("RunNativeLinuxTests")
     .Does(() =>
 {
-    Run(
+    VerifyCommandSucceeded(Run(
+        "../tests/Bootstrap.Tests",
+        "wsl",
+        "make",
+        "test"));
+});
+
+Task("RunNativeWindowsTests")
+    .Does(() =>
+{
+    VerifyCommandSucceeded(Run(
         "../tests/Bootstrap.Tests/bin",
         "../tests/Bootstrap.Tests/bin/Bootstrap.Tests.exe",
-        "--gtest_output=xml:bootstrap_results.xml");
+        "--gtest_output=xml:bootstrap_results_windows.xml"));
 });
 
 Task("Build")
     .IsDependentOn("BuildManaged")
-    .IsDependentOn("BuildNative");
+    .IsDependentOn("BuildNativeWindows")
+    .IsDependentOn("BuildNativeLinux");
 
 Task("RunTests")
     .IsDependentOn("RunManagedTests")
-    .IsDependentOn("RunNativeTests");
+    .IsDependentOn("RunNativeWindowsTests")
+    .IsDependentOn("RunNativeLinuxTests");
 
 Task("Default")
-    .IsDependentOn("Restore")
+    .IsDependentOn("RestoreNuGet")
     .IsDependentOn("Build")
     .IsDependentOn("RunTests");
 
