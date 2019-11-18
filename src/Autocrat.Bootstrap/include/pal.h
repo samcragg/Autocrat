@@ -2,6 +2,7 @@
 #define PAL_H
 
 #include <cstddef>
+#include <chrono>
 #include <thread>
 
 namespace pal
@@ -56,6 +57,12 @@ namespace pal
      * @returns The current CPU index.
      */
     std::size_t get_current_processor();
+
+    /**
+     * Gets the current steady time.
+     * @returns The number of microseconds since an unspecified epoch.
+     */
+    std::chrono::microseconds get_current_time();
 
     /**
      * Receives a datagram and stores the source address.

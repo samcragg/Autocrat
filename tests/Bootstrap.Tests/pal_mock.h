@@ -102,6 +102,14 @@ namespace pal
 
 }
 
+class pal_service
+{
+public:
+    virtual ~pal_service() = default;
+
+    virtual std::chrono::microseconds get_current_time() = 0;
+};
+
 class pal_socket
 {
 public:
@@ -113,7 +121,8 @@ public:
     virtual int recv_from(const pal::socket_handle& socket, char* buffer, std::size_t length, pal::socket_address* from) = 0;
 };
 
-extern pal_socket* active_socket_mock;
+pal_service* active_service_mock;
+pal_socket* active_socket_mock;
 
 namespace pal
 {

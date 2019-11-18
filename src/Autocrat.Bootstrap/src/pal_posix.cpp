@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <sched.h>
 #include <signal.h>
+#include <time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <linux/futex.h>
@@ -224,6 +225,14 @@ namespace pal
     std::size_t get_current_processor()
     {
         return static_cast<std::size_t>(sched_getcpu());
+    }
+
+    std::chrono::microseconds get_current_time()
+    {
+        timespec time = { };
+        clock_gettime(CLOCK_MONOTONIC, &time);
+        std::int64_t microseconds = (time.tv_nsec + 999) / 1'000;
+        return std::chrono::microseconds((time.tv_sec * 1'000'000) + microseconds);
     }
 
     int recv_from(const socket_handle& socket, char* buffer, std::size_t length, socket_address* from)

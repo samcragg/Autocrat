@@ -55,6 +55,13 @@ namespace
         std::this_thread::sleep_for(5s);
         return TRUE;
     }
+
+    std::int64_t get_clock_frequency()
+    {
+        LARGE_INTEGER frequency = {};
+        QueryPerformanceFrequency(&frequency);
+        return frequency.QuadPart;
+    }
 }
 
 namespace pal
@@ -243,6 +250,15 @@ namespace pal
     std::size_t get_current_processor()
     {
         return static_cast<std::size_t>(GetCurrentProcessorNumber());
+    }
+
+    std::chrono::microseconds get_current_time()
+    {
+        static const std::int64_t ticks_per_microsecond = get_clock_frequency() / 1'000'000;
+
+        LARGE_INTEGER time = {};
+        QueryPerformanceCounter(&time);
+        return std::chrono::microseconds((time.QuadPart + ticks_per_microsecond - 1) / ticks_per_microsecond);
     }
 
     int recv_from(const socket_handle& socket, char* buffer, std::size_t length, socket_address* from)

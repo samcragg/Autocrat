@@ -81,3 +81,13 @@ TEST_F(PalServicesDeathTest, ShouldHandleConsoleCloseSignals)
 
     enable_automatic_ctrl_c_handling(false);
 }
+
+TEST_F(PalServicesTests, ShouldGetTheCurrentTimeStamp)
+{
+    std::chrono::microseconds start = pal::get_current_time();
+    std::this_thread::yield();
+    std::chrono::microseconds end = pal::get_current_time();
+
+    EXPECT_NE(start, end);
+    EXPECT_GT(1000, (end - start).count());
+}
