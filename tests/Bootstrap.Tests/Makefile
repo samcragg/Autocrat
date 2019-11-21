@@ -8,6 +8,7 @@ SRCS = \
  $(SRC_DIR)/native_exports.cpp \
  $(SRC_DIR)/network_service.cpp \
  $(SRC_DIR)/thread_pool.cpp \
+ $(SRC_DIR)/timer_service.cpp \
  $(SRC_DIR)/pal_posix.cpp
 
 TESTS = \
@@ -21,7 +22,9 @@ TESTS = \
  tests/PalThreadTests.cpp \
  tests/ServicesTests.cpp \
  tests/SmallVectorTests.cpp \
+ tests/SmartPtrTests.cpp \
  tests/ThreadPoolTests.cpp \
+ tests/TimerServiceTests.cpp \
  main.cpp \
  mock_method_handles.cpp \
  pal_mock.cpp

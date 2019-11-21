@@ -7,6 +7,7 @@
 #include <vector>
 
 #define create_udp_socket test_create_udp_socket
+#define get_current_time test_get_current_time
 #define socket_address test_socket_address
 #define socket_handle test_socket_handle
 #define socket_map test_socket_map
@@ -98,6 +99,7 @@ namespace pal
 
     void bind(const test_socket_handle& socket, const test_socket_address& address);
     test_socket_handle test_create_udp_socket();
+    std::chrono::microseconds test_get_current_time();
     int recv_from(const test_socket_handle& socket, char* buffer, std::size_t length, test_socket_address* from);
 
 }
@@ -107,7 +109,7 @@ class pal_service
 public:
     virtual ~pal_service() = default;
 
-    virtual std::chrono::microseconds get_current_time() = 0;
+    virtual std::chrono::microseconds current_time() = 0;
 };
 
 class pal_socket
@@ -121,8 +123,8 @@ public:
     virtual int recv_from(const pal::socket_handle& socket, char* buffer, std::size_t length, pal::socket_address* from) = 0;
 };
 
-pal_service* active_service_mock;
-pal_socket* active_socket_mock;
+extern pal_service* active_service_mock;
+extern pal_socket* active_socket_mock;
 
 namespace pal
 {

@@ -78,5 +78,14 @@
     <ClCompile Include="tests\PalThreadTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\TimerServiceTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\timer_service.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\SmartPtrTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -29,6 +29,9 @@
     <ClCompile Include="src\native_exports.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\timer_service.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\method_handles.h">
@@ -65,6 +68,12 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\pause.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\timer_service.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\smart_ptr.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

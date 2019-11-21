@@ -8,7 +8,8 @@ SOURCES = \
  src/native_exports.cpp \
  src/network_service.cpp \
  src/pal_posix.cpp \
- src/thread_pool.cpp
+ src/thread_pool.cpp \
+ src/timer_service.cpp
 
 OUTPUT_LIB = bin/Autocrat.Bootstrap.a
 build: $(OUTPUT_LIB);
@@ -23,5 +24,5 @@ $(OUTPUT_LIB): $(OBJECTS)
 
 .PHONY: clean
 clean:
-	@rm -rf $(OBJ_DIR)
+	@rm -r $(OBJ_DIR)/*.o
 	@rm -f $(OUTPUT_LIB)

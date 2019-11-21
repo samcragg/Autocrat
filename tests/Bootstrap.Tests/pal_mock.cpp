@@ -63,14 +63,14 @@ namespace pal
         active_socket_mock->bind(socket, address);
     }
 
-    std::chrono::microseconds get_current_time()
-    {
-        return active_service_mock->get_current_time();
-    }
-
     test_socket_handle test_create_udp_socket()
     {
         return active_socket_mock->create_udp_socket();
+    }
+
+    std::chrono::microseconds test_get_current_time()
+    {
+        return active_service_mock->current_time();
     }
 
     int recv_from(const test_socket_handle& socket, char* buffer, std::size_t length, test_socket_address* from)
