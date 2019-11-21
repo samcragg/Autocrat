@@ -49,9 +49,6 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\thread_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="tests\ManagedArrayPtrTests.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="tests\NetworkServiceTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>

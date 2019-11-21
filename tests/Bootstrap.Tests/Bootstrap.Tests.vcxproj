@@ -92,7 +92,6 @@
     <ClCompile Include="pal_mock.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />
     <ClCompile Include="tests\BoundedQueueTests.cpp" />
-    <ClCompile Include="tests\ManagedArrayPtrTests.cpp" />
     <ClCompile Include="tests\ManagedArrayTests.cpp" />
     <ClCompile Include="tests\NativeExportsTests.cpp" />
     <ClCompile Include="tests\NetworkServiceTests.cpp" />

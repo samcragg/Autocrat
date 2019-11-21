@@ -14,8 +14,8 @@ namespace
 
     void invoke_callback(std::any& data)
     {
-        const auto& [address, method, array] = std::any_cast<callback_data>(data);
-        method(address.port(), array.get());
+        const auto& [address, method, block] = std::any_cast<callback_data>(data);
+        method(address.port(), &block->array);
     }
 }
 
@@ -66,16 +66,16 @@ namespace autocrat
             return;
         }
 
-        managed_byte_array_ptr array = _array_pool.aquire();
+        managed_byte_array_ptr block = _array_pool.aquire();
         pal::socket_address address;
-        int size = pal::recv_from(handle, reinterpret_cast<char*>(array->data()), array->capacity(), &address);
-        array->resize(size);
+        int size = pal::recv_from(handle, reinterpret_cast<char*>(block->array.data()), block->array.capacity(), &address);
+        block->array.resize(size);
 
         SPDLOG_DEBUG("{} bytes received on port {}", size, data.port);
 
         for (auto callback : data.callbacks)
         {
-            _thread_pool->enqueue(&invoke_callback, std::make_tuple(address, callback, array));
+            _thread_pool->enqueue(&invoke_callback, std::make_tuple(address, callback, block));
         }
     }
 }

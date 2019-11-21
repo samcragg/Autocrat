@@ -4,6 +4,23 @@
 
 namespace autocrat
 {
+    namespace detail
+    {
+        void intrusive_ptr_add_ref(array_pool_block* pointer) noexcept
+        {
+            pointer->usage++;
+        }
+
+        void intrusive_ptr_release(array_pool_block* pointer) noexcept
+        {
+            std::size_t count = pointer->usage.fetch_sub(1);
+            if (count == 1)
+            {
+                pointer->owner->release(pointer);
+            }
+        }
+    }
+
     managed_byte_array::managed_byte_array() :
         _length(0),
         _data()
@@ -60,89 +77,6 @@ namespace autocrat
         return _length;
     }
 
-    managed_byte_array_ptr::managed_byte_array_ptr(std::nullptr_t) noexcept :
-        _block(nullptr)
-    {
-    }
-
-    managed_byte_array_ptr::managed_byte_array_ptr(detail::array_pool_block* block) noexcept :
-        _block(block)
-    {
-        assert(block != nullptr);
-        assert(block->usage == 0);
-        block->usage = 1;
-    }
-
-    managed_byte_array_ptr::managed_byte_array_ptr(const managed_byte_array_ptr& other) noexcept :
-        _block(other._block)
-    {
-        if (_block != nullptr)
-        {
-            _block->usage++;
-        }
-    }
-
-    managed_byte_array_ptr::managed_byte_array_ptr(managed_byte_array_ptr&& other) noexcept :
-        _block(other._block)
-    {
-        other._block = nullptr;
-    }
-
-    managed_byte_array_ptr::~managed_byte_array_ptr()
-    {
-        if (_block != nullptr)
-        {
-            std::size_t count = _block->usage.fetch_sub(1);
-            if (count == 1)
-            {
-                _block->owner->release(_block);
-            }
-        }
-    }
-
-    managed_byte_array_ptr::operator bool() const noexcept
-    {
-        return _block != nullptr;
-    }
-
-    managed_byte_array_ptr& managed_byte_array_ptr::operator=(const managed_byte_array_ptr& other) noexcept
-    {
-        managed_byte_array_ptr temp(other);
-        swap(temp);
-        return *this;
-    }
-
-    managed_byte_array_ptr& managed_byte_array_ptr::operator=(managed_byte_array_ptr&& other) noexcept
-    {
-        detail::array_pool_block* temp = other._block;
-        other._block = nullptr;
-        _block = temp;
-        return *this;
-    }
-
-    auto managed_byte_array_ptr::operator*() const noexcept -> element_type&
-    {
-        assert(_block != nullptr);
-        return _block->array;
-    }
-
-    auto managed_byte_array_ptr::operator->() const noexcept -> element_type*
-    {
-        assert(_block != nullptr);
-        return &_block->array;
-    }
-
-    auto managed_byte_array_ptr::get() const noexcept ->element_type*
-    {
-        return (_block == nullptr) ? nullptr : &_block->array;
-    }
-
-    void managed_byte_array_ptr::swap(managed_byte_array_ptr& other) noexcept
-    {
-        using std::swap;
-        swap(_block, other._block);
-    }
-
     managed_byte_array_ptr array_pool::aquire()
     {
         // TODO: Thread safety?
@@ -178,15 +112,5 @@ namespace autocrat
 
         // TODO: Thread safety?
         _available.push(value);
-    }
-
-    bool operator==(const managed_byte_array_ptr& a, const managed_byte_array_ptr& b)
-    {
-        return a._block == b._block;
-    }
-
-    void swap(managed_byte_array_ptr& lhs, managed_byte_array_ptr& rhs) noexcept
-    {
-        lhs.swap(rhs);
     }
 }

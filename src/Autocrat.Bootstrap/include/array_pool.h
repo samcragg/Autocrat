@@ -2,10 +2,10 @@
 #define ARRAY_POOL_H
 
 #include <array>
-#include <atomic>
 #include <cstdint>
 #include <deque>
 #include <stack>
+#include "smart_ptr.h"
 
 namespace autocrat
 {
@@ -104,49 +104,13 @@ namespace autocrat
             std::atomic_size_t usage;
             managed_byte_array array;
         };
+
+        void intrusive_ptr_add_ref(array_pool_block* pointer) noexcept;
+
+        void intrusive_ptr_release(array_pool_block* pointer) noexcept;
     }
 
-    /**
-     * Manages the lifetime of a `managed_byte_array` that has been obtained
-     * from `array_pool`.
-     */
-    class managed_byte_array_ptr
-    {
-    public:
-        using element_type = managed_byte_array;
-
-        managed_byte_array_ptr() noexcept = default;
-        managed_byte_array_ptr(std::nullptr_t) noexcept;
-        managed_byte_array_ptr(const managed_byte_array_ptr& other) noexcept;
-        managed_byte_array_ptr(managed_byte_array_ptr&& other) noexcept;
-        ~managed_byte_array_ptr();
-        explicit operator bool() const noexcept;
-
-        managed_byte_array_ptr& operator=(const managed_byte_array_ptr& other) noexcept;
-        managed_byte_array_ptr& operator=(managed_byte_array_ptr&& other) noexcept;
-
-        element_type& operator*() const noexcept;
-        element_type* operator->() const noexcept;
-
-        /**
-         * Returns the stored pointer.
-         * @returns The stored pointer.
-         */
-        element_type* get() const noexcept;
-
-        /**
-         * Exchanges the contents of this instance and `other`.
-         * @param other The instance to exchange contents with.
-         */
-        void swap(managed_byte_array_ptr& other) noexcept;
-
-        friend array_pool;
-        friend bool operator==(const managed_byte_array_ptr&, const managed_byte_array_ptr&);
-    private:
-        managed_byte_array_ptr(detail::array_pool_block* block) noexcept;
-
-        detail::array_pool_block* _block { nullptr };
-    };
+    using managed_byte_array_ptr = intrusive_ptr<detail::array_pool_block>;
 
     /**
      * Represents a pool of byte array resources.
@@ -175,29 +139,14 @@ namespace autocrat
          * @returns The number of arrays in use.
          */
         std::size_t size() const noexcept;
-
-        friend managed_byte_array_ptr;
     private:
+        friend void detail::intrusive_ptr_release(array_pool_block* pointer) noexcept;
+
         void release(element_type* value);
 
         std::stack<element_type*> _available;
         storage_type _pool;
     };
-
-    /**
-     * Determines whether two `managed_byte_array_ptr` instances are equal.
-     * @param a The value to compare.
-     * @param b The value to compare.
-     * @returns `true` if the instances point to the same value; otherwise, `false`.
-     */
-    bool operator==(const managed_byte_array_ptr& a, const managed_byte_array_ptr& b);
-    
-    /**
-     * Exchanges the given values.
-     * @param lhs The value to swap.
-     * @param rhs The value to swap.
-     */
-    void swap(managed_byte_array_ptr& lhs, managed_byte_array_ptr& rhs) noexcept;
 }
 
 #endif
