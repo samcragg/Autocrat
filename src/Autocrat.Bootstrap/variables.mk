@@ -2,7 +2,7 @@ mode ?= Release
 OBJ_DIR = obj/$(mode)
 WARNINGFLAGS = -Werror -Wall -Wextra -Wpedantic
 
-CXXFLAGS = $(WARNINGFLAGS) -pthread -lrt -march=x86-64 -std=c++17
+CXXFLAGS = $(WARNINGFLAGS) -pthread -lrt -m64 -std=c++17
 ifeq ($(mode), Debug)
 	CXXFLAGS += -g
 else
