@@ -6,6 +6,7 @@
 #include "defines.h"
 #include "network_service.h"
 #include "thread_pool.h"
+#include "timer_service.h"
 
 namespace autocrat
 {
@@ -47,7 +48,7 @@ namespace autocrat
          */
         void initialize()
         {
-            _services = std::make_tuple(std::make_unique<Services...>(_thread_pool.get()));
+            _services = std::make_tuple(std::make_unique<Services>(_thread_pool.get())...);
         }
 
         /**
@@ -68,7 +69,8 @@ namespace autocrat
 
     using global_services_type = services<
         thread_pool,
-        network_service>;
+        network_service,
+        timer_service>;
 
     extern MOCKABLE_GLOBAL(global_services_type) global_services;
 }
