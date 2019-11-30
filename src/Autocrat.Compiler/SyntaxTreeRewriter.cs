@@ -16,9 +16,6 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class SyntaxTreeRewriter
     {
-        private const string NativeAdapterAttributeName =
-            "Autocrat.Abstractions." + nameof(NativeAdapterAttribute);
-
         private readonly List<(ITypeSymbol, ITypeSymbol)> adapters = new List<(ITypeSymbol, ITypeSymbol)>();
         private readonly Compilation compilation;
         private readonly Func<SemanticModel, NativeRegisterRewriter> createRewriter;
@@ -41,7 +38,7 @@ namespace Autocrat.Compiler
             {
                 foreach (AttributeData attribute in type.GetAttributes())
                 {
-                    if (attribute.AttributeClass.ToDisplayString() == NativeAdapterAttributeName)
+                    if (RoslynHelper.IsOfType<NativeAdapterAttribute>(attribute.AttributeClass))
                     {
                         INamedTypeSymbol interfaceType = type.Interfaces.Single();
                         this.adapters.Add((type, interfaceType));
