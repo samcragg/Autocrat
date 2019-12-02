@@ -14,6 +14,25 @@ namespace Autocrat.Compiler
     internal static class RoslynHelper
     {
         /// <summary>
+        /// Finds an attribute of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the attribute to find.</typeparam>
+        /// <param name="type">The type to search for the attribute on.</param>
+        /// <returns>The attribute data if found; otherwise, <c>null</c>.</returns>
+        public static AttributeData? FindAttribute<T>(ITypeSymbol type)
+        {
+            foreach (AttributeData attribute in type.GetAttributes())
+            {
+                if (IsOfType<T>(attribute.AttributeClass))
+                {
+                    return attribute;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Determines whether the specified symbol equals the specified type.
         /// </summary>
         /// <typeparam name="T">The type to compare to.</typeparam>

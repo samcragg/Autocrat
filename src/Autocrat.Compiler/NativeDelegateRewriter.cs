@@ -45,6 +45,18 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="NativeDelegateRewriter"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected NativeDelegateRewriter()
+        {
+            this.callbackGenerator = null!;
+            this.model = null!;
+        }
+
+        /// <summary>
         /// Transforms any argument that represents a native delegate.
         /// </summary>
         /// <param name="argument">The argument to transform.</param>
@@ -52,7 +64,7 @@ namespace Autocrat.Compiler
         /// The native method handle if the argument represents a native
         /// delegate; otherwise, the original argument.
         /// </returns>
-        public ArgumentSyntax TransformArgument(ArgumentSyntax argument)
+        public virtual ArgumentSyntax TransformArgument(ArgumentSyntax argument)
         {
             TypeInfo typeInfo = this.model.GetTypeInfo(argument.Expression);
             string? signature;
