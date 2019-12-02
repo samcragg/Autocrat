@@ -55,8 +55,9 @@ namespace Autocrat.Compiler
         public ArgumentSyntax TransformArgument(ArgumentSyntax argument)
         {
             TypeInfo typeInfo = this.model.GetTypeInfo(argument.Expression);
+            string? signature;
             if ((typeInfo.ConvertedType.TypeKind != TypeKind.Delegate) ||
-                !GetNativeSignature(typeInfo.ConvertedType, out string signature))
+                ((signature = GetNativeSignature(typeInfo.ConvertedType)) == null))
             {
                 return argument;
             }
@@ -73,20 +74,18 @@ namespace Autocrat.Compiler
             };
         }
 
-        private static bool GetNativeSignature(ITypeSymbol symbol, out string signature)
+        private static string? GetNativeSignature(ITypeSymbol symbol)
         {
             foreach (AttributeData attribute in symbol.GetAttributes())
             {
                 if (RoslynHelper.IsOfType<NativeDelegateAttribute>(attribute.AttributeClass) &&
                     (attribute.ConstructorArguments.Length == 1))
                 {
-                    signature = (string)attribute.ConstructorArguments[0].Value;
-                    return true;
+                    return (string)attribute.ConstructorArguments[0].Value;
                 }
             }
 
-            signature = default;
-            return false;
+            return null;
         }
 
         private ArgumentSyntax ExportIdentifer(string signature, ExpressionSyntax expression)

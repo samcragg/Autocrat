@@ -88,7 +88,7 @@ namespace Autocrat.Compiler
         /// <param name="destination">Where to save the source code to.</param>
         public virtual void EmitNativeCode(Stream destination)
         {
-            NativeImportGenerator nativeGenerator = ServiceFactory(null).GetNativeImportGenerator();
+            NativeImportGenerator nativeGenerator = ServiceFactory(null!).GetNativeImportGenerator();
             nativeGenerator.WriteTo(destination);
 
             const string MainStub = @"

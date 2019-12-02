@@ -39,6 +39,9 @@ namespace Autocrat.Compiler
         /// </remarks>
         protected OutputStreams()
         {
+            this.assembly = null!;
+            this.assemblyPdb = null!;
+            this.source = null!;
         }
 
         /// <summary>

@@ -26,8 +26,8 @@ namespace Autocrat.Compiler
         private readonly HashSet<string> localNames =
             new HashSet<string>(StringComparer.Ordinal);
 
-        private readonly Dictionary<ITypeSymbol, IdentifierNameSyntax> variables =
-            new Dictionary<ITypeSymbol, IdentifierNameSyntax>();
+        private readonly Dictionary<ITypeSymbol, IdentifierNameSyntax?> variables =
+            new Dictionary<ITypeSymbol, IdentifierNameSyntax?>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstanceBuilder"/> class.
@@ -59,7 +59,7 @@ namespace Autocrat.Compiler
         /// <returns>The name of the local variable.</returns>
         public virtual IdentifierNameSyntax GenerateForType(INamedTypeSymbol type)
         {
-            if (!this.variables.TryGetValue(type, out IdentifierNameSyntax name))
+            if (!this.variables.TryGetValue(type, out IdentifierNameSyntax? name))
             {
                 // Create a marker to avoid cyclic dependencies
                 this.variables.Add(type, null);

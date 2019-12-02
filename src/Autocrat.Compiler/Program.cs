@@ -54,14 +54,17 @@ namespace Autocrat.Compiler
             try
             {
                 Logger.Info("Loading projects");
-                Compilation[] compilations = await loader
+                Compilation?[] compilations = await loader
                     .GetCompilationsAsync(projects)
                     .ConfigureAwait(false);
 
                 Logger.Info("Generating code");
-                foreach (Compilation compilation in compilations)
+                foreach (Compilation? compilation in compilations)
                 {
-                    generator.Add(compilation);
+                    if (compilation != null)
+                    {
+                        generator.Add(compilation);
+                    }
                 }
 
                 Logger.Info("Emitting assembly");

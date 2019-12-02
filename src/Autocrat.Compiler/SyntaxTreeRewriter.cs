@@ -55,6 +55,8 @@ namespace Autocrat.Compiler
         /// </remarks>
         protected SyntaxTreeRewriter()
         {
+            this.compilation = null!;
+            this.createRewriter = null!;
         }
 
         /// <summary>

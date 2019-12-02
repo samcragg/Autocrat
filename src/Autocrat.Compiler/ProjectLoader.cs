@@ -28,9 +28,9 @@ namespace Autocrat.Compiler
         /// <returns>
         /// A task that represents the compilations of the projects.
         /// </returns>
-        public virtual Task<Compilation[]> GetCompilationsAsync(string[] paths)
+        public virtual Task<Compilation?[]> GetCompilationsAsync(string[] paths)
         {
-            var tasks = new List<Task<Compilation>>();
+            var tasks = new List<Task<Compilation?>>();
             foreach (string path in paths)
             {
                 Logger.Info<string>("Loading project {path}", path);

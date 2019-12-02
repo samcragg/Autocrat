@@ -74,6 +74,7 @@ namespace Autocrat.Compiler
         /// </remarks>
         protected InitializerGenerator()
         {
+            this.instanceBuilder = null!;
         }
 
         /// <summary>

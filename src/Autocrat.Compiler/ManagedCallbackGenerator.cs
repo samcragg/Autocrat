@@ -78,6 +78,8 @@ namespace Autocrat.Compiler
         /// </remarks>
         protected ManagedCallbackGenerator()
         {
+            this.instanceBuilder = null!;
+            this.nativeGenerator = null!;
         }
 
         /// <summary>

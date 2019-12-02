@@ -61,7 +61,7 @@ namespace Autocrat.Compiler
             }
         }
 
-        private ITypeSymbol GetArrayDependencyType(ITypeSymbol type)
+        private ITypeSymbol? GetArrayDependencyType(ITypeSymbol type)
         {
             static bool ContainsSingleGenericArgument(INamedTypeSymbol classType)
             {
@@ -92,7 +92,7 @@ namespace Autocrat.Compiler
 
         private ITypeSymbol ResolveParameterType(IParameterSymbol parameter)
         {
-            ITypeSymbol arrayType = this.GetArrayDependencyType(parameter.Type);
+            ITypeSymbol? arrayType = this.GetArrayDependencyType(parameter.Type);
             if (arrayType != null)
             {
                 return arrayType;

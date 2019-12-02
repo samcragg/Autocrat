@@ -15,10 +15,10 @@ namespace Autocrat.Compiler
     {
         private static readonly Lazy<NativeImportGenerator> NativeImportGenerator = new Lazy<NativeImportGenerator>();
         private readonly Compilation compilation;
-        private ConstructorResolver constructorResolver;
-        private InterfaceResolver interfaceResolver;
-        private IKnownTypes knownTypes;
-        private ManagedCallbackGenerator managedCallbackGenerator;
+        private ConstructorResolver? constructorResolver;
+        private InterfaceResolver? interfaceResolver;
+        private IKnownTypes? knownTypes;
+        private ManagedCallbackGenerator? managedCallbackGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceFactory"/> class.
