@@ -124,7 +124,7 @@ namespace Autocrat.Compiler
                 Identifier(GeneratedMethod))
                 .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
                 .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
-                    ManagedCallbackGenerator.CreateNativeCallableAttribute(GeneratedMethod)))))
+                    RoslynHelper.CreateNativeCallableAttribute(GeneratedMethod)))))
                 .WithBody(this.CreateInitializeMethodBody());
 
             return ClassDeclaration(GeneratedClassName)

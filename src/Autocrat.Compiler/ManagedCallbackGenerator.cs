@@ -8,7 +8,6 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Runtime.InteropServices;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -19,8 +18,8 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class ManagedCallbackGenerator
     {
-        // This class goes through the methods in a type and generates static
-        // methods that can be called from native code. The arguments passed to
+        // This class generates static methods that invoke an instance method
+        // so that they can be called from native code. The arguments passed to
         // the constructor will be created as local variables in the method,
         // i.e.
         //
@@ -109,44 +108,13 @@ namespace Autocrat.Compiler
             MethodDeclarationSyntax declaration = MethodDeclaration(returnType, methodName)
                 .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
                 .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
-                    CreateNativeCallableAttribute(methodName)))))
+                    RoslynHelper.CreateNativeCallableAttribute(methodName)))))
                 .WithBody(this.CreateBody(method))
                 .WithParameterList(ParameterList(SeparatedList(
                     CreateParameters(method))));
 
             this.methods.Add(declaration);
             return this.nativeGenerator.RegisterMethod(nativeSignature, methodName);
-        }
-
-        /// <summary>
-        /// Generates an attribute indicating that the method can be called by
-        /// native code.
-        /// </summary>
-        /// <param name="method">The native name of the method.</param>
-        /// <returns>An attribute syntax.</returns>
-        internal static AttributeSyntax CreateNativeCallableAttribute(string method)
-        {
-            AttributeArgumentSyntax callingConvention = AttributeArgument(
-                NameEquals(IdentifierName("CallingConvention")),
-                null,
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    IdentifierName(nameof(CallingConvention)),
-                    IdentifierName(nameof(CallingConvention.Cdecl))));
-
-            AttributeArgumentSyntax entryPoint = AttributeArgument(
-                NameEquals(IdentifierName("EntryPoint")),
-                null,
-                LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(method)));
-
-            var arguments = new AttributeArgumentSyntax[]
-            {
-                entryPoint,
-                callingConvention,
-            };
-
-            return Attribute(IdentifierName("NativeCallable"))
-                .WithArgumentList(AttributeArgumentList(SeparatedList(arguments)));
         }
 
         private static IEnumerable<ParameterSyntax> CreateParameters(IMethodSymbol method)

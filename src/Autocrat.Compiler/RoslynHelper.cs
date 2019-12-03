@@ -6,13 +6,48 @@
 namespace Autocrat.Compiler
 {
     using System;
+    using System.Runtime.InteropServices;
     using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
     /// Provides utility methods for working with the Roslyn API.
     /// </summary>
     internal static class RoslynHelper
     {
+        /// <summary>
+        /// Generates an attribute indicating that the method can be called by
+        /// native code.
+        /// </summary>
+        /// <param name="method">The native name of the method.</param>
+        /// <returns>An attribute syntax.</returns>
+        public static AttributeSyntax CreateNativeCallableAttribute(string method)
+        {
+            AttributeArgumentSyntax callingConvention = AttributeArgument(
+                NameEquals(IdentifierName("CallingConvention")),
+                null,
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    IdentifierName(nameof(CallingConvention)),
+                    IdentifierName(nameof(CallingConvention.Cdecl))));
+
+            AttributeArgumentSyntax entryPoint = AttributeArgument(
+                NameEquals(IdentifierName("EntryPoint")),
+                null,
+                LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(method)));
+
+            var arguments = new AttributeArgumentSyntax[]
+            {
+                entryPoint,
+                callingConvention,
+            };
+
+            return Attribute(IdentifierName("NativeCallable"))
+                .WithArgumentList(AttributeArgumentList(SeparatedList(arguments)));
+        }
+
         /// <summary>
         /// Finds an attribute of the specified type.
         /// </summary>
