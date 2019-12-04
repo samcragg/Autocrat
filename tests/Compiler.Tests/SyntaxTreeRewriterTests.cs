@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Autocrat.Abstractions;
     using Autocrat.Compiler;
     using Microsoft.CodeAnalysis;
     using NSubstitute;
@@ -11,12 +10,12 @@
 
     public class SyntaxTreeRewriterTests
     {
-        private readonly NativeRegisterRewriter nativeRewriter;
+        private readonly InterfaceRewriter interfaceRewriter;
 
         private SyntaxTreeRewriterTests()
         {
-            this.nativeRewriter = Substitute.For<NativeRegisterRewriter>();
-            this.nativeRewriter.Visit(null)
+            this.interfaceRewriter = Substitute.For<InterfaceRewriter>();
+            this.interfaceRewriter.Visit(null)
                 .ReturnsForAnyArgs(ci => ci.Arg<SyntaxNode>());
         }
 
@@ -32,7 +31,7 @@
 
             var treeRewriter = new SyntaxTreeRewriter(
                 compilation,
-                _ => this.nativeRewriter,
+                _ => this.interfaceRewriter,
                 knownTypes);
 
             return treeRewriter.Generate(compilation.SyntaxTrees.Single());
@@ -40,22 +39,16 @@
 
         public sealed class GenerateTests : SyntaxTreeRewriterTests
         {
-            public interface ITestAdapter
-            {
-            }
-
             [Fact]
             public void ShouldAddTheKnownTypes()
             {
                 this.RewriteCode(@"public class C { }", typeof(TestAdapter));
 
-                this.nativeRewriter.Received().AddReplacement(
-                    Arg.Is<ITypeSymbol>(t => t.Name == nameof(ITestAdapter)),
+                this.interfaceRewriter.Received().RegisterClass(
                     Arg.Is<ITypeSymbol>(t => t.Name == nameof(TestAdapter)));
             }
 
-            [NativeAdapter]
-            public class TestAdapter : ITestAdapter
+            public class TestAdapter
             {
             }
         }

@@ -6,9 +6,6 @@
 namespace Autocrat.Compiler
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Autocrat.Abstractions;
     using Microsoft.CodeAnalysis;
 
     /// <summary>
@@ -16,9 +13,9 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class SyntaxTreeRewriter
     {
-        private readonly List<(ITypeSymbol, ITypeSymbol)> adapters = new List<(ITypeSymbol, ITypeSymbol)>();
         private readonly Compilation compilation;
-        private readonly Func<SemanticModel, NativeRegisterRewriter> createRewriter;
+        private readonly Func<SemanticModel, InterfaceRewriter> createRewriter;
+        private readonly IKnownTypes knownTypes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SyntaxTreeRewriter"/> class.
@@ -28,23 +25,12 @@ namespace Autocrat.Compiler
         /// <param name="knownTypes">Contains the discovered types.</param>
         public SyntaxTreeRewriter(
             Compilation compilation,
-            Func<SemanticModel, NativeRegisterRewriter> createRewriter,
+            Func<SemanticModel, InterfaceRewriter> createRewriter,
             IKnownTypes knownTypes)
         {
             this.compilation = compilation;
             this.createRewriter = createRewriter;
-
-            foreach (INamedTypeSymbol type in knownTypes)
-            {
-                foreach (AttributeData attribute in type.GetAttributes())
-                {
-                    if (RoslynHelper.IsOfType<NativeAdapterAttribute>(attribute.AttributeClass))
-                    {
-                        INamedTypeSymbol interfaceType = type.Interfaces.Single();
-                        this.adapters.Add((type, interfaceType));
-                    }
-                }
-            }
+            this.knownTypes = knownTypes;
         }
 
         /// <summary>
@@ -57,6 +43,7 @@ namespace Autocrat.Compiler
         {
             this.compilation = null!;
             this.createRewriter = null!;
+            this.knownTypes = null!;
         }
 
         /// <summary>
@@ -72,10 +59,10 @@ namespace Autocrat.Compiler
             }
 
             SemanticModel model = this.compilation.GetSemanticModel(tree);
-            NativeRegisterRewriter rewriter = this.createRewriter(model);
-            foreach ((ITypeSymbol adapter, ITypeSymbol interfaceType) in this.adapters)
+            InterfaceRewriter rewriter = this.createRewriter(model);
+            foreach (INamedTypeSymbol type in this.knownTypes)
             {
-                rewriter.AddReplacement(interfaceType, adapter);
+                rewriter.RegisterClass(type);
             }
 
             SyntaxNode root = rewriter.Visit(tree.GetRoot());

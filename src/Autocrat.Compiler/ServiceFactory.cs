@@ -58,7 +58,7 @@ namespace Autocrat.Compiler
         {
             return new SyntaxTreeRewriter(
                 this.compilation,
-                this.CreateNativeRegisterRewriter,
+                this.CreateInterfaceRegisterRewriter,
                 this.GetKnownTypes());
         }
 
@@ -118,12 +118,13 @@ namespace Autocrat.Compiler
             return NativeImportGenerator.Value;
         }
 
-        private NativeRegisterRewriter CreateNativeRegisterRewriter(SemanticModel model)
+        private InterfaceRewriter CreateInterfaceRegisterRewriter(SemanticModel model)
         {
-            return new NativeRegisterRewriter(
+            return new InterfaceRewriter(
                 model,
-                this.GetManagedCallbackGenerator(),
-                new SignatureGenerator());
+                new NativeDelegateRewriter(
+                    this.GetManagedCallbackGenerator(),
+                    model));
         }
 
         private IKnownTypes GetKnownTypes()
