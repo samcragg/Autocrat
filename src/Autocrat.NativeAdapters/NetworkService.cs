@@ -11,22 +11,23 @@ namespace Autocrat.NativeAdapters
     /// <summary>
     /// Allows the registering of low level network resource handling.
     /// </summary>
-    [NativeAdapter]
-    public class NetworkService : INetworkService
+    [RewriteInterface(typeof(INetworkService))]
+    public static class NetworkService
     {
         /// <summary>
         /// Calls the native method to register the callback.
         /// </summary>
         /// <param name="port">The port to register.</param>
         /// <param name="handle">The method to invoke on callback.</param>
-        [DllImport("*", CallingConvention = CallingConvention.Cdecl, EntryPoint = "register_udp_data_received")]
-        public static extern void OnDataReceived(int port, int handle);
-
-        /// <inheritdoc />
-        public void RegisterUdp<T>(int port)
-            where T : IUdpHandler
+        public static void RegisterUdp(int port, int handle)
         {
-            // Not used at runtime
+            NativeMethods.RegisterUdpDataReceived(port, handle);
+        }
+
+        private static class NativeMethods
+        {
+            [DllImport("*", CallingConvention = CallingConvention.Cdecl, EntryPoint = "register_udp_data_received")]
+            public static extern void RegisterUdpDataReceived(int port, int handle);
         }
     }
 }
