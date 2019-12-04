@@ -57,11 +57,23 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="InterfaceRewriter"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected InterfaceRewriter()
+        {
+            this.delegateRewriter = null!;
+            this.model = null!;
+        }
+
+        /// <summary>
         /// Looks for interfaces that the class implements via the
         /// <see cref="RewriteInterfaceAttribute"/>.
         /// </summary>
         /// <param name="classType">The type of the class.</param>
-        public void RegisterClass(ITypeSymbol classType)
+        public virtual void RegisterClass(ITypeSymbol classType)
         {
             AttributeData? rewriteInterface =
                 RoslynHelper.FindAttribute<RewriteInterfaceAttribute>(classType);
