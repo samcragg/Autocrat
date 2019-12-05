@@ -15,22 +15,18 @@ namespace Autocrat.Compiler
     {
         private readonly Compilation compilation;
         private readonly Func<SemanticModel, InterfaceRewriter> createRewriter;
-        private readonly IKnownTypes knownTypes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SyntaxTreeRewriter"/> class.
         /// </summary>
         /// <param name="compilation">Contains the compiled information.</param>
         /// <param name="createRewriter">Creates a NativeRegisterRewriter.</param>
-        /// <param name="knownTypes">Contains the discovered types.</param>
         public SyntaxTreeRewriter(
             Compilation compilation,
-            Func<SemanticModel, InterfaceRewriter> createRewriter,
-            IKnownTypes knownTypes)
+            Func<SemanticModel, InterfaceRewriter> createRewriter)
         {
             this.compilation = compilation;
             this.createRewriter = createRewriter;
-            this.knownTypes = knownTypes;
         }
 
         /// <summary>
@@ -43,7 +39,6 @@ namespace Autocrat.Compiler
         {
             this.compilation = null!;
             this.createRewriter = null!;
-            this.knownTypes = null!;
         }
 
         /// <summary>
@@ -60,11 +55,6 @@ namespace Autocrat.Compiler
 
             SemanticModel model = this.compilation.GetSemanticModel(tree);
             InterfaceRewriter rewriter = this.createRewriter(model);
-            foreach (INamedTypeSymbol type in this.knownTypes)
-            {
-                rewriter.RegisterClass(type);
-            }
-
             SyntaxNode root = rewriter.Visit(tree.GetRoot());
             return tree.WithRootAndOptions(root, tree.Options);
         }

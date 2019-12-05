@@ -13,5 +13,11 @@ namespace Autocrat.Compiler
     /// </summary>
     internal interface IKnownTypes : IReadOnlyCollection<INamedTypeSymbol>
     {
+        /// <summary>
+        /// Finds the class marked as rewriting the specified interface, if any.
+        /// </summary>
+        /// <param name="symbol">The interface type.</param>
+        /// <returns>The class symbol, or <c>null</c> if none exist.</returns>
+        ITypeSymbol? FindClassForInterface(ITypeSymbol symbol);
     }
 }

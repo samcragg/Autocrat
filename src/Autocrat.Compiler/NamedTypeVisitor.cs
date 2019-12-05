@@ -7,6 +7,7 @@ namespace Autocrat.Compiler
 {
     using System.Collections;
     using System.Collections.Generic;
+    using Autocrat.Abstractions;
     using Microsoft.CodeAnalysis;
 
     /// <summary>
@@ -14,6 +15,7 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class NamedTypeVisitor : SymbolVisitor
     {
+        private readonly Dictionary<ITypeSymbol, ITypeSymbol> interfacesToRewrite = new Dictionary<ITypeSymbol, ITypeSymbol>();
         private readonly ISet<INamedTypeSymbol> types = new HashSet<INamedTypeSymbol>();
 
         /// <summary>
@@ -21,7 +23,7 @@ namespace Autocrat.Compiler
         /// </summary>
         public NamedTypeVisitor()
         {
-            this.Types = new KnownTypes(this.types);
+            this.Types = new KnownTypes(this);
         }
 
         /// <summary>
@@ -33,6 +35,11 @@ namespace Autocrat.Compiler
         public override void VisitNamedType(INamedTypeSymbol symbol)
         {
             this.types.Add(symbol);
+
+            if (symbol.TypeKind == TypeKind.Class)
+            {
+                this.CheckForInterfaceAttribute(symbol);
+            }
         }
 
         /// <inheritdoc />
@@ -44,20 +51,45 @@ namespace Autocrat.Compiler
             }
         }
 
+        private void CheckForInterfaceAttribute(INamedTypeSymbol symbol)
+        {
+            AttributeData? rewriteInterface =
+                RoslynHelper.FindAttribute<RewriteInterfaceAttribute>(symbol);
+
+            if (rewriteInterface != null)
+            {
+                this.interfacesToRewrite.Add(
+                    (ITypeSymbol)rewriteInterface.ConstructorArguments[0].Value,
+                    symbol);
+            }
+        }
+
         private class KnownTypes : IKnownTypes
         {
-            private readonly ICollection<INamedTypeSymbol> collection;
+            private readonly NamedTypeVisitor owner;
 
-            public KnownTypes(ICollection<INamedTypeSymbol> collection)
+            public KnownTypes(NamedTypeVisitor owner)
             {
-                this.collection = collection;
+                this.owner = owner;
             }
 
-            public int Count => this.collection.Count;
+            public int Count => this.owner.types.Count;
+
+            public ITypeSymbol? FindClassForInterface(ITypeSymbol symbol)
+            {
+                if (this.owner.interfacesToRewrite.TryGetValue(symbol, out ITypeSymbol classSymbol))
+                {
+                    return classSymbol;
+                }
+                else
+                {
+                    return null;
+                }
+            }
 
             public IEnumerator<INamedTypeSymbol> GetEnumerator()
             {
-                return this.collection.GetEnumerator();
+                return this.owner.types.GetEnumerator();
             }
 
             IEnumerator IEnumerable.GetEnumerator()

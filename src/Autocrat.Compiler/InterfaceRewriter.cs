@@ -5,9 +5,6 @@
 
 namespace Autocrat.Compiler
 {
-    using System;
-    using System.Collections.Generic;
-    using Autocrat.Abstractions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -40,19 +37,19 @@ namespace Autocrat.Compiler
         // the native method that actually uses the handle gets called (for
         // example, to convert .NET types to native primitive types)
         private readonly NativeDelegateRewriter delegateRewriter;
+        private readonly IKnownTypes knownTypes;
         private readonly SemanticModel model;
-
-        private readonly Dictionary<string, TypeSyntax> typesToReplace =
-            new Dictionary<string, TypeSyntax>(StringComparer.Ordinal);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterfaceRewriter"/> class.
         /// </summary>
         /// <param name="model">Contains the semantic information.</param>
+        /// <param name="knownTypes">Contains the discovered types.</param>
         /// <param name="delegateRewriter">Rewrites delegate arguments.</param>
-        public InterfaceRewriter(SemanticModel model, NativeDelegateRewriter delegateRewriter)
+        public InterfaceRewriter(SemanticModel model, IKnownTypes knownTypes, NativeDelegateRewriter delegateRewriter)
         {
             this.model = model;
+            this.knownTypes = knownTypes;
             this.delegateRewriter = delegateRewriter;
         }
 
@@ -65,25 +62,8 @@ namespace Autocrat.Compiler
         protected InterfaceRewriter()
         {
             this.delegateRewriter = null!;
+            this.knownTypes = null!;
             this.model = null!;
-        }
-
-        /// <summary>
-        /// Looks for interfaces that the class implements via the
-        /// <see cref="RewriteInterfaceAttribute"/>.
-        /// </summary>
-        /// <param name="classType">The type of the class.</param>
-        public virtual void RegisterClass(ITypeSymbol classType)
-        {
-            AttributeData? rewriteInterface =
-                RoslynHelper.FindAttribute<RewriteInterfaceAttribute>(classType);
-
-            if (rewriteInterface != null)
-            {
-                this.typesToReplace.Add(
-                    rewriteInterface.ConstructorArguments[0].Value.ToString(),
-                    ParseTypeName(classType.ToDisplayString()));
-            }
         }
 
         /// <inheritdoc />
@@ -92,11 +72,12 @@ namespace Autocrat.Compiler
             if (node.Expression is MemberAccessExpressionSyntax member)
             {
                 TypeInfo type = this.model.GetTypeInfo(member.Expression);
-                if (this.typesToReplace.TryGetValue(type.Type.ToDisplayString(), out TypeSyntax classType))
+                ITypeSymbol? classType = this.knownTypes.FindClassForInterface(type.Type);
+                if (classType != null)
                 {
                     MemberAccessExpressionSyntax newMethod = MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
-                        classType,
+                        ParseTypeName(classType.ToDisplayString()),
                         member.Name);
 
                     return InvocationExpression(newMethod, this.TransformArguments(node.ArgumentList));

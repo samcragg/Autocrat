@@ -14,7 +14,7 @@
     {
         private readonly NativeDelegateRewriter delegateRewriter;
         private readonly InterfaceRewriter interfaceRewriter;
-        private readonly INamedTypeSymbol replacementClass;
+        private readonly IKnownTypes knownTypes;
         private readonly MethodDeclarationSyntax testMethod;
 
         private InterfaceRewriterTests()
@@ -22,21 +22,14 @@
             this.delegateRewriter = Substitute.For<NativeDelegateRewriter>();
             this.delegateRewriter.TransformArgument(null).ReturnsForAnyArgs(ci => ci.Arg<ArgumentSyntax>());
 
-            Compilation compilation = CompilationHelper.CompileCode(@"
-namespace Autocrat.Abstractions
-{
-    public sealed class RewriteInterfaceAttribute : System.Attribute
-    {
-        public RewriteInterfaceAttribute(System.Type interfaceType) { }
-    }
-}
+            this.knownTypes = Substitute.For<IKnownTypes>();
 
+            Compilation compilation = CompilationHelper.CompileCode(@"
 interface IFakeInterface
 {
     void InterfaceMethod(int a);
 }
 
-[Autocrat.Abstractions.RewriteInterface(typeof(IFakeInterface))]
 static class ReplacementClass
 {
     public static void InterfaceMethod(int a)
@@ -53,7 +46,9 @@ class TestClass
 }");
 
             SyntaxTree tree = compilation.SyntaxTrees.Single();
-            this.replacementClass = compilation.GetTypeByMetadataName("ReplacementClass");
+            this.knownTypes.FindClassForInterface(compilation.GetTypeByMetadataName("IFakeInterface"))
+                .Returns(compilation.GetTypeByMetadataName("ReplacementClass"));
+
             this.testMethod = tree.GetRoot()
                 .DescendantNodes()
                 .OfType<MethodDeclarationSyntax>()
@@ -62,6 +57,7 @@ class TestClass
 
             this.interfaceRewriter = new InterfaceRewriter(
                 compilation.GetSemanticModel(tree),
+                this.knownTypes,
                 this.delegateRewriter);
         }
 
@@ -75,7 +71,6 @@ class TestClass
                         SyntaxKind.NumericLiteralExpression,
                         Literal(456))));
 
-                this.interfaceRewriter.RegisterClass(this.replacementClass);
                 SyntaxNode result = this.interfaceRewriter.Visit(this.testMethod);
 
                 result.ToString().Should().Contain("InterfaceMethod(456)");
@@ -84,7 +79,6 @@ class TestClass
             [Fact]
             public void ShouldRewriteRegisteredClasses()
             {
-                this.interfaceRewriter.RegisterClass(this.replacementClass);
                 SyntaxNode result = this.interfaceRewriter.Visit(this.testMethod);
 
                 result.ToString().Should().NotContain("instance.InterfaceMethod");

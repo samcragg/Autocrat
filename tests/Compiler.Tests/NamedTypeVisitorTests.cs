@@ -29,6 +29,37 @@ namespace TestNamespace
             }
 
             [Fact]
+            public void ShouldExtractRewrittenInterfaces()
+            {
+                Compilation compilation = CompilationHelper.CompileCode(@"
+namespace Autocrat.Abstractions
+{
+    public sealed class RewriteInterfaceAttribute : System.Attribute
+    {
+        public RewriteInterfaceAttribute(System.Type interfaceType) { }
+    }
+}
+
+namespace TestNamespace
+{
+    interface IFakeInterface
+    {
+    }
+
+    [Autocrat.Abstractions.RewriteInterface(typeof(IFakeInterface))]
+    static class FakeClass
+    {
+    }
+}");
+                INamedTypeSymbol interfaceType = compilation.GetTypeByMetadataName("TestNamespace.IFakeInterface");
+
+                this.visitor.Visit(GetNamespace(compilation, "TestNamespace"));
+                ITypeSymbol result = this.visitor.Types.FindClassForInterface(interfaceType);
+
+                result.Name.Should().Be("FakeClass");
+            }
+
+            [Fact]
             public void ShouldExtractTypesInNestedNamespaces()
             {
                 Compilation compilation = CompilationHelper.CompileCode(@"
