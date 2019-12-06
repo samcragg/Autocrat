@@ -17,7 +17,7 @@ extern "C"
 
     void CDECL register_udp_data_received(std::int32_t port, std::int32_t handle)
     {
-        auto callback = std::get<udp_register_method>(get_known_method(handle));
+        auto callback = std::get<udp_data_received_method>(get_known_method(handle));
         auto* service = autocrat::global_services.get_service<autocrat::network_service>();
         service->add_udp_callback(
             static_cast<std::uint16_t>(port),

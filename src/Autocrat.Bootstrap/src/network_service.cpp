@@ -10,7 +10,7 @@ using namespace std::placeholders;
 
 namespace
 {
-    using callback_data = std::tuple<pal::socket_address, udp_register_method, autocrat::managed_byte_array_ptr>;
+    using callback_data = std::tuple<pal::socket_address, udp_data_received_method, autocrat::managed_byte_array_ptr>;
 
     void invoke_callback(std::any& data)
     {
@@ -26,7 +26,7 @@ namespace autocrat
     {
     }
 
-    void network_service::add_udp_callback(std::uint16_t port, udp_register_method callback)
+    void network_service::add_udp_callback(std::uint16_t port, udp_data_received_method callback)
     {
         for (auto& kvp : _sockets)
         {

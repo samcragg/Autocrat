@@ -30,9 +30,9 @@ public:
 
 namespace
 {
-    std::function<void(std::int32_t, void*)> on_udp_callback;
+    std::function<void(std::int32_t, const void*)> on_udp_callback;
 
-    void udp_callback(std::int32_t port, void* data)
+    void udp_callback(std::int32_t port, const void* data)
     {
         on_udp_callback(port, data);
     }
@@ -69,10 +69,10 @@ TEST_F(NetworkServiceTests, ShouldInvokeTheHandlerWithTheReadData)
             return 4;
         });
 
-    autocrat::managed_byte_array* array_data = nullptr;
-    on_udp_callback = [&](auto, void* data)
+    const autocrat::managed_byte_array* array_data = nullptr;
+    on_udp_callback = [&](auto, const void* data)
     {
-        array_data = reinterpret_cast<autocrat::managed_byte_array*>(data);
+        array_data = reinterpret_cast<const autocrat::managed_byte_array*>(data);
     };
 
     _service.add_udp_callback(123, &udp_callback);

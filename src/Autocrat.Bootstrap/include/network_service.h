@@ -15,7 +15,7 @@ namespace autocrat
 
     struct socket_data
     {
-        small_vector<udp_register_method> callbacks;
+        small_vector<udp_data_received_method> callbacks;
         std::uint16_t port;
     };
 
@@ -38,7 +38,7 @@ namespace autocrat
          * @param port     The port number to list for messages on.
          * @param callback The method to invoke with the received data.
          */
-        MOCKABLE_METHOD void add_udp_callback(std::uint16_t port, udp_register_method callback);
+        MOCKABLE_METHOD void add_udp_callback(std::uint16_t port, udp_data_received_method callback);
 
         /**
          * Checks for network messages and dispatches any that have arrived.

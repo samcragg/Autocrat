@@ -7,7 +7,7 @@
 class mock_network_service : public autocrat::network_service
 {
 public:
-    MockMethod(void, add_udp_callback, (std::uint16_t, udp_register_method))
+    MockMethod(void, add_udp_callback, (std::uint16_t, udp_data_received_method))
     MockMethod(void, check_and_dispatch, ())
 };
 
