@@ -64,6 +64,11 @@ namespace autocrat
         value_type* data() noexcept;
 
         /**
+         * Returns pointer to the underlying array serving as element storage.
+         */
+        const value_type* data() const noexcept;
+
+        /**
          * Returns an iterator to the element following the last element of the
          * container.
          * @returns An iterator to the element following the last element. 

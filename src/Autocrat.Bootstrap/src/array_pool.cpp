@@ -45,6 +45,11 @@ namespace autocrat
         _length = 0;
     }
 
+    auto managed_byte_array::data() const noexcept -> const value_type*
+    {
+        return _data.data();
+    }
+
     auto managed_byte_array::data() noexcept -> value_type*
     {
         return _data.data();
