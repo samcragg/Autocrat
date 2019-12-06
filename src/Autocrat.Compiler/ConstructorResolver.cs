@@ -19,17 +19,23 @@ namespace Autocrat.Compiler
     {
         private readonly Compilation compilation;
         private readonly InterfaceResolver interfaceResolver;
+        private readonly IKnownTypes knownTypes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConstructorResolver"/> class.
         /// </summary>
         /// <param name="compilation">Represents the compiler.</param>
+        /// <param name="knownTypes">Contains the discovered types.</param>
         /// <param name="interfaceResolver">
         /// Used to resolve classes implementing interfaces.
         /// </param>
-        public ConstructorResolver(Compilation compilation, InterfaceResolver interfaceResolver)
+        public ConstructorResolver(
+            Compilation compilation,
+            IKnownTypes knownTypes,
+            InterfaceResolver interfaceResolver)
         {
             this.interfaceResolver = interfaceResolver;
+            this.knownTypes = knownTypes;
             this.compilation = compilation;
         }
 
@@ -41,7 +47,7 @@ namespace Autocrat.Compiler
         /// <remarks>
         /// The types returned will be in the order expected by the constructor.
         /// </remarks>
-        public virtual IReadOnlyList<ITypeSymbol> GetParameters(INamedTypeSymbol classType)
+        public virtual IReadOnlyList<ITypeSymbol?> GetParameters(INamedTypeSymbol classType)
         {
             ImmutableArray<IParameterSymbol> constructorParameters =
                 classType.Constructors
@@ -51,11 +57,11 @@ namespace Autocrat.Compiler
 
             if ((constructorParameters == null) || (constructorParameters.Length == 0))
             {
-                return Array.Empty<ITypeSymbol>();
+                return Array.Empty<ITypeSymbol?>();
             }
             else
             {
-                var types = new List<ITypeSymbol>(constructorParameters.Length);
+                var types = new List<ITypeSymbol?>(constructorParameters.Length);
                 types.AddRange(constructorParameters.Select(this.ResolveParameterType));
                 return types;
             }
@@ -90,12 +96,17 @@ namespace Autocrat.Compiler
             return null;
         }
 
-        private ITypeSymbol ResolveParameterType(IParameterSymbol parameter)
+        private ITypeSymbol? ResolveParameterType(IParameterSymbol parameter)
         {
             ITypeSymbol? arrayType = this.GetArrayDependencyType(parameter.Type);
             if (arrayType != null)
             {
                 return arrayType;
+            }
+
+            if (this.knownTypes.FindClassForInterface(parameter.Type) != null)
+            {
+                return null;
             }
 
             IReadOnlyCollection<ITypeSymbol> classes = this.interfaceResolver.FindClasses(

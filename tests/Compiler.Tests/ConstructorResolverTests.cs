@@ -14,6 +14,7 @@
         private readonly INamedTypeSymbol arrayOfDependencies;
         private readonly INamedTypeSymbol defaultConstructor;
         private readonly InterfaceResolver interfaceResolver;
+        private readonly IKnownTypes knownTypes;
         private readonly INamedTypeSymbol multipleConstructors;
         private readonly INamedTypeSymbol multipleDependencies;
         private readonly ConstructorResolver resolver;
@@ -72,7 +73,11 @@ class SingleDependency
             this.interfaceResolver.FindClasses(null)
                 .ReturnsForAnyArgs(ci => new[] { (INamedTypeSymbol)ci.Args()[0] });
 
-            this.resolver = new ConstructorResolver(compilation, this.interfaceResolver);
+            this.knownTypes = Substitute.For<IKnownTypes>();
+            this.knownTypes.FindClassForInterface(null)
+                .ReturnsForAnyArgs((ITypeSymbol)null);
+
+            this.resolver = new ConstructorResolver(compilation, this.knownTypes, this.interfaceResolver);
         }
 
         public sealed class GetParametersTests : ConstructorResolverTests
@@ -117,6 +122,18 @@ class SingleDependency
                     this.singleDependency);
 
                 result.Should().ContainSingle().Which.Should().Be(this.abstractClass);
+            }
+
+            [Fact]
+            public void ShouldReturnNullForRewrittenInterfaces()
+            {
+                this.knownTypes.FindClassForInterface(this.abstractClass)
+                    .Returns(this.abstractClass);
+
+                IReadOnlyList<ITypeSymbol> result = this.resolver.GetParameters(
+                    this.singleDependency);
+
+                result.Should().ContainSingle().Which.Should().BeNull();
             }
 
             [Fact]

@@ -140,9 +140,13 @@ namespace Autocrat.Compiler
 
         private IEnumerable<SyntaxNode> GetConstructorArguments(INamedTypeSymbol type)
         {
-            foreach (ITypeSymbol parameter in this.constructorResolver.GetParameters(type))
+            foreach (ITypeSymbol? parameter in this.constructorResolver.GetParameters(type))
             {
-                if (parameter is IArrayTypeSymbol arrayType)
+                if (parameter is null)
+                {
+                    yield return Argument(LiteralExpression(SyntaxKind.NullLiteralExpression));
+                }
+                else if (parameter is IArrayTypeSymbol arrayType)
                 {
                     yield return Argument(this.DeclareArray((INamedTypeSymbol)arrayType.ElementType));
                 }

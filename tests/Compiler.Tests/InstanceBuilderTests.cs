@@ -49,7 +49,7 @@ public class SimpleClass
             this.derivedClass = this.compilation.GetTypeByMetadataName("DerivedClass");
             this.simpleClass = this.compilation.GetTypeByMetadataName("SimpleClass");
 
-            this.constructorResolver = Substitute.For<ConstructorResolver>(new object[] { null, null });
+            this.constructorResolver = Substitute.For<ConstructorResolver>(new object[] { null, null, null });
             this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<IKnownTypes>());
             this.builder = new InstanceBuilder(this.constructorResolver, this.interfaceResolver);
         }
@@ -129,6 +129,18 @@ public static class WrapperClass
 
                 dynamic instance = this.GetLocal(identifier);
                 ((object)instance.Injected).GetType().Name.Should().Be(this.simpleClass.Name);
+            }
+
+            [Fact]
+            public void ShouldInjectNulls()
+            {
+                this.constructorResolver.GetParameters(this.dependency)
+                    .Returns(new ITypeSymbol[] { null });
+
+                IdentifierNameSyntax identifier = this.builder.GenerateForType(this.dependency);
+
+                dynamic instance = this.GetLocal(identifier);
+                ((object)instance.Injected).Should().BeNull();
             }
 
             [Fact]
