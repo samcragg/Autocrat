@@ -43,19 +43,34 @@ i.e. code along these lines:
 
 Note the dependencies are scanned for at compile time and the generated method
 creates them as locals (i.e. their transient). In addition to initializers,
-classes that are called back from the framework methods also get transformed
+delegates that are called back from the framework methods also get transformed
 so they can be called from native code, e.g. given this code:
 
-    framework.Register<Class>(arguments);
+    service.Register(arguments, this.CallbackMethod);
 
 would be transformed to:
 
-    ExportedNativeMethods.Register_MethodInClass(arguments, 0);
+    Service.Register(arguments, 0);
+    ...
+    public static class NativeCallableMethods
+    {
+        [NativeCallable(...)]
+        public static void CallbackMethod(object arguments)
+        {
+            var instance = new Instance();
+            instance.CallbackMethod(arguments);
+        }
+    }
 
 where `0` represents the index of the method in the native method stubs array
-(each method in the class gets transformed similar to how the `IInitializer`
-method gets created and then an array is generated that contains all the
-exported managed methods in the native code)
+(the methods in the `NativeCallableMethods` get put inside an array that gets
+compiled by the native compiler, see the below example). For this to work, the
+delegates are marked with `NativeDelegate` and the instead of implementing the
+interface, `Service` has the `RewriteInterface` attribute applied to it so that
+the interface methods get rewritten to call static methods on the class, which
+allows the delegates to be rewritten to use the indexes. Note that for
+interfaces implemented this way `null` will be passed in to them as they will
+never be used.
 
 Here's a complete example of the above. Starting with this code:
 
@@ -70,11 +85,12 @@ Here's a complete example of the above. Starting with this code:
 
         public void OnConfigurationLoaded()
         {
-            this.networkService.RegisterUdp<UdpHandler>(123);
+            var handler = new UdpHandler();
+            this.networkService.RegisterUdp(123, handler.OnDataReceived);
         }
     }
 
-    public class UdpHandler : IUdpHandler
+    public class UdpHandler
     {
         public void OnDataReceived(int port, byte[] data)
         {
@@ -89,7 +105,7 @@ The above code would cause the following C# code to be generated:
         [NativeCallable(...)]
         public static void OnConfigurationLoaded()
         {
-            var instance = new Initializer(new NetworkService());
+            var instance = new Initializer(null);
             instance.OnConfigurationLoaded();
         }
     }
@@ -116,7 +132,7 @@ Notice that we no longer use the `INetworkService` instance and we also pass in
 `0` to the static method. Taking a look at the generated C++ code, the
 following gets compiled and linked with the native executable:
 
-    extern "C" void UdpHandler_OnDataReceived(std::int32_t, void*);
+    extern "C" void UdpHandler_OnDataReceived(std::int32_t, const void*);
 
     method_types& get_known_method(std::size_t handle)
     {
