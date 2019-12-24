@@ -74,6 +74,7 @@
   <ItemGroup>
     <ClCompile Include="src\array_pool.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\managed_interop.cpp" />
     <ClCompile Include="src\native_exports.cpp" />
     <ClCompile Include="src\network_service.cpp" />
     <ClCompile Include="src\pal_win32.cpp" />
@@ -85,6 +86,7 @@
     <ClInclude Include="include\collections.h" />
     <ClInclude Include="include\defines.h" />
     <ClInclude Include="include\managed_exports.h" />
+    <ClInclude Include="include\managed_interop.h" />
     <ClInclude Include="include\method_handles.h" />
     <ClInclude Include="include\native_exports.h" />
     <ClInclude Include="include\network_service.h" />

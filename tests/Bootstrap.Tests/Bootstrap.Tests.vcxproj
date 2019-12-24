@@ -82,6 +82,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\array_pool.cpp" />
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\managed_interop.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\native_exports.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\network_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\pal_win32.cpp" />
@@ -90,6 +91,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mock_method_handles.cpp" />
     <ClCompile Include="pal_mock.cpp" />
+    <ClCompile Include="tests\ReferenceScannerTests.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />
     <ClCompile Include="tests\BoundedQueueTests.cpp" />
     <ClCompile Include="tests\ManagedArrayTests.cpp" />

@@ -5,6 +5,7 @@ CXXFLAGS += -I include -isystem ../../libs
 SOURCES = \
  src/array_pool.cpp \
  src/main.cpp \
+ src/managed_interop.cpp \
  src/native_exports.cpp \
  src/network_service.cpp \
  src/pal_posix.cpp \

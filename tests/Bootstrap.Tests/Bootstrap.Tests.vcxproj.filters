@@ -84,5 +84,11 @@
     <ClCompile Include="tests\SmartPtrTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\managed_interop.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\ReferenceScannerTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
