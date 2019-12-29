@@ -8,7 +8,7 @@ namespace autocrat
         // Object
         struct managed_object
         {
-            mutable const managed_type* type;
+            managed_type* type;
         };
 
         // Array
@@ -43,7 +43,14 @@ namespace
         std::size_t entry_count;
     };
 
-    const std::uintptr_t scanned_bit = 0x01;
+    const std::uintptr_t moved_bit = 0x01;
+    const std::uintptr_t moved_mask = ~moved_bit;
+
+    void* get_moved_location(const autocrat::detail::managed_object* object)
+    {
+        auto pointer = reinterpret_cast<std::uintptr_t>(object->type) & moved_mask;
+        return reinterpret_cast<void*>(pointer);
+    }
 
     bool has_reference_fields(const autocrat::detail::managed_type* type)
     {
@@ -51,21 +58,9 @@ namespace
         return (type->flags & has_pointers_flag) != 0;
     }
 
-    bool has_scanned(const autocrat::detail::managed_object* object)
+    bool has_moved(const autocrat::detail::managed_object* object)
     {
-        return reinterpret_cast<std::uintptr_t>(object->type) & scanned_bit;
-    }
-
-    void mark_as_scanned(const autocrat::detail::managed_object* object, bool value)
-    {
-        const std::uintptr_t scanned_mask = ~scanned_bit;
-        auto pointer = reinterpret_cast<std::uintptr_t>(object->type) & scanned_mask;
-        if (value)
-        {
-            pointer |= scanned_bit;
-        }
-
-        object->type = reinterpret_cast<const autocrat::detail::managed_type*>(pointer);
+        return reinterpret_cast<std::uintptr_t>(object->type) & moved_bit;
     }
 }
 
@@ -73,35 +68,50 @@ namespace autocrat
 {
     using namespace detail;
 
-    std::uint32_t reference_scanner::bytes() const noexcept
+    reference_scanner::reference_scanner(object_mover& mover) :
+        _mover(&mover)
     {
-        return _bytes;
     }
 
-    void reference_scanner::scan(const void* root)
+    void* reference_scanner::move(void* root)
     {
-        auto object = static_cast<const managed_object*>(root);
-        if ((object == nullptr) || has_scanned(object))
+        if (root == nullptr)
         {
-            return;
+            return nullptr;
+        }
+
+        auto object = static_cast<managed_object*>(root);
+        if (has_moved(object))
+        {
+            return get_moved_location(object);
         }
 
         const managed_type* type = object->type;
-        mark_as_scanned(object, true);
-        if (has_reference_fields(type))
-        {
-            scan(object, type);
-        }
-
-        _bytes += type->base_size;
+        std::size_t bytes = type->base_size;
         if (type->component_size > 0)
         {
             auto array = static_cast<const managed_array*>(object);
-            _bytes += type->component_size * array->length;
+            bytes += static_cast<std::size_t>(type->component_size) * array->length;
         }
+
+        void* moved = move_object(object, bytes);
+        if (has_reference_fields(type))
+        {
+            scan(object, moved, type);
+        }
+
+        return moved;
     }
 
-    void reference_scanner::scan(const managed_object* object, const managed_type* type)
+    void* reference_scanner::move_object(managed_object* object, std::size_t size)
+    {
+        void* moved = _mover->move_object(reinterpret_cast<std::byte*>(object), size);
+        auto pointer = reinterpret_cast<std::uintptr_t>(moved) | moved_bit;
+        object->type = reinterpret_cast<autocrat::detail::managed_type*>(pointer);
+        return moved;
+    }
+
+    void reference_scanner::scan(managed_object* object, void* copy, const managed_type* type)
     {
         // The layout of the references in a type goes backwards from the top
         // of the type information:
@@ -119,31 +129,34 @@ namespace autocrat
         for (std::size_t i = block_info.entry_count; i > 0; --i)
         {
             std::size_t count = (type->base_size + block->series_size) / sizeof(void*);
-            auto address = reinterpret_cast<const char*>(object) + block->start_offset;
-            scan_references(address, count);
+            scan_references(object, copy, block->start_offset, count);
             --block;
         }
 
         // Now handle arrays
         if (type->component_size > 0)
         {
-            assert(type->component_size == sizeof(std::intptr_t));
-            auto array = static_cast<const managed_array*>(object);
-            scan_references(array + 1, array->length); //+1 to scan the region after the array
+            assert(type->component_size == sizeof(void*));
+            std::size_t elements = static_cast<managed_array*>(object)->length;
+            scan_references(object, copy, sizeof(managed_array), elements);
         }
     }
 
-    void reference_scanner::scan_references(const void* address, std::size_t count)
+    void reference_scanner::scan_references(void* object, void* copy, std::size_t offset, std::size_t count)
     {
         while (count-- > 0)
         {
-            auto reference = reinterpret_cast<const void* const*>(address);
-            if (*reference != nullptr)
+            void* address = static_cast<char*>(object) + offset;
+            void* instance = *static_cast<void**>(address);
+            if (instance != nullptr)
             {
-                scan(*reference);
+                _mover->set_reference(
+                    static_cast<std::byte*>(copy),
+                    offset,
+                    move(instance));
             }
 
-            address = static_cast<const char*>(address) + sizeof(std::size_t);
+            offset += sizeof(void*);
         }
     }
 }
