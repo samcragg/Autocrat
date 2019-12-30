@@ -67,20 +67,23 @@ namespace Autocrat.Compiler
         }
 
         /// <inheritdoc />
-        public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
+        public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             if (node.Expression is MemberAccessExpressionSyntax member)
             {
                 TypeInfo type = this.model.GetTypeInfo(member.Expression);
-                ITypeSymbol? classType = this.knownTypes.FindClassForInterface(type.Type);
-                if (classType != null)
+                if (type.Type != null)
                 {
-                    MemberAccessExpressionSyntax newMethod = MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        ParseTypeName(classType.ToDisplayString()),
-                        member.Name);
+                    ITypeSymbol? classType = this.knownTypes.FindClassForInterface(type.Type);
+                    if (classType != null)
+                    {
+                        MemberAccessExpressionSyntax newMethod = MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            ParseTypeName(classType.ToDisplayString()),
+                            member.Name);
 
-                    return InvocationExpression(newMethod, this.TransformArguments(node.ArgumentList));
+                        return InvocationExpression(newMethod, this.TransformArguments(node.ArgumentList));
+                    }
                 }
             }
 

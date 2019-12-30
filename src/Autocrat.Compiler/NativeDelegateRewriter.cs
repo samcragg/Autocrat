@@ -68,7 +68,8 @@ namespace Autocrat.Compiler
         {
             TypeInfo typeInfo = this.model.GetTypeInfo(argument.Expression);
             string? signature;
-            if ((typeInfo.ConvertedType.TypeKind != TypeKind.Delegate) ||
+            if ((typeInfo.ConvertedType is null) ||
+                (typeInfo.ConvertedType.TypeKind != TypeKind.Delegate) ||
                 ((signature = GetNativeSignature(typeInfo.ConvertedType)) == null))
             {
                 return argument;
@@ -93,7 +94,7 @@ namespace Autocrat.Compiler
                 if (RoslynHelper.IsOfType<NativeDelegateAttribute>(attribute.AttributeClass) &&
                     (attribute.ConstructorArguments.Length == 1))
                 {
-                    return (string)attribute.ConstructorArguments[0].Value;
+                    return (string?)attribute.ConstructorArguments[0].Value;
                 }
             }
 
@@ -103,7 +104,7 @@ namespace Autocrat.Compiler
         private ArgumentSyntax ExportIdentifer(string signature, ExpressionSyntax expression)
         {
             SymbolInfo symbolInfo = this.model.GetSymbolInfo(expression);
-            if (symbolInfo.Symbol.Kind != SymbolKind.Method)
+            if (symbolInfo.Symbol?.Kind != SymbolKind.Method)
             {
                 throw new InvalidOperationException("Expected a method: " + expression.ToString());
             }
@@ -122,7 +123,12 @@ namespace Autocrat.Compiler
         private ArgumentSyntax ExportMethodAccess(string signature, MemberAccessExpressionSyntax memberAccess)
         {
             TypeInfo typeInfo = this.model.GetTypeInfo(memberAccess.Expression);
-            ImmutableArray<ISymbol> members = typeInfo.Type.GetMembers(memberAccess.Name.ToString());
+            ImmutableArray<ISymbol> members = ImmutableArray<ISymbol>.Empty;
+            if (!(typeInfo.Type is null))
+            {
+                members = typeInfo.Type.GetMembers(memberAccess.Name.ToString());
+            }
+
             if (members.Length != 1)
             {
                 throw new InvalidOperationException(

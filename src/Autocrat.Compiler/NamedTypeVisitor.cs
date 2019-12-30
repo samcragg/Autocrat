@@ -56,11 +56,10 @@ namespace Autocrat.Compiler
             AttributeData? rewriteInterface =
                 RoslynHelper.FindAttribute<RewriteInterfaceAttribute>(symbol);
 
-            if (rewriteInterface != null)
+            object? argument = rewriteInterface?.ConstructorArguments[0].Value;
+            if (!(argument is null))
             {
-                this.interfacesToRewrite.Add(
-                    (ITypeSymbol)rewriteInterface.ConstructorArguments[0].Value,
-                    symbol);
+                this.interfacesToRewrite.Add((ITypeSymbol)argument, symbol);
             }
         }
 
