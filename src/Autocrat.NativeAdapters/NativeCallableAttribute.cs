@@ -19,6 +19,6 @@ namespace System.Runtime.InteropServices
         /// <summary>
         /// Gets or sets the name of the method for native code.
         /// </summary>
-        public string EntryPoint { get; set; }
+        public string? EntryPoint { get; set; }
     }
 }
