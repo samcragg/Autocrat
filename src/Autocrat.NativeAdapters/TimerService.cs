@@ -10,7 +10,7 @@ namespace Autocrat.NativeAdapters
     using Autocrat.Abstractions;
 
     /// <summary>
-    /// Allows the registering of low level network resource handling.
+    /// Allows the handling of timing events.
     /// </summary>
     [RewriteInterface(typeof(INetworkService))]
     public static class TimerService

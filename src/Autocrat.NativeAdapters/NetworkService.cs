@@ -9,7 +9,7 @@ namespace Autocrat.NativeAdapters
     using Autocrat.Abstractions;
 
     /// <summary>
-    /// Allows the registering of low level network resource handling.
+    /// Allows the handling of low level network resources.
     /// </summary>
     [RewriteInterface(typeof(INetworkService))]
     public static class NetworkService
