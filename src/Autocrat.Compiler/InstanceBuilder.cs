@@ -11,6 +11,7 @@ namespace Autocrat.Compiler
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using NLog;
     using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
@@ -18,6 +19,7 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class InstanceBuilder
     {
+        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
         private static readonly TypeSyntax VarKeyword = ParseTypeName("var");
         private readonly ConstructorResolver constructorResolver;
         private readonly List<StatementSyntax> declarations = new List<StatementSyntax>();
@@ -62,6 +64,7 @@ namespace Autocrat.Compiler
             if (!this.variables.TryGetValue(type, out IdentifierNameSyntax? name))
             {
                 // Create a marker to avoid cyclic dependencies
+                Logger.Debug<string>("Attempting to resolve {typeName}", type.ToDisplayString());
                 this.variables.Add(type, null);
                 name = this.DeclareLocal(type);
                 this.variables[type] = name;
