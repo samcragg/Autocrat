@@ -31,7 +31,7 @@
                 
                 classMethod.Should().NotBeNull();
                 classMethod.IsStatic.Should().BeTrue();
-                classMethod.ReturnType.Should().Be(method.ReturnType);
+                classMethod.ReturnType.FullName.Should().Be(method.ReturnType.FullName);
             }
         }
 
@@ -50,6 +50,15 @@
             public void ShouldImplementTheInterfaceMethods()
             {
                 AssertImplementsInterface<ITimerService>(typeof(TimerService));
+            }
+        }
+
+        public sealed class WorkerFactoryTests : ServiceTests
+        {
+            [Fact]
+            public void ShouldImplementTheInterfaceMethods()
+            {
+                AssertImplementsInterface<IWorkerFactory>(typeof(WorkerFactory));
             }
         }
     }
