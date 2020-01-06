@@ -87,7 +87,7 @@
 public class Test
 {
     public UnknownType Invalid { get; set; }
-}"));
+}", allowErrors: true));
 
                 this.generator.Invoking(g => g.EmitAssembly(Stream.Null, Stream.Null))
                     .Should().Throw<InvalidOperationException>();

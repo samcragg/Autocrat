@@ -33,8 +33,8 @@ class TestClass
     void AcceptsNormalDelegate(System.Action<int> action) { }
     void TestMethod()
     {
-" + code +
-@"}
+    " + code + @";
+    }
 }");
 
             SyntaxTree tree = compilation.SyntaxTrees.First();

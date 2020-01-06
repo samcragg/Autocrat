@@ -61,9 +61,17 @@
             private static INamedTypeSymbol CreateClass()
             {
                 Compilation compilation = CompilationHelper.CompileCode(
-"class TestClass : Autocrat.Abstractions." + nameof(IInitializer) + @"
+@"namespace Autocrat.Abstractions
 {
-    void " + GeneratedMethodName + @"()
+    public interface IInitializer
+    {
+        void " + GeneratedMethodName + @"();
+    }
+}
+
+class TestClass : Autocrat.Abstractions." + nameof(IInitializer) + @"
+{
+    public void " + GeneratedMethodName + @"()
     {
     }
 }");
