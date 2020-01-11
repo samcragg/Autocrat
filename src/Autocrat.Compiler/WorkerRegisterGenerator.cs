@@ -54,17 +54,31 @@ namespace Autocrat.Compiler
         /// <param name="instanceBuilder">
         /// Factory that creates the builder to generates code to create objects.
         /// </param>
-        /// <param name="factoryVisitor">Used to discover the worker types.</param>
+        /// <param name="factoryTypes">The worker types to register.</param>
         /// <param name="nativeGenerator">Used to register the managed methods.</param>
         public WorkerRegisterGenerator(
             Func<InstanceBuilder> instanceBuilder,
-            WorkerFactoryVisitor factoryVisitor,
+            IReadOnlyCollection<INamedTypeSymbol> factoryTypes,
             NativeImportGenerator nativeGenerator)
             : base("Workers")
         {
-            this.factoryTypes = factoryVisitor.WorkerTypes;
+            this.factoryTypes = factoryTypes;
             this.instanceBuilder = instanceBuilder;
             this.nativeGenerator = nativeGenerator;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorkerRegisterGenerator"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected WorkerRegisterGenerator()
+            : base("Workers")
+        {
+            this.factoryTypes = null!;
+            this.instanceBuilder = null!;
+            this.nativeGenerator = null!;
         }
 
         /// <inheritdoc />

@@ -28,6 +28,7 @@ namespace Autocrat.Compiler
         private readonly List<MethodDeclarationSyntax> callbackMethods = new List<MethodDeclarationSyntax>();
         private readonly List<SyntaxTree> generatedCode = new List<SyntaxTree>();
         private readonly HashSet<MetadataReference> references = new HashSet<MetadataReference>();
+        private readonly HashSet<INamedTypeSymbol> workerTypes = new HashSet<INamedTypeSymbol>();
 
         /// <summary>
         /// Gets or sets the function to call to create a
@@ -52,6 +53,7 @@ namespace Autocrat.Compiler
             this.RewriteNativeAdapters(factory);
             this.SaveCompilationMetadata(compilation);
             this.SaveCallbacks(factory);
+            this.SaveWorkerTypes(factory);
         }
 
         /// <summary>
@@ -69,6 +71,7 @@ namespace Autocrat.Compiler
                 .AddSyntaxTrees(this.generatedCode);
 
             compilation = this.AddCallbackAdapters(compilation);
+            compilation = this.AddRegisterWorkerTypes(compilation);
 
             EmitResult result = compilation.Emit(destination, pdb);
             if (!result.Success)
@@ -120,6 +123,20 @@ int main()
             return compilation.AddSyntaxTrees(tree);
         }
 
+        private CSharpCompilation AddRegisterWorkerTypes(CSharpCompilation compilation)
+        {
+            Logger.Info("Creating worker type registration");
+            ServiceFactory factory = ServiceFactory(compilation);
+            WorkerRegisterGenerator generator = factory.CreateWorkerRegisterGenerator(this.workerTypes);
+            if (generator.HasCode)
+            {
+                compilation = compilation.AddSyntaxTrees(
+                    CSharpSyntaxTree.Create(generator.Generate()));
+            }
+
+            return compilation;
+        }
+
         private void RewriteInitializers(ServiceFactory factory, Compilation compilation)
         {
             Logger.Info("Rewriting " + nameof(IInitializer) + "s");
@@ -162,6 +179,12 @@ int main()
             {
                 this.references.Add(reference);
             }
+        }
+
+        private void SaveWorkerTypes(ServiceFactory factory)
+        {
+            WorkerFactoryVisitor visitor = factory.CreateWorkerFactoryVisitor();
+            this.workerTypes.UnionWith(visitor.WorkerTypes);
         }
     }
 }

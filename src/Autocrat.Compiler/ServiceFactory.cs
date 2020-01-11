@@ -6,6 +6,7 @@
 namespace Autocrat.Compiler
 {
     using System;
+    using System.Collections.Generic;
     using Microsoft.CodeAnalysis;
 
     /// <summary>
@@ -59,6 +60,29 @@ namespace Autocrat.Compiler
             return new SyntaxTreeRewriter(
                 this.compilation,
                 this.CreateInterfaceRegisterRewriter);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="WorkerFactoryVisitor"/> instance.
+        /// </summary>
+        /// <returns>A new instance of the <see cref="WorkerFactoryVisitor"/> class.</returns>
+        public virtual WorkerFactoryVisitor CreateWorkerFactoryVisitor()
+        {
+            return new WorkerFactoryVisitor(this.compilation);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="WorkerRegisterGenerator"/> instance.
+        /// </summary>
+        /// <param name="factoryTypes">The worker types to register.</param>
+        /// <returns>A new instance of the <see cref="WorkerRegisterGenerator"/> class.</returns>
+        public virtual WorkerRegisterGenerator CreateWorkerRegisterGenerator(
+            IReadOnlyCollection<INamedTypeSymbol> factoryTypes)
+        {
+            return new WorkerRegisterGenerator(
+                this.CreateInstanceBuilder,
+                factoryTypes,
+                this.GetNativeImportGenerator());
         }
 
         /// <summary>

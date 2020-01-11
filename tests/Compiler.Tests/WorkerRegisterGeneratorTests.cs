@@ -12,7 +12,6 @@
     public class WorkerRegisterGeneratorTests
     {
         private readonly InstanceBuilder builder;
-        private readonly WorkerFactoryVisitor factoryVisitor;
         private readonly WorkerRegisterGenerator generator;
         private readonly NativeImportGenerator nativeGenerator;
         private readonly List<INamedTypeSymbol> workerTypes = new List<INamedTypeSymbol>();
@@ -20,7 +19,6 @@
         private WorkerRegisterGeneratorTests()
         {
             this.builder = Substitute.For<InstanceBuilder>(null, null);
-            this.factoryVisitor = Substitute.For<WorkerFactoryVisitor>();
             this.nativeGenerator = Substitute.For<NativeImportGenerator>();
 
             this.builder.GenerateForType(null)
@@ -29,9 +27,7 @@
             this.builder.LocalDeclarations
                 .Returns(new[] { EmptyStatement() });
 
-            this.factoryVisitor.WorkerTypes.Returns(this.workerTypes);
-
-            this.generator = new WorkerRegisterGenerator(() => this.builder, this.factoryVisitor, this.nativeGenerator);
+            this.generator = new WorkerRegisterGenerator(() => this.builder, this.workerTypes, this.nativeGenerator);
         }
 
         public sealed class GenerateTests : WorkerRegisterGeneratorTests
