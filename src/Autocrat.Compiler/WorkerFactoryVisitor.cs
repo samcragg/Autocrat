@@ -11,12 +11,14 @@ namespace Autocrat.Compiler
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using NLog;
 
     /// <summary>
     /// Extracts the types created by the <see cref="IWorkerFactory"/> interface.
     /// </summary>
     internal class WorkerFactoryVisitor : CSharpSyntaxWalker
     {
+        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
         private readonly SemanticModel? model;
         private readonly INamedTypeSymbol workerFactoryInterface;
         private readonly HashSet<INamedTypeSymbol> workerTypes = new HashSet<INamedTypeSymbol>();
@@ -65,7 +67,9 @@ namespace Autocrat.Compiler
                     if (string.Equals(method.Name, nameof(IWorkerFactory.GetWorker), StringComparison.Ordinal) &&
                         SymbolEqualityComparer.Default.Equals(method.ContainingType, this.workerFactoryInterface))
                     {
-                        this.workerTypes.Add((INamedTypeSymbol)method.TypeArguments[0]);
+                        var type = (INamedTypeSymbol)method.TypeArguments[0];
+                        Logger.Info<string>("Discovered worker type: {typeName}", type.ToDisplayString());
+                        this.workerTypes.Add(type);
                     }
                 }
             }
