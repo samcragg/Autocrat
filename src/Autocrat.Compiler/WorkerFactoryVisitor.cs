@@ -19,7 +19,7 @@ namespace Autocrat.Compiler
     {
         private readonly SemanticModel? model;
         private readonly INamedTypeSymbol workerFactoryInterface;
-        private readonly HashSet<ITypeSymbol> workerTypes = new HashSet<ITypeSymbol>();
+        private readonly HashSet<INamedTypeSymbol> workerTypes = new HashSet<INamedTypeSymbol>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WorkerFactoryVisitor"/> class.
@@ -38,9 +38,20 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="WorkerFactoryVisitor"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected WorkerFactoryVisitor()
+        {
+            this.workerFactoryInterface = null!;
+        }
+
+        /// <summary>
         /// Gets the generic arguments passed into <see cref="IWorkerFactory.GetWorker{T}"/>.
         /// </summary>
-        public IReadOnlyCollection<ITypeSymbol> WorkerTypes => this.workerTypes;
+        public virtual IReadOnlyCollection<INamedTypeSymbol> WorkerTypes => this.workerTypes;
 
         /// <inheritdoc />
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
@@ -54,7 +65,7 @@ namespace Autocrat.Compiler
                     if (string.Equals(method.Name, nameof(IWorkerFactory.GetWorker), StringComparison.Ordinal) &&
                         SymbolEqualityComparer.Default.Equals(method.ContainingType, this.workerFactoryInterface))
                     {
-                        this.workerTypes.Add(method.TypeArguments[0]);
+                        this.workerTypes.Add((INamedTypeSymbol)method.TypeArguments[0]);
                     }
                 }
             }

@@ -6,6 +6,9 @@
 namespace Autocrat.Compiler
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -16,17 +19,14 @@ namespace Autocrat.Compiler
     internal abstract class MethodGenerator
     {
         private readonly string generatedClassName;
-        private readonly string generatedMethodName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MethodGenerator"/> class.
         /// </summary>
         /// <param name="generatedClassName">The name for the generated class.</param>
-        /// <param name="generatedMethodName">The name for the generated method.</param>
-        protected MethodGenerator(string generatedClassName, string generatedMethodName)
+        protected MethodGenerator(string generatedClassName)
         {
             this.generatedClassName = generatedClassName;
-            this.generatedMethodName = generatedMethodName;
         }
 
         /// <summary>
@@ -54,24 +54,38 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
-        /// Creates the body for the method.
+        /// Creates a public static method that is exported to native code.
         /// </summary>
-        /// <returns>The code for the method.</returns>
-        protected abstract BlockSyntax CreateMethodBody();
+        /// <param name="name">The method identifier.</param>
+        /// <param name="body">The method body.</param>
+        /// <param name="returnType">Option return type.</param>
+        /// <returns>The method declaration syntax.</returns>
+        protected static MemberDeclarationSyntax CreateMethod(string name, BlockSyntax body, TypeSyntax? returnType = null)
+        {
+            SyntaxList<AttributeListSyntax> attributes = SingletonList(AttributeList(SingletonSeparatedList(
+                    RoslynHelper.CreateNativeCallableAttribute(name))));
+
+            MethodDeclarationSyntax method = MethodDeclaration(
+                returnType ?? PredefinedType(Token(SyntaxKind.VoidKeyword)),
+                Identifier(name));
+
+            return method
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+                .WithAttributeLists(attributes)
+                .WithBody(body);
+        }
+
+        /// <summary>
+        /// Creates the methods for the generated class.
+        /// </summary>
+        /// <returns>A sequence of methods to add.</returns>
+        protected abstract IEnumerable<MemberDeclarationSyntax> GetMethods();
 
         private MemberDeclarationSyntax CreateClass()
         {
-            MethodDeclarationSyntax method = MethodDeclaration(
-                PredefinedType(Token(SyntaxKind.VoidKeyword)),
-                Identifier(this.generatedMethodName))
-                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-                .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
-                    RoslynHelper.CreateNativeCallableAttribute(this.generatedMethodName)))))
-                .WithBody(this.CreateMethodBody());
-
             return ClassDeclaration(this.generatedClassName)
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
-                .AddMembers(method);
+                .AddMembers(this.GetMethods().ToArray());
         }
     }
 }

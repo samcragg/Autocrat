@@ -38,17 +38,13 @@
             {
                 this.initializer.AddClass(CreateClass());
                 CompilationUnitSyntax compilation = this.initializer.Generate();
-                SeparatedSyntaxList<AttributeArgumentSyntax> arguments =
+                MemberDeclarationSyntax member =
                     compilation.Members.Should().ContainSingle()
                     .Which.Should().BeAssignableTo<ClassDeclarationSyntax>()
                     .Which.Members.Should().ContainSingle()
-                    .Which.Should().BeAssignableTo<MethodDeclarationSyntax>()
-                    .Which.AttributeLists.Should().ContainSingle()
-                    .Which.Attributes.Should().ContainSingle()
-                    .Subject.ArgumentList.Arguments;
+                    .Subject;
 
-                arguments.Select(x => x.NormalizeWhitespace().ToString())
-                    .Should().Contain("EntryPoint = \"" + GeneratedMethodName + "\"");
+                CompilationHelper.AssertExportedAs(member, GeneratedMethodName);
             }
 
             [Fact]
@@ -60,7 +56,7 @@
 
             private static INamedTypeSymbol CreateClass()
             {
-                Compilation compilation = CompilationHelper.CompileCode(
+                return CompilationHelper.CreateTypeSymbol(
 @"namespace Autocrat.Abstractions
 {
     public interface IInitializer
@@ -75,14 +71,6 @@ class TestClass : Autocrat.Abstractions." + nameof(IInitializer) + @"
     {
     }
 }");
-                SyntaxTree tree = compilation.SyntaxTrees.First();
-                TypeDeclarationSyntax type = tree.GetRoot()
-                    .DescendantNodes()
-                    .OfType<TypeDeclarationSyntax>()
-                    .First();
-
-                SemanticModel model = compilation.GetSemanticModel(tree);
-                return model.GetDeclaredSymbol(type);
             }
         }
     }

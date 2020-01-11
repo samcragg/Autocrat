@@ -59,7 +59,7 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="instanceBuilder">Generates code to create objects.</param>
         public InitializerGenerator(InstanceBuilder instanceBuilder)
-            : base("Initialization", nameof(IInitializer.OnConfigurationLoaded))
+            : base("Initialization")
         {
             this.instanceBuilder = instanceBuilder;
         }
@@ -71,7 +71,7 @@ namespace Autocrat.Compiler
         /// This constructor is to make the class easier to be mocked.
         /// </remarks>
         protected InitializerGenerator()
-            : base(string.Empty, string.Empty)
+            : base(string.Empty)
         {
             this.instanceBuilder = null!;
         }
@@ -96,15 +96,15 @@ namespace Autocrat.Compiler
         }
 
         /// <inheritdoc />
-        protected override BlockSyntax CreateMethodBody()
+        protected override IEnumerable<MemberDeclarationSyntax> GetMethods()
         {
-            var invocations = new List<StatementSyntax>(this.methods.Count);
+            var statements = new List<StatementSyntax>(this.methods.Count);
             foreach ((INamedTypeSymbol type, IMethodSymbol method) in this.methods)
             {
                 IdentifierNameSyntax instance =
                     this.instanceBuilder.GenerateForType(type);
 
-                invocations.Add(
+                statements.Add(
                     ExpressionStatement(
                         InvocationExpression(
                             MemberAccessExpression(
@@ -113,9 +113,10 @@ namespace Autocrat.Compiler
                                 IdentifierName(method.Name)))));
             }
 
-            return Block(
-                this.instanceBuilder.LocalDeclarations
-                    .Concat(invocations));
+            statements.InsertRange(0, this.instanceBuilder.LocalDeclarations);
+            yield return CreateMethod(
+                nameof(IInitializer.OnConfigurationLoaded),
+                Block(statements));
         }
     }
 }
