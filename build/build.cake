@@ -85,7 +85,7 @@ Task("RestoreCppMock")
     CheckoutGitRepo(
         "cpp_mock",
         "https://github.com/samcragg/cpp_mock",
-        "v1.0.1",
+        "v1.0.2",
         "include");
 
     CopyDirectory("repos/cpp_mock/include", GetLibsFolder());
