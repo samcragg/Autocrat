@@ -7,6 +7,7 @@
 #include "network_service.h"
 #include "thread_pool.h"
 #include "timer_service.h"
+#include "worker_service.h"
 
 namespace autocrat
 {
@@ -70,7 +71,8 @@ namespace autocrat
     using global_services_type = services<
         thread_pool,
         network_service,
-        timer_service>;
+        timer_service,
+        worker_service>;
 
     extern MOCKABLE_GLOBAL(global_services_type) global_services;
 }

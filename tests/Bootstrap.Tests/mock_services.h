@@ -18,6 +18,13 @@ public:
     MockMethod(void, check_and_dispatch, ())
 };
 
+class mock_worker_service : public autocrat::worker_service
+{
+public:
+    MockMethod(void*, get_worker, (const void*))
+    MockMethod(void, register_type, (const void*, construct_worker))
+};
+
 class mock_services : public autocrat::global_services_type
 {
 public:
@@ -25,7 +32,8 @@ public:
     {
         _services = std::make_tuple(
             std::make_unique<mock_network_service>(),
-            std::make_unique<mock_timer_service>()
+            std::make_unique<mock_timer_service>(),
+            std::make_unique<mock_worker_service>()
         );
     }
 
@@ -44,6 +52,12 @@ public:
     {
         return *static_cast<mock_timer_service*>(
             get_service<autocrat::timer_service>());
+    }
+
+    mock_worker_service& worker_service()
+    {
+        return *static_cast<mock_worker_service*>(
+            get_service<autocrat::worker_service>());
     }
 };
 

@@ -13,6 +13,30 @@ class NativeExportsTests : public testing::Test
 protected:
 };
 
+TEST_F(NativeExportsTests, LoadObjectShouldReturnTheValue)
+{
+    int type = 0;
+    int worker = 0;
+    When(mock_global_services.worker_service().get_worker)
+        .With(&type)
+        .Return(&worker);
+
+    void* result = load_object(&type);
+
+    EXPECT_EQ(&worker, result);
+}
+
+TEST_F(NativeExportsTests, RegisterConstructorShouldAddTheMethodHandle)
+{
+    construct_worker method = []() -> void* { return nullptr; };
+    method_registration registration = method_registration::register_method(method);
+    int type = 0;
+
+    register_constructor(&type, registration.index());
+
+    Verify(mock_global_services.worker_service().register_type)
+        .With(&type, method);
+}
 TEST_F(NativeExportsTests, RegisterTimerShouldAddTheMethodHandle)
 {
     timer_method method = [](std::int32_t) {};

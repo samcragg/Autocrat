@@ -58,6 +58,9 @@ int autocrat_main()
     initialize_logging();
     setup_services();
 
+    spdlog::debug("Registering worker type constructors");
+    managed_exports::RegisterWorkerTypes();
+
     spdlog::info("Loading configuration");
     managed_exports::OnConfigurationLoaded();
 

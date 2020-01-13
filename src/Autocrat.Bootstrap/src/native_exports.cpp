@@ -4,6 +4,19 @@
 
 extern "C"
 {
+    void* CDECL load_object(const void* type)
+    {
+        auto* service = autocrat::global_services.get_service<autocrat::worker_service>();
+        return service->get_worker(type);
+    }
+
+    void CDECL register_constructor(const void* type, std::int32_t handle)
+    {
+        auto constructor = std::get<construct_worker>(get_known_method(handle));
+        auto* service = autocrat::global_services.get_service<autocrat::worker_service>();
+        service->register_type(type, constructor);
+    }
+
     std::int32_t CDECL register_timer(std::int64_t delay_us, std::int64_t interval_us, std::int32_t handle)
     {
         auto callback = std::get<timer_method>(get_known_method(handle));
