@@ -88,6 +88,7 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\pal_win32.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\thread_pool.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\timer_service.cpp" />
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\worker_service.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mock_method_handles.cpp" />
     <ClCompile Include="pal_mock.cpp" />
@@ -105,5 +106,6 @@
     <ClCompile Include="tests\SmartPtrTests.cpp" />
     <ClCompile Include="tests\ThreadPoolTests.cpp" />
     <ClCompile Include="tests\TimerServiceTests.cpp" />
+    <ClCompile Include="tests\WorkerServiceTests.cpp" />
   </ItemGroup>
 </Project>

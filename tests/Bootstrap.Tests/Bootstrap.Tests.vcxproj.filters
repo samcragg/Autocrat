@@ -90,5 +90,11 @@
     <ClCompile Include="tests\ReferenceScannerTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\WorkerServiceTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\worker_service.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

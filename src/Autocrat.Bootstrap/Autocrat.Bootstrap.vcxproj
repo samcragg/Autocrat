@@ -80,6 +80,7 @@
     <ClCompile Include="src\pal_win32.cpp" />
     <ClCompile Include="src\thread_pool.cpp" />
     <ClCompile Include="src\timer_service.cpp" />
+    <ClCompile Include="src\worker_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\array_pool.h" />
@@ -97,6 +98,7 @@
     <ClInclude Include="include\smart_ptr.h" />
     <ClInclude Include="include\thread_pool.h" />
     <ClInclude Include="include\timer_service.h" />
+    <ClInclude Include="include\worker_service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

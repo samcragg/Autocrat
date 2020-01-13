@@ -8,10 +8,12 @@
 #include <cstdint>
 #include <variant>
 
+using construct_worker = void* (*)();
 using timer_method = void (*)(std::int32_t);
 using udp_data_received_method = void (*)(std::int32_t, const void*);
 
 using method_types = std::variant<
+    construct_worker,
     timer_method,
     udp_data_received_method
 >;

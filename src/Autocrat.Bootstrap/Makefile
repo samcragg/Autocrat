@@ -10,7 +10,8 @@ SOURCES = \
  src/network_service.cpp \
  src/pal_posix.cpp \
  src/thread_pool.cpp \
- src/timer_service.cpp
+ src/timer_service.cpp \
+ src/worker_service.cpp
 
 OUTPUT_LIB = bin/Autocrat.Bootstrap.a
 build: $(OUTPUT_LIB);
