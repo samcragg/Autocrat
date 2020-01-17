@@ -6,7 +6,7 @@ CXXFLAGS = $(WARNINGFLAGS) -pthread -lrt -m64 -std=c++17
 ifeq ($(mode), Debug)
 	CXXFLAGS += -g
 else
-	CXXFLAGS += -O2
+	CXXFLAGS += -O2 -DNDEBUG
 endif
 
 define build_object
