@@ -16,6 +16,7 @@ SRCS = \
 TESTS = \
  tests/ArrayPoolTests.cpp \
  tests/BoundedQueueTests.cpp \
+ tests/DynamicArrayTests.cpp \
  tests/ManagedArrayTests.cpp \
  tests/NativeExportsTests.cpp \
  tests/PalServicesTests.cpp \

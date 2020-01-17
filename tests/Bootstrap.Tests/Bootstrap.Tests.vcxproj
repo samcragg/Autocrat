@@ -78,6 +78,7 @@
     <ClInclude Include="mock_method_handles.h" />
     <ClInclude Include="mock_services.h" />
     <ClInclude Include="pal_mock.h" />
+    <ClInclude Include="TestUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc" />
@@ -92,6 +93,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mock_method_handles.cpp" />
     <ClCompile Include="pal_mock.cpp" />
+    <ClCompile Include="tests\DynamicArrayTests.cpp" />
     <ClCompile Include="tests\ReferenceScannerTests.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />
     <ClCompile Include="tests\BoundedQueueTests.cpp" />

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <new>
@@ -127,6 +128,114 @@ namespace autocrat
         std::array<cell_t, Sz> _buffer;
         alignas(hardware_destructive_interference_size) std::atomic_size_t _enqueue_position;
         alignas(hardware_destructive_interference_size) std::atomic_size_t _dequeue_position;
+    };
+
+    /**
+     * Represents a dynamically allocated array of elements.
+     */
+    template <class T>
+    class dynamic_array
+    {
+    public:
+        using const_iterator = const T*;
+        using const_pointer = const T*;
+        using const_reference = const T&;
+        using iterator = T*;
+        using pointer = T*;
+        using reference = T&;
+        using value_type = T;
+
+        dynamic_array() :
+            _count(0)
+        {
+        }
+
+        explicit dynamic_array(std::size_t size) :
+            _count(size),
+            _elements(std::make_unique<T[]>(size))
+        {
+        }
+
+        reference operator[](std::size_t index) noexcept
+        {
+            assert(index < _count);
+            return *(data() + index);
+        }
+
+        const_reference operator[](std::size_t index) const noexcept
+        {
+            assert(index < _count);
+            return *(data() + index);
+        }
+
+
+        /**
+         * Returns an iterator to the first element of the container.
+         * @returns An iterator to the first element.
+         */
+        iterator begin() noexcept
+        {
+            return data();
+        }
+
+        /**
+         * Returns an iterator to the first element of the container.
+         * @returns An iterator to the first element.
+         */
+        const_iterator begin() const noexcept
+        {
+            return data();
+        }
+
+        /**
+         * Returns pointer to the underlying array serving as element storage.
+         * @returns A pointer to the underlying element storage.
+         */
+        pointer data() noexcept
+        {
+            return _elements.get();
+        }
+
+        /**
+         * Returns pointer to the underlying array serving as element storage.
+         * @returns A pointer to the underlying element storage.
+         */
+        const_pointer data() const noexcept
+        {
+            return _elements.get();
+        }
+
+        /**
+         * Returns an iterator to the element following the last element of the
+         * container.
+         * @returns An iterator to the element following the last element.
+         */
+        iterator end() noexcept
+        {
+            return data() + _count;
+        }
+
+        /**
+         * Returns an iterator to the element following the last element of the
+         * container.
+         * @returns An iterator to the element following the last element.
+         */
+        const_iterator end() const noexcept
+        {
+            return data() + _count;
+        }
+
+        /**
+         * Returns the number of elements in the container.
+         * @returns The number of elements in the container.
+         */
+        std::size_t size() const noexcept
+        {
+            return _count;
+        }
+    private:
+        std::size_t _count;
+        std::unique_ptr<T[]> _elements;
     };
 
     /**
