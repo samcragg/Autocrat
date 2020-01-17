@@ -3,7 +3,6 @@
 
 #include <any>
 #include <atomic>
-#include <memory>
 #include <thread>
 #include <tuple>
 #include "collections.h"
@@ -47,8 +46,7 @@ namespace autocrat
         std::atomic_bool _is_running;
         std::atomic_uint32_t _sleeping;
         bounded_queue<work_item, 1024> _work;
-        std::unique_ptr<std::thread[]> _threads;
-        std::size_t _thread_count;
+        dynamic_array<std::thread> _threads;
         std::uint32_t _wait_handle;
     };
 }

@@ -8,13 +8,12 @@ namespace autocrat
     thread_pool::thread_pool(std::size_t cpu_id, ::size_t threads) :
         _is_running(true),
         _sleeping(0),
-        _threads(new std::thread[threads]),
-        _thread_count(threads),
+        _threads(threads),
         _wait_handle(0)
     {
         spdlog::info("Creating {} threads with affinity starting from {}", threads, cpu_id);
 
-        for (std::size_t i = 0; i != _thread_count; ++i)
+        for (std::size_t i = 0; i != threads; ++i)
         {
             _threads[i] = std::thread(&thread_pool::perform_work, this);
             pal::set_affinity(_threads[i], cpu_id + i);
@@ -29,11 +28,11 @@ namespace autocrat
             pal::wake_all(&_wait_handle);
         }
 
-        for (std::size_t i = 0; i != _thread_count; ++i)
+        for (auto& thread : _threads)
         {
             try
             {
-                _threads[i].join();
+                thread.join();
             }
             catch (...)
             {
@@ -83,7 +82,7 @@ namespace autocrat
         std::uint32_t count = ++_sleeping;
 
         // Ensure at least one thread is immediately available
-        if (count != _thread_count)
+        if (count != _threads.size())
         {
             pal::wait_on(&_wait_handle);
         }
