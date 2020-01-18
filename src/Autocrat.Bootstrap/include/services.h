@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <tuple>
+#include <type_traits>
 #include "defines.h"
 #include "network_service.h"
 #include "thread_pool.h"
@@ -17,7 +18,7 @@ namespace autocrat
      * @tparam Services   The services classes to maintain.
      * @remarks The `Service` class must have the following:
      * + A constructor accepting a pointer to a ThreadPool
-     * + A method called `check_and_dispatch`
+     * + (optional) A method called `check_and_dispatch`
      */
     template <class ThreadPool, class... Services>
     class services
@@ -29,9 +30,7 @@ namespace autocrat
          */
         void check_and_dispatch()
         {
-            std::apply(
-                [](auto&... service) { (service->check_and_dispatch(), ...); },
-                _services);
+            ((check_and_dispatch(std::get<std::unique_ptr<Services>>(_services).get())), ...);
         }
 
         /**
@@ -64,6 +63,17 @@ namespace autocrat
         }
     private:
         GIVE_ACCESS_TO_MOCKS
+
+        template <class Service, bool HasMethod = std::is_member_function_pointer_v<decltype(&Service::check_and_dispatch)>>
+        static void check_and_dispatch(Service* service)
+        {
+            service->check_and_dispatch();
+        }
+
+        static void check_and_dispatch(void*)
+        {
+        }
+
         std::tuple<std::unique_ptr<Services>...> _services;
         std::unique_ptr<ThreadPool> _thread_pool;
     };
