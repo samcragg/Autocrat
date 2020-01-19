@@ -15,7 +15,7 @@ namespace autocrat
 
         for (std::size_t i = 0; i != threads; ++i)
         {
-            _threads[i] = std::thread(&thread_pool::perform_work, this);
+            _threads[i] = std::thread(&thread_pool::perform_work, this, i);
             pal::set_affinity(_threads[i], cpu_id + i);
         }
     }
@@ -40,6 +40,11 @@ namespace autocrat
         }
     }
 
+    void thread_pool::add_observer(lifetime_service* service)
+    {
+        _observers.push_back(service);
+    }
+
     void thread_pool::enqueue(callback_function function, std::any&& arg)
     {
         if (_sleeping != 0)
@@ -50,7 +55,27 @@ namespace autocrat
         _work.emplace(std::make_tuple(function, std::move(arg)));
     }
 
-    void thread_pool::perform_work()
+    std::size_t thread_pool::size() const noexcept
+    {
+        return _threads.size();
+    }
+
+    void thread_pool::invoke_work_item(std::size_t index, work_item& item) const
+    {
+        for (lifetime_service* observer : _observers)
+        {
+            observer->on_begin_work(index);
+        }
+
+        std::get<callback_function>(item)(std::get<std::any>(item));
+        
+        for (lifetime_service* observer : _observers)
+        {
+            observer->on_end_work(index);
+        }
+    }
+
+    void thread_pool::perform_work(std::size_t index)
     {
         const std::uint32_t maximum_spins = 1000;
         std::uint32_t spin_count = 0;
@@ -61,8 +86,7 @@ namespace autocrat
             if (_work.pop(&work))
             {
                 spin_count = 0;
-                auto& [callback, arg] = work;
-                callback(arg);
+                invoke_work_item(index, work);
             }
             else if (spin_count < maximum_spins)
             {

@@ -11,6 +11,27 @@
 namespace autocrat
 {
     /**
+     * Allows the monitoring of the work request.
+     */
+    class lifetime_service
+    {
+    public:
+        /**
+         * Called when a work item is about to be invoked.
+         * @param thread_id The id of the thread that will run the work item.
+         */
+        virtual void on_begin_work(std::size_t thread_id) = 0;
+
+        /**
+         * Called when a work item has completed.
+         * @param thread_id The if of the thread that ran the work item.
+         */
+        virtual void on_end_work(std::size_t thread_id) = 0;
+    protected:
+        ~lifetime_service() = default;
+    };
+
+    /**
      * Allows the queuing up of work to be performed in the future.
      */
     class thread_pool
@@ -30,7 +51,17 @@ namespace autocrat
          * @param threads The number of threads the pool should contain.
          */
         thread_pool(std::size_t cpu_id, std::size_t threads);
+
+        /**
+         * Destructs the `thread_pool` instance.
+         */
         MOCKABLE_METHOD ~thread_pool() noexcept;
+
+        /**
+         * Registers the service to receive notifications.
+         * @param service The instance to notify on work item events.
+         */
+        MOCKABLE_METHOD void add_observer(lifetime_service* service);
 
         /**
          * Enqueues the specified work to be performed in a background thread.
@@ -38,14 +69,22 @@ namespace autocrat
          * @param arg      The data to pass to the function.
          */
         MOCKABLE_METHOD void enqueue(callback_function function, std::any&& arg);
+
+        /**
+         * Gets the size of the thread pool.
+         * @returns The number of worker threads.
+         */
+        MOCKABLE_METHOD std::size_t size() const noexcept;
     private:
         using work_item = std::tuple<callback_function, std::any>;
-        void perform_work();
+        void invoke_work_item(std::size_t index, work_item& item) const;
+        void perform_work(std::size_t index);
         void wait_for_work();
 
         std::atomic_bool _is_running;
         std::atomic_uint32_t _sleeping;
         bounded_queue<work_item, 1024> _work;
+        small_vector<lifetime_service*> _observers;
         dynamic_array<std::thread> _threads;
         std::uint32_t _wait_handle;
     };
