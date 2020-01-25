@@ -32,7 +32,7 @@ namespace autocrat
         {
             if (kvp.second.port == port)
             {
-                kvp.second.callbacks.push_back(callback);
+                kvp.second.callbacks.emplace_back(callback);
                 return;
             }
         }
@@ -45,7 +45,7 @@ namespace autocrat
 
         socket_data data = {};
         data.port = port;
-        data.callbacks.push_back(callback);
+        data.callbacks.emplace_back(callback);
         _sockets.insert({ std::move(socket), std::move(data) });
     }
 

@@ -42,7 +42,7 @@ namespace autocrat
 
     void thread_pool::add_observer(lifetime_service* service)
     {
-        _observers.push_back(service);
+        _observers.emplace_back(service);
     }
 
     void thread_pool::enqueue(callback_function function, std::any&& arg)

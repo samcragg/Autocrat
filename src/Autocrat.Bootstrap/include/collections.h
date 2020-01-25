@@ -257,37 +257,44 @@ namespace autocrat
         using pointer = T*;
         using value_type = T;
 
+        /**
+         * Constructs a new instance of the `small_vector<T>` class.
+         */
         small_vector() :
+            _capacity(0),
             _count(0),
             _storage({})
         {
         }
 
+        /**
+         * Destructs an instance of the `small_vector<T>` class.
+         */
         ~small_vector() noexcept
         {
-            pointer element = data();
-            for (std::size_t i = 0; i != _count; i++)
-            {
-                element->~T();
-                ++element;
-            }
-
-            if (_count > maximum_local_elements)
+            clear();
+            if (has_dynamic_storage())
             {
                 std::allocator<T> alloc;
-                std::allocator_traits<std::allocator<T>>::deallocate(alloc, _dynamic.storage, _dynamic.capacity);
+                std::allocator_traits<std::allocator<T>>::deallocate(alloc, _dynamic, _capacity);
             }
         }
 
         small_vector(const small_vector<T>&) = delete;
 
+        /**
+         * Constructs a new instance of the `small_vector<T>` class.
+         * @param other The instance to move the resources from.
+         */
         small_vector(small_vector<T>&& other) noexcept(std::is_nothrow_move_constructible<T>::value) :
+            _capacity(other._capacity),
             _count(other._count)
         {
             other._count = 0;
-            if (_count > maximum_local_elements)
+            if (has_dynamic_storage())
             {
                 _dynamic = other._dynamic;
+                other._capacity = 0;
             }
             else
             {
@@ -306,11 +313,10 @@ namespace autocrat
 
         small_vector<T>& operator=(small_vector<T>&& other) noexcept(std::is_nothrow_move_assignable<T>::value)
         {
-            std::size_t count = other._count;
-            other._count = 0;
-            _count = count;
+            swap_and_zero(other._capacity, _capacity);
+            swap_and_zero(other._count, _count);
 
-            if (count > maximum_local_elements)
+            if (has_dynamic_storage())
             {
                 _dynamic = other._dynamic;
             }
@@ -343,18 +349,27 @@ namespace autocrat
         }
 
         /**
+         * Erases all elements from the container.
+         */
+        void clear() noexcept
+        {
+            std::destroy_n(data(), _count);
+            _count = 0;
+        }
+
+        /**
          * Returns pointer to the underlying array serving as element storage.
          * @returns A pointer to the underlying element storage.
          */
         pointer data() noexcept
         {
-            if (_count <= maximum_local_elements)
+            if (has_dynamic_storage())
             {
-                return get_local_element();
+                return get_dynamic_element();
             }
             else
             {
-                return get_dynamic_element();
+                return get_local_element();
             }
         }
 
@@ -364,14 +379,38 @@ namespace autocrat
          */
         const_pointer data() const noexcept
         {
-            if (_count <= maximum_local_elements)
-            {
-                return get_local_element();
-            }
-            else
+            if (has_dynamic_storage())
             {
                 return get_dynamic_element();
             }
+            else
+            {
+                return get_local_element();
+            }
+        }
+
+        /**
+         * Appends a new element to the end of the container.
+         * @param args The arguments to forward to the constructor of the element.
+         * @returns A reference to the inserted element.
+         */
+        template <class... Args>
+        T& emplace_back(Args&&... args)
+        {
+            T* element = allocate_element();
+            std::allocator<T> alloc;
+            std::allocator_traits<std::allocator<T>>::construct(alloc, element, std::forward<Args>(args)...);
+            ++_count;
+            return *element;
+        }
+
+        /**
+         * Checks if the container has no elements.
+         * @returns `true` if the container is empty; otherwise, `false`.
+         */
+        bool empty() const noexcept
+        {
+            return _count == 0;
         }
 
         /**
@@ -395,26 +434,6 @@ namespace autocrat
         }
 
         /**
-         * Appends the given element value to the end of the container.
-         * @param value The value of th element to append.
-         */
-        void push_back(const T& value)
-        {
-            *allocate_element() = value;
-            ++_count;
-        }
-
-        /**
-         * Appends the given element value to the end of the container.
-         * @param value The value of th element to append.
-         */
-        void push_back(T&& value)
-        {
-            *allocate_element() = std::move(value);
-            ++_count;
-        }
-
-        /**
          * Returns the number of elements in the container.
          * @returns The number of elements in the container.
          */
@@ -423,23 +442,28 @@ namespace autocrat
             return _count;
         }
     private:
-        struct dynamic_memory
+        static void swap_and_zero(std::uint32_t& src, std::uint32_t& dst)
         {
-            T* storage;
-            std::size_t capacity;
-        };
+            std::uint32_t tmp = src;
+            src = 0;
+            dst = tmp;
+        }
 
         pointer allocate_element()
         {
-            if (_count < maximum_local_elements)
+            if (!has_dynamic_storage())
             {
-                return get_local_element() + _count;
+                if (_count < maximum_local_elements)
+                {
+                    return get_local_element() + _count;
+                }
+                else
+                {
+                    assert(_count == maximum_local_elements);
+                    create_dynamic_storage();
+                }
             }
-            else if (_count == maximum_local_elements)
-            {
-                create_dynamic_storage();
-            }
-            else if (_count == _dynamic.capacity)
+            else if (_count == _capacity)
             {
                 resize_dynamic_storage();
             }
@@ -450,18 +474,24 @@ namespace autocrat
         void create_dynamic_storage()
         {
             std::allocator<T> alloc;
-            
+
             static constexpr std::size_t default_capacity = maximum_local_elements * 2;
             T* storage = std::allocator_traits<std::allocator<T>>::allocate(alloc, default_capacity);
 
             pointer src = get_local_element();
             std::move(src, src + maximum_local_elements, storage);
-            _dynamic = { storage, default_capacity };
+            _dynamic = storage;
+            _capacity = default_capacity;
+        }
+
+        bool has_dynamic_storage() const noexcept
+        {
+            return _capacity != 0;
         }
 
         pointer get_dynamic_element() const noexcept
         {
-            return _dynamic.storage;
+            return _dynamic;
         }
 
         pointer get_local_element() const noexcept
@@ -471,23 +501,28 @@ namespace autocrat
 
         void resize_dynamic_storage()
         {
-            std::allocator<T> alloc;
+            std::size_t new_size = _capacity + (_capacity / 2); // 1.5 growth factor
+            if (new_size > std::numeric_limits<std::uint32_t>::max())
+            {
+                throw std::bad_alloc();
+            }
 
-            std::size_t new_size = _count + (_count / 2); // 1.5 growth factor
+            std::allocator<T> alloc;
             T* new_storage = std::allocator_traits<std::allocator<T>>::allocate(alloc, new_size);
 
             pointer src = get_dynamic_element();
             std::move(src, src + _count, static_cast<T*>(new_storage));
 
-            std::allocator_traits<std::allocator<T>>::deallocate(alloc, _dynamic.storage, _dynamic.capacity);
-            _dynamic.storage = new_storage;
-            _dynamic.capacity = new_size;
+            std::allocator_traits<std::allocator<T>>::deallocate(alloc, _dynamic, _capacity);
+            _dynamic = new_storage;
+            _capacity = static_cast<std::uint32_t>(new_size);
         }
 
-        std::size_t _count;
+        std::uint32_t _capacity;
+        std::uint32_t _count;
         union
         {
-            dynamic_memory _dynamic;
+            T* _dynamic;
             std::aligned_storage_t<sizeof(T) * maximum_local_elements> _storage;
         };
     };
