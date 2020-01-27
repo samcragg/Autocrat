@@ -5,6 +5,7 @@
 #include <tuple>
 #include <type_traits>
 #include "defines.h"
+#include "gc_service.h"
 #include "network_service.h"
 #include "thread_pool.h"
 #include "timer_service.h"
@@ -80,6 +81,7 @@ namespace autocrat
 
     using global_services_type = services<
         thread_pool,
+        gc_service,
         network_service,
         timer_service,
         worker_service>;

@@ -74,6 +74,7 @@
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
     <ClCompile Include="src\array_pool.cpp" />
+    <ClCompile Include="src\gc_service.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\managed_interop.cpp" />
     <ClCompile Include="src\native_exports.cpp" />
@@ -87,6 +88,7 @@
     <ClInclude Include="include\array_pool.h" />
     <ClInclude Include="include\collections.h" />
     <ClInclude Include="include\defines.h" />
+    <ClInclude Include="include\gc_service.h" />
     <ClInclude Include="include\managed_exports.h" />
     <ClInclude Include="include\managed_interop.h" />
     <ClInclude Include="include\method_handles.h" />

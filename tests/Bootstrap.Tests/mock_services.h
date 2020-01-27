@@ -4,6 +4,12 @@
 #include "services.h"
 #include <cpp_mock.h>
 
+class mock_gc_service : public autocrat::gc_service
+{
+public:
+    MockMethod(void*, allocate, (std::size_t))
+};
+
 class mock_network_service : public autocrat::network_service
 {
 public:
@@ -31,6 +37,7 @@ public:
     void create_services()
     {
         _services = std::make_tuple(
+            std::make_unique<mock_gc_service>(),
             std::make_unique<mock_network_service>(),
             std::make_unique<mock_timer_service>(),
             std::make_unique<mock_worker_service>()
@@ -40,6 +47,12 @@ public:
     void release_services()
     {
         _services = {};
+    }
+
+    mock_gc_service& gc_service()
+    {
+        return *static_cast<mock_gc_service*>(
+            get_service<autocrat::gc_service>());
     }
 
     mock_network_service& network_service()

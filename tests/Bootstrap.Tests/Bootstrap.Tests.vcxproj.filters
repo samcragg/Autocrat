@@ -20,6 +20,9 @@
     <ClInclude Include="mock_services.h" />
     <ClInclude Include="mock_method_handles.h" />
     <ClInclude Include="TestUtils.h" />
+    <ClInclude Include="TestMocks.h">
+      <Filter>gtest</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc">
@@ -99,6 +102,9 @@
     </ClCompile>
     <ClCompile Include="tests\DynamicArrayTests.cpp">
       <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\gc_service.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

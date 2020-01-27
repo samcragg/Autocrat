@@ -5,6 +5,7 @@ CXXFLAGS += -DUNIT_TESTS -I . -I ../../src/Autocrat.Bootstrap/include -isystem .
 SRC_DIR = ../../src/Autocrat.Bootstrap/src
 SRCS = \
  $(SRC_DIR)/array_pool.cpp \
+ $(SRC_DIR)/gc_service.cpp \
  $(SRC_DIR)/managed_interop.cpp \
  $(SRC_DIR)/native_exports.cpp \
  $(SRC_DIR)/network_service.cpp \

@@ -78,11 +78,13 @@
     <ClInclude Include="mock_method_handles.h" />
     <ClInclude Include="mock_services.h" />
     <ClInclude Include="pal_mock.h" />
+    <ClInclude Include="TestMocks.h" />
     <ClInclude Include="TestUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\array_pool.cpp" />
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\gc_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\managed_interop.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\native_exports.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\network_service.cpp" />
