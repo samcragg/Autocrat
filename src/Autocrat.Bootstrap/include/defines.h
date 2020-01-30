@@ -26,4 +26,10 @@
 #define CDECL __cdecl
 #endif
 
+#if NDEBUG
+#define UNUSED(x) ((void)x)
+#else
+#define UNUSED(x)
+#endif
+
 #endif

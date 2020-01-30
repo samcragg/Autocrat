@@ -41,6 +41,9 @@
     <ClCompile Include="src\gc_service.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\memory_pool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\method_handles.h">
@@ -92,6 +95,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\gc_service.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\memory_pool.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

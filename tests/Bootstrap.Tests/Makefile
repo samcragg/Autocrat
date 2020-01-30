@@ -7,6 +7,7 @@ SRCS = \
  $(SRC_DIR)/array_pool.cpp \
  $(SRC_DIR)/gc_service.cpp \
  $(SRC_DIR)/managed_interop.cpp \
+ $(SRC_DIR)/memory_pool.cpp \
  $(SRC_DIR)/native_exports.cpp \
  $(SRC_DIR)/network_service.cpp \
  $(SRC_DIR)/pal_posix.cpp \
@@ -19,7 +20,9 @@ TESTS = \
  tests/BoundedQueueTests.cpp \
  tests/DynamicArrayTests.cpp \
  tests/ManagedArrayTests.cpp \
+ tests/MemoryPoolTests.cpp \
  tests/NativeExportsTests.cpp \
+ tests/NodePoolTests.cpp \
  tests/PalServicesTests.cpp \
  tests/PalSocketTests.cpp \
  tests/PalThreadTests.cpp \
@@ -30,6 +33,7 @@ TESTS = \
  tests/ThreadPoolTests.cpp \
  tests/TimerServiceTests.cpp \
  tests/WorkerServiceTests.cpp \
+ MemoryMonitor.cpp \
  main.cpp \
  mock_method_handles.cpp \
  pal_mock.cpp

@@ -23,6 +23,9 @@
     <ClInclude Include="TestMocks.h">
       <Filter>gtest</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryMonitor.h">
+      <Filter>gtest</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc">
@@ -104,6 +107,16 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\gc_service.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryMonitor.cpp" />
+    <ClCompile Include="tests\MemoryPoolTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\NodePoolTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\memory_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

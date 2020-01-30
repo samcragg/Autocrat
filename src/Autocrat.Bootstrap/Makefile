@@ -7,6 +7,7 @@ SOURCES = \
  src/gc_service.cpp \
  src/main.cpp \
  src/managed_interop.cpp \
+ src/memory_pool.cpp \
  src/native_exports.cpp \
  src/network_service.cpp \
  src/pal_posix.cpp \
