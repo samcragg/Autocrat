@@ -142,19 +142,15 @@ namespace autocrat
         }
     }
 
-    void reference_scanner::scan_references(void* object, void* copy, std::size_t offset, std::size_t count)
+    void reference_scanner::scan_references(const void* object, void* copy, std::size_t offset, std::size_t count)
     {
         while (count-- > 0)
         {
-            void* address = static_cast<char*>(object) + offset;
-            void* instance = *static_cast<void**>(address);
-            if (instance != nullptr)
-            {
-                _mover->set_reference(
-                    static_cast<std::byte*>(copy),
-                    offset,
-                    move(instance));
-            }
+            void* instance = _mover->get_reference(static_cast<const std::byte*>(object), offset);
+            _mover->set_reference(
+                static_cast<std::byte*>(copy),
+                offset,
+                move(instance));
 
             offset += sizeof(void*);
         }

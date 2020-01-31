@@ -40,7 +40,7 @@ namespace
 
     struct CGCDescSeries
     {
-        val_array_series val_serie[3];
+        val_array_series val_series[3];
         size_t seriessize;
     };
 
@@ -117,9 +117,15 @@ namespace
 
 struct ObjectCounter : autocrat::object_mover
 {
+    void* get_reference(const std::byte* object, std::size_t offset) override
+    {
+        void* address_of_field = const_cast<std::byte*>(object + offset);
+        return *static_cast<void**>(address_of_field);
+    }
+
     void* move_object(const std::byte* object, std::size_t size) override
     {
-        bytes += size;
+        allocated_bytes += size;
         references++;
         return const_cast<std::byte*>(object);
     }
@@ -128,31 +134,32 @@ struct ObjectCounter : autocrat::object_mover
     {
     }
 
-    std::size_t bytes = 0;
+    std::size_t allocated_bytes = 0;
     std::size_t references = 0;
 };
 
-struct ObjectMover : autocrat::object_mover
+struct ObjectMover : ObjectCounter
 {
     void* move_object(const std::byte* object, std::size_t size) override
     {
-        EXPECT_LT(size, buffer.size() - allocated);
+        EXPECT_LT(size, buffer.size() - allocated_bytes);
 
-        std::byte* new_object = buffer.data() + allocated;
+        std::byte* new_object = buffer.data() + allocated_bytes;
         std::copy_n(object, size, new_object);
-        allocated += size;
+        allocated_bytes += size;
         return new_object;
     }
 
     void set_reference(std::byte* object, std::size_t offset, void* reference) override
     {
-        EXPECT_GE(object, buffer.data());
-        EXPECT_LT(object + offset + sizeof(void*), buffer.data() + buffer.size());
-
-        std::copy_n(reinterpret_cast<std::byte*>(&reference), sizeof(void*), object + offset);
+        if (reference != nullptr)
+        {
+            EXPECT_GE(object, buffer.data());
+            EXPECT_LT(object + offset + sizeof(void*), buffer.data() + buffer.size());
+            std::copy_n(reinterpret_cast<std::byte*>(&reference), sizeof(void*), object + offset);
+        }
     }
 
-    std::size_t allocated = 0;
     std::array<std::byte, 1024u> buffer = {};
 };
 
@@ -172,7 +179,7 @@ TEST_F(ReferenceScannerTests, MoveShouldHandleNullObjects)
 {
     _scanner.move(static_cast<void*>(nullptr));
 
-    EXPECT_EQ(0u, _counter.bytes);
+    EXPECT_EQ(0u, _counter.allocated_bytes);
     EXPECT_EQ(0u, _counter.references);
 }
 
@@ -208,7 +215,7 @@ TEST_F(ReferenceScannerTests, ShouldMoveTheReferencesAndData)
     auto array_copy = static_cast<ManagedArray<3u>*>(copy->SecondReference);
     EXPECT_EQ(array_copy->references[0], array_copy->references[2]);
     EXPECT_GE(array_copy->references[0], mover.buffer.data());
-    EXPECT_LT(array_copy->references[0], mover.buffer.data() + mover.allocated);
+    EXPECT_LT(array_copy->references[0], mover.buffer.data() + mover.allocated_bytes);
     EXPECT_EQ(nullptr, array_copy->references[1]);
 }
 
@@ -219,7 +226,7 @@ TEST_F(ReferenceScannerTests, ShouldScanEmptyObjects)
 
     _scanner.move(&value);
 
-    EXPECT_EQ(24u, _counter.bytes);
+    EXPECT_EQ(24u, _counter.allocated_bytes);
     EXPECT_EQ(1u, _counter.references);
 }
 
@@ -231,7 +238,7 @@ TEST_F(ReferenceScannerTests, ShouldScanCircularReferences)
 
     _scanner.move(&object);
 
-    EXPECT_EQ(24u, _counter.bytes);
+    EXPECT_EQ(24u, _counter.allocated_bytes);
     EXPECT_EQ(1u, _counter.references);
 }
 
@@ -250,7 +257,7 @@ TEST_F(ReferenceScannerTests, ShouldScanReferenceArrays)
 
     _scanner.move(&object);
 
-    EXPECT_EQ(24u + 24u + 40u + 24u, _counter.bytes);
+    EXPECT_EQ(24u + 24u + 40u + 24u, _counter.allocated_bytes);
     EXPECT_EQ(3u, _counter.references);
 }
 
@@ -265,7 +272,7 @@ TEST_F(ReferenceScannerTests, ShouldScanInheritedReferences)
 
     _scanner.move(&derived);
 
-    EXPECT_EQ(48u + 24u, _counter.bytes);
+    EXPECT_EQ(48u + 24u, _counter.allocated_bytes);
     EXPECT_EQ(2u, _counter.references);
 }
 
@@ -281,6 +288,6 @@ TEST_F(ReferenceScannerTests, ShouldScanTypesWithValueArrays)
 
     _scanner.move(&object);
 
-    EXPECT_EQ(24u + 24u + 12u, _counter.bytes);
+    EXPECT_EQ(24u + 24u + 12u, _counter.allocated_bytes);
     EXPECT_EQ(2u, _counter.references);
 }

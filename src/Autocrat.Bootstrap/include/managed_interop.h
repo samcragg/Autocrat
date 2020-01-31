@@ -18,6 +18,14 @@ namespace autocrat
     struct object_mover
     {
         /**
+         * Gets the specified reference field in the object.
+         * @param object The address of the object.
+         * @param offset The offset of the field.
+         * @returns The value for the reference.
+         */
+        virtual void* get_reference(const std::byte* object, std::size_t offset) = 0;
+
+        /**
          * Copies the object into another memory region.
          * @param object The address of the object.
          * @param size   The size, in bytes, of the object.
@@ -53,7 +61,7 @@ namespace autocrat
     private:
         void* move_object(detail::managed_object* object, std::size_t size);
         void scan(detail::managed_object* object, void* copy, const detail::managed_type* type);
-        void scan_references(void* object, void* copy, std::size_t offset, std::size_t count);
+        void scan_references(const void* object, void* copy, std::size_t offset, std::size_t count);
 
         object_mover* _mover;
     };
