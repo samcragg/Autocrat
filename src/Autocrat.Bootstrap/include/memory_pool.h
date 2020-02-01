@@ -92,6 +92,14 @@ namespace autocrat
         void move_to(value_type* destination, std::size_t size);
 
         /**
+         * Overwrites the specified data starting at the specified index.
+         * @param index  The location of where to start writing.
+         * @param data   The data to copy.
+         * @param length The number of bytes to copy.
+         */
+        void replace(std::size_t index, const value_type* data, std::size_t length);
+
+        /**
          * Gets the number of bytes written to this instance.
          * @returns The number of bytes that have been written.
          */

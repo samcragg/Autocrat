@@ -111,7 +111,7 @@ namespace autocrat
         }
     }
 
-    void memory_pool_buffer::move_to(std::byte* destination, std::size_t size)
+    void memory_pool_buffer::move_to(value_type* destination, std::size_t size)
     {
         assert(size >= _count);
         UNUSED(size);
@@ -131,6 +131,33 @@ namespace autocrat
         assert(node == nullptr);
         _head = nullptr;
         _count = 0;
+    }
+
+    void memory_pool_buffer::replace(std::size_t index, const value_type* data, std::size_t length)
+    {
+        assert((index + length) <= _count);
+
+        std::size_t node_index = index / pool_node::capacity;
+        std::size_t offset = index % pool_node::capacity;
+
+        pool_node* node = _head;
+        while (node_index-- > 0)
+        {
+            node = node->next;
+        }
+
+        const std::byte* src = data;
+        std::size_t remaining = length;
+        while (remaining > 0)
+        {
+            std::size_t count = std::min(remaining, pool_node::capacity - offset);
+            std::copy_n(src, count, node->buffer.data() + offset);
+            offset = 0;
+
+            node = node->next;
+            src += count;
+            remaining -= count;
+        }
     }
 
     std::size_t memory_pool_buffer::size() const noexcept
