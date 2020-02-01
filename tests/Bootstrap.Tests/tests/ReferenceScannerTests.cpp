@@ -117,20 +117,20 @@ namespace
 
 struct ObjectCounter : autocrat::object_mover
 {
-    void* get_reference(const std::byte* object, std::size_t offset) override
+    void* get_reference(void* object, std::size_t offset) override
     {
-        void* address_of_field = const_cast<std::byte*>(object + offset);
+        void* address_of_field = static_cast<std::byte*>(object) + offset;
         return *static_cast<void**>(address_of_field);
     }
 
-    void* move_object(const std::byte* object, std::size_t size) override
+    void* move_object(void* object, std::size_t size) override
     {
         allocated_bytes += size;
         references++;
-        return const_cast<std::byte*>(object);
+        return object;
     }
 
-    void set_reference(std::byte*, std::size_t, void*) override
+    void set_reference(void*, std::size_t, void*) override
     {
     }
 
@@ -140,23 +140,24 @@ struct ObjectCounter : autocrat::object_mover
 
 struct ObjectMover : ObjectCounter
 {
-    void* move_object(const std::byte* object, std::size_t size) override
+    void* move_object(void* object, std::size_t size) override
     {
         EXPECT_LT(size, buffer.size() - allocated_bytes);
 
         std::byte* new_object = buffer.data() + allocated_bytes;
-        std::copy_n(object, size, new_object);
+        std::copy_n(static_cast<std::byte*>(object), size, new_object);
         allocated_bytes += size;
         return new_object;
     }
 
-    void set_reference(std::byte* object, std::size_t offset, void* reference) override
+    void set_reference(void* object, std::size_t offset, void* reference) override
     {
         if (reference != nullptr)
         {
-            EXPECT_GE(object, buffer.data());
-            EXPECT_LT(object + offset + sizeof(void*), buffer.data() + buffer.size());
-            std::copy_n(reinterpret_cast<std::byte*>(&reference), sizeof(void*), object + offset);
+            auto data = static_cast<std::byte*>(object);
+            EXPECT_GE(data, buffer.data());
+            EXPECT_LT(data + offset + sizeof(void*), buffer.data() + buffer.size());
+            std::copy_n(reinterpret_cast<std::byte*>(&reference), sizeof(void*), data + offset);
         }
     }
 

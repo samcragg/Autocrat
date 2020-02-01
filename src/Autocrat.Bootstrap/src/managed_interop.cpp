@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdint>
 #include "managed_interop.h"
 
 namespace autocrat
@@ -105,7 +106,7 @@ namespace autocrat
 
     void* reference_scanner::move_object(managed_object* object, std::size_t size)
     {
-        void* moved = _mover->move_object(reinterpret_cast<std::byte*>(object), size);
+        void* moved = _mover->move_object(object, size);
         auto pointer = reinterpret_cast<std::uintptr_t>(moved) | moved_bit;
         object->type = reinterpret_cast<autocrat::detail::managed_type*>(pointer);
         return moved;
@@ -142,15 +143,13 @@ namespace autocrat
         }
     }
 
-    void reference_scanner::scan_references(const void* object, void* copy, std::size_t offset, std::size_t count)
+    void reference_scanner::scan_references(void* object, void* copy, std::size_t offset, std::size_t count)
     {
         while (count-- > 0)
         {
-            void* instance = _mover->get_reference(static_cast<const std::byte*>(object), offset);
-            _mover->set_reference(
-                static_cast<std::byte*>(copy),
-                offset,
-                move(instance));
+            void* instance = _mover->get_reference(object, offset);
+            void* new_reference = move(instance);
+            _mover->set_reference(copy, offset, new_reference);
 
             offset += sizeof(void*);
         }

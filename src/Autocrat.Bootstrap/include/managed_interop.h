@@ -2,7 +2,6 @@
 #define MANAGED_INEROP_H
 
 #include <cstddef>
-#include <cstdint>
 
 namespace autocrat
 {
@@ -23,23 +22,23 @@ namespace autocrat
          * @param offset The offset of the field.
          * @returns The value for the reference.
          */
-        virtual void* get_reference(const std::byte* object, std::size_t offset) = 0;
+        virtual void* get_reference(void* object, std::size_t offset) = 0;
 
         /**
          * Copies the object into another memory region.
-         * @param object The address of the object.
+         * @param object The object reference.
          * @param size   The size, in bytes, of the object.
-         * @returns The address of the new object.
+         * @returns The reference to the new object.
          */
-        virtual void* move_object(const std::byte* object, std::size_t size) = 0;
+        virtual void* move_object(void* object, std::size_t size) = 0;
 
         /**
          * Sets the specified reference field in the object.
-         * @param object    The address of the object.
+         * @param object    The object reference.
          * @param offset    The offset of the field.
          * @param reference The new value for the reference.
          */
-        virtual void set_reference(std::byte* object, std::size_t offset, void* reference) = 0;
+        virtual void set_reference(void* object, std::size_t offset, void* reference) = 0;
     };
 
     /**
@@ -61,7 +60,7 @@ namespace autocrat
     private:
         void* move_object(detail::managed_object* object, std::size_t size);
         void scan(detail::managed_object* object, void* copy, const detail::managed_type* type);
-        void scan_references(const void* object, void* copy, std::size_t offset, std::size_t count);
+        void scan_references(void* object, void* copy, std::size_t offset, std::size_t count);
 
         object_mover* _mover;
     };
