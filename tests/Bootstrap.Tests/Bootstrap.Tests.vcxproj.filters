@@ -119,5 +119,9 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\memory_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="ManagedObjects.h" />
+    <ClCompile Include="tests\FixedHashmapTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

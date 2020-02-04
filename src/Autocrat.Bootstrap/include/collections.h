@@ -6,6 +6,7 @@
 #include <atomic>
 #include <cassert>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <new>
 #include <type_traits>
@@ -145,11 +146,18 @@ namespace autocrat
         using reference = T&;
         using value_type = T;
 
+        /**
+         * Constructs a new instance of the `dyanmic_array<T>` class.
+         */
         dynamic_array() :
             _count(0)
         {
         }
 
+        /**
+         * Constructs a new instance of the `dynamic_array<T>` class.
+         * @param size The capacity for the array.
+         */
         explicit dynamic_array(std::size_t size) :
             _count(size),
             _elements(std::make_unique<T[]>(size))
@@ -237,6 +245,157 @@ namespace autocrat
         std::size_t _count;
         std::unique_ptr<T[]> _elements;
     };
+
+    /**
+     * Represents a fixed size unordered lookup collection.
+     */
+    template <class Key, class Value>
+    class fixed_hashmap
+    {
+    public:
+        static_assert(std::is_trivially_destructible_v<Key>, "destructor is not implemented");
+        static_assert(std::is_trivially_destructible_v<Value>, "destructor is not implemented");
+
+        /**
+         * The maximum number of items that an instance can contain.
+         */
+        static constexpr std::size_t maximum_capacity = 127u;
+
+        using value_type = std::pair<Key, Value>;
+        using const_iterator = const value_type*;
+
+        /**
+         * Constructs a new instance of the `fixed_hashmap<Key, Value>` class.
+         */
+        fixed_hashmap() :
+            _buckets({}),
+            _entries({}),
+            _next_free_index(0)
+        {
+        }
+
+        /**
+         * Inserts a new element into the container, constructed in-place with the
+         * given args if there is no element with the key.
+         * @tparam Args The argument types for the constructor of the element.
+         * @param key  The key to associate with the value.
+         * @param args Arguments to forward to the constructor of the element.
+         */
+        template <class... Args>
+        void emplace(const Key& key, Args&&... args)
+        {
+            std::size_t bucket = get_bucket(key);
+            auto it = get_entry(bucket);
+            if (it == nullptr)
+            {
+                create_entry(std::make_pair(
+                    key,
+                    Value(std::forward<Args>(args)...)));
+
+                // entry indexes are one based, so next_free_index points to the
+                // one after the entry we just made, which is just what we need
+                _buckets[bucket] = _next_free_index;
+            }
+            else
+            {
+                entry* previous = it;
+                do
+                {
+                    if (it->pair.first == key)
+                    {
+                        return;
+                    }
+
+                    previous = it;
+                    it = it->next;
+                } while (it != nullptr);
+
+                previous->next = create_entry(std::make_pair(
+                    key,
+                    Value(std::forward<Args>(args)...)));
+            }
+        }
+
+        /**
+         * Returns an iterator to the element following the last element of the container.
+         * @returns An iterator to the element following the last element.
+         */
+        const_iterator end() const noexcept
+        {
+            return nullptr;
+        }
+
+        /**
+         * Finds an element with the specified key.
+         * @param key The key value of the element to search for.
+         * @returns An iterator to an element with the specified key, or the value
+         *          of `end()` is no such key is found.
+         */
+        const_iterator find(const Key& key) const
+        {
+            const entry* it = get_entry(get_bucket(key));
+            while (it != nullptr)
+            {
+                if (it->pair.first == key)
+                {
+                    return &it->pair;
+                }
+
+                it = it->next;
+            }
+
+            return end();
+        }
+    private:
+        struct entry
+        {
+            entry* next;
+            value_type pair;
+        };
+
+        using entry_type = std::aligned_storage_t<sizeof(entry), alignof(entry)>;
+
+        entry* create_entry(value_type&& pair)
+        {
+            assert(_next_free_index < _entries.size());
+            entry* e = get_entry(&_entries[_next_free_index]);
+            ++_next_free_index;
+
+            e->pair = std::move(pair);
+            return e;
+        }
+
+        entry* get_entry(std::size_t bucket) const
+        {
+            // We use 1-based indexes so we know the difference between empty
+            // buckets and used ones
+            std::size_t index = _buckets[bucket];
+            if (index == 0)
+            {
+                return nullptr;
+            }
+            else
+            {
+                return get_entry( _entries.data() + index - 1);
+            }
+        }
+
+        entry* get_entry(const entry_type* raw) const
+        {
+            return const_cast<entry*>(
+                std::launder(reinterpret_cast<const entry*>(raw)));
+        }
+
+        std::size_t get_bucket(const Key& key) const
+        {
+            return std::hash<Key>{}(key) % _buckets.size();
+        }
+
+        std::array<std::uint8_t, maximum_capacity> _buckets;
+        std::array<entry_type, maximum_capacity> _entries;
+        std::uint8_t _next_free_index;
+    };
+
 
     /**
      * Represents a dynamically sized container that stores elements
