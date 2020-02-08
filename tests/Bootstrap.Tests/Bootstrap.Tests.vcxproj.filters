@@ -123,5 +123,9 @@
     <ClCompile Include="tests\FixedHashmapTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="ManagedObjects.cpp" />
+    <ClCompile Include="tests\ObjectSerializerTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

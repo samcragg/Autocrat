@@ -2,67 +2,56 @@
 #define MANAGED_INEROP_H
 
 #include <cstddef>
+#include <optional>
+#include "memory_pool.h"
 
 namespace autocrat
 {
+    // Expose this to the unit tests, as it's the base for saving/restoring
+    // objects to/from a buffer
     namespace detail
     {
         struct managed_object;
         struct managed_type;
+
+        class reference_scanner
+        {
+        public:
+            void* move(void* root);
+        protected:
+            ~reference_scanner() = default;
+
+            virtual std::optional<void*> get_moved_location(void* object) = 0;
+            virtual void* get_reference(void* object, std::size_t offset) = 0;
+            virtual void* move_object(void* object, std::size_t size) = 0;
+            virtual void set_moved_location(void* object, void* new_location) = 0;
+            virtual void set_reference(void* object, std::size_t offset, void* reference) = 0;
+        private:
+            void scan(managed_object* object, void* copy, const managed_type* type);
+            void scan_references(void* object, void* copy, std::size_t offset, std::size_t count);
+        };
     }
 
     /**
-     * Interface for the moving of managed object memory.
+     * Allows the saving and loading of an object.
      */
-    struct object_mover
-    {
-        /**
-         * Gets the specified reference field in the object.
-         * @param object The address of the object.
-         * @param offset The offset of the field.
-         * @returns The value for the reference.
-         */
-        virtual void* get_reference(void* object, std::size_t offset) = 0;
-
-        /**
-         * Copies the object into another memory region.
-         * @param object The object reference.
-         * @param size   The size, in bytes, of the object.
-         * @returns The reference to the new object.
-         */
-        virtual void* move_object(void* object, std::size_t size) = 0;
-
-        /**
-         * Sets the specified reference field in the object.
-         * @param object    The object reference.
-         * @param offset    The offset of the field.
-         * @param reference The new value for the reference.
-         */
-        virtual void set_reference(void* object, std::size_t offset, void* reference) = 0;
-    };
-
-    /**
-     * Scans the managed object graph for all references.
-     */
-    class reference_scanner
+    class object_serializer
     {
     public:
-        explicit reference_scanner(object_mover& mover);
+        /**
+         * Restores the previously saved object.
+         * @returns A pointer to the object.
+         */
+        void* restore();
 
         /**
-         * Moves the object graph and its references.
-         * @param root The root of the object graph to scan.
-         * @returns The address of the object after it has been moved.
-         * @remarks The passed in object will be in an invalid state after this
-         *          method has returned (i.e. its data will be inaccessible).
+         * Saves the specified object to this instance.
+         * @param object The address of the object to save.
          */
-        void* move(void* root);
+        void save(void* object);
     private:
-        void* move_object(detail::managed_object* object, std::size_t size);
-        void scan(detail::managed_object* object, void* copy, const detail::managed_type* type);
-        void scan_references(void* object, void* copy, std::size_t offset, std::size_t count);
-
-        object_mover* _mover;
+        memory_pool_buffer _buffer;
+        std::size_t _references = 0;
     };
 }
 

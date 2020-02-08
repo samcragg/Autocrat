@@ -24,6 +24,7 @@ TESTS = \
  tests/MemoryPoolTests.cpp \
  tests/NativeExportsTests.cpp \
  tests/NodePoolTests.cpp \
+ tests/ObjectSerializerTests.cpp \
  tests/PalServicesTests.cpp \
  tests/PalSocketTests.cpp \
  tests/PalThreadTests.cpp \
@@ -34,6 +35,7 @@ TESTS = \
  tests/ThreadPoolTests.cpp \
  tests/TimerServiceTests.cpp \
  tests/WorkerServiceTests.cpp \
+ ManagedObjects.cpp \
  MemoryMonitor.cpp \
  main.cpp \
  mock_method_handles.cpp \

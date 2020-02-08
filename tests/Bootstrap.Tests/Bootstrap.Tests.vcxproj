@@ -95,6 +95,7 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\timer_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\worker_service.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ManagedObjects.cpp" />
     <ClCompile Include="MemoryMonitor.cpp" />
     <ClCompile Include="mock_method_handles.cpp" />
     <ClCompile Include="pal_mock.cpp" />
@@ -103,6 +104,7 @@
     <ClCompile Include="tests\FixedHashmapTests.cpp" />
     <ClCompile Include="tests\MemoryPoolTests.cpp" />
     <ClCompile Include="tests\NodePoolTests.cpp" />
+    <ClCompile Include="tests\ObjectSerializerTests.cpp" />
     <ClCompile Include="tests\ReferenceScannerTests.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />
     <ClCompile Include="tests\BoundedQueueTests.cpp" />

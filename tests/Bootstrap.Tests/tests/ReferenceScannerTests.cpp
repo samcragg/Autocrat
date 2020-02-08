@@ -2,121 +2,25 @@
 
 #include <algorithm>
 #include <array>
+#include <unordered_map>
 #include <gtest/gtest.h>
+#include "ManagedObjects.h"
 
-namespace
+struct ObjectCounter : autocrat::detail::reference_scanner
 {
-    // Taken from CoreRT Runtime/inc/eetype.h
-    struct EEType
+    std::optional<void*> get_moved_location(void* object) override
     {
-        std::uint16_t m_usComponentSize;
-        std::uint16_t m_usFlags;
-        std::uint32_t m_uBaseSize;
-        EEType* m_RelatedType;
-        std::uint16_t m_usNumVtableSlots;
-        std::uint16_t m_usNumInterfaces;
-        std::uint32_t m_uHashCode;
-        void* m_ppTypeManager;
-    };
-
-    // Taken from Runtime/ObjectLayout.h
-    struct Object
-    {
-        EEType* m_pEEType;
-    };
-
-    struct Array : Object
-    {
-        std::uint32_t m_Length;
-        std::uint32_t m_uAlignpad;
-    };
-
-    // Taken from gc/gcdesc.h
-    struct val_array_series
-    {
-        std::size_t m_startOffset;
-        std::size_t m_count;
-    };
-
-    struct CGCDescSeries
-    {
-        val_array_series val_series[3];
-        size_t seriessize;
-    };
-
-    // These values were obtained from a 64-bit CoreRT project. The members are
-    // in the order the CLR puts them, not the C# declaration order
-    EEType object_type = { 0u, 256u, 24u, nullptr, 0u, 0u, 0u, nullptr };
-    EEType value_type = { 0u, 256u, 24u, &object_type, 0u, 0u, 0u, nullptr };
-    EEType boxed_int32_type = { 0u, 16648u, 24u, &value_type, 0u, 0u, 0u, nullptr };
-    EEType array_int32_type = { 4u, 258u, 24u, &boxed_int32_type, 0u, 0u, 0u, nullptr };
-
-    struct BaseClass : Object
-    {
-        void* BaseReference;
-        std::int32_t BaseInteger;
-
-        char padding[4];
-    };
-    static_assert(sizeof(BaseClass) == 24u);
-
-    struct
-    {
-        std::size_t CGCDescSeries[3]{ 0xffffffffffffffe8, 0x08, 0x01 };
-        EEType Type{ 0u, 288u, 32u, &object_type, 0u, 0u, 0u, nullptr };
-    } BaseClassInfo;
-
-    // Can't use C++ inheritance due to padding
-    struct DerivedClass : Object
-    {
-        void* BaseReference;
-        std::int32_t BaseInteger;
-
-        std::int32_t Integer;
-        void* FirstReference;
-        void* SecondReference;
-
-        char padding[8];
-    };
-    static_assert(sizeof(DerivedClass) == 48u);
-
-    struct
-    {
-        std::size_t CGCDescSeries[5]{ 0xffffffffffffffe0, 0x18, 0xffffffffffffffd8, 0x08, 0x02 };
-        EEType Type{ 0u, 32u, 48u, &BaseClassInfo.Type, 0u, 0u, 0u, nullptr };
-    } DerivedClassInfo;
-
-    struct SingleReference : Object
-    {
-        void* Reference;
-
-        char padding[8];
-    };
-    static_assert(sizeof(SingleReference) == 24u);
-
-    struct
-    {
-        std::size_t CGCDescSeries[3]{ 0xfffffffffffffff0, 0x08, 0x01 };
-        EEType Type{ 0u, 32u, 24u, &object_type, 0u, 0u, 0u, nullptr };
-    } SingleReferenceInfo;
-
-    EEType SingleReferenceArrayType = { 8u, 290u, 24u, &SingleReferenceInfo.Type, 0u, 0u, 0u, nullptr };
-
-    template <std::uint32_t Sz>
-    struct ManagedArray : Array
-    {
-        ManagedArray() :
-            references{}
+        auto it = moved_objects.find(object);
+        if (it == moved_objects.end())
         {
-            m_Length = Sz;
+            return std::nullopt;
         }
+        else
+        {
+            return it->second;
+        }
+    }
 
-        void* references[Sz];
-    };
-}
-
-struct ObjectCounter : autocrat::object_mover
-{
     void* get_reference(void* object, std::size_t offset) override
     {
         void* address_of_field = static_cast<std::byte*>(object) + offset;
@@ -130,12 +34,18 @@ struct ObjectCounter : autocrat::object_mover
         return object;
     }
 
+    void set_moved_location(void* object, void* new_location) override
+    {
+        moved_objects[object] = new_location;
+    }
+
     void set_reference(void*, std::size_t, void*) override
     {
     }
 
     std::size_t allocated_bytes = 0;
     std::size_t references = 0;
+    std::unordered_map<void*, void*> moved_objects;
 };
 
 struct ObjectMover : ObjectCounter
@@ -167,21 +77,15 @@ struct ObjectMover : ObjectCounter
 class ReferenceScannerTests : public testing::Test
 {
 protected:
-    ReferenceScannerTests() :
-        _scanner(_counter)
-    {
-    }
-
-    ObjectCounter _counter;
-    autocrat::reference_scanner _scanner;
 };
 
 TEST_F(ReferenceScannerTests, MoveShouldHandleNullObjects)
 {
-    _scanner.move(static_cast<void*>(nullptr));
+    ObjectCounter counter;
+    counter.move(static_cast<void*>(nullptr));
 
-    EXPECT_EQ(0u, _counter.allocated_bytes);
-    EXPECT_EQ(0u, _counter.references);
+    EXPECT_EQ(0u, counter.allocated_bytes);
+    EXPECT_EQ(0u, counter.references);
 }
 
 TEST_F(ReferenceScannerTests, ShouldMoveTheReferencesAndData)
@@ -201,8 +105,7 @@ TEST_F(ReferenceScannerTests, ShouldMoveTheReferencesAndData)
     original.SecondReference = &array;
 
     ObjectMover mover;
-    _scanner = autocrat::reference_scanner(mover);
-    _scanner.move(&original);
+    mover.move(&original);
 
     // Clear the originals to prove the copy is independent
     array = {};
@@ -225,10 +128,11 @@ TEST_F(ReferenceScannerTests, ShouldScanEmptyObjects)
     Object value = {};
     value.m_pEEType = &object_type;
 
-    _scanner.move(&value);
+    ObjectCounter counter;
+    counter.move(&value);
 
-    EXPECT_EQ(24u, _counter.allocated_bytes);
-    EXPECT_EQ(1u, _counter.references);
+    EXPECT_EQ(24u, counter.allocated_bytes);
+    EXPECT_EQ(1u, counter.references);
 }
 
 TEST_F(ReferenceScannerTests, ShouldScanCircularReferences)
@@ -237,10 +141,11 @@ TEST_F(ReferenceScannerTests, ShouldScanCircularReferences)
     object.m_pEEType = &SingleReferenceInfo.Type;
     object.Reference = &object;
 
-    _scanner.move(&object);
+    ObjectCounter counter;
+    counter.move(&object);
 
-    EXPECT_EQ(24u, _counter.allocated_bytes);
-    EXPECT_EQ(1u, _counter.references);
+    EXPECT_EQ(24u, counter.allocated_bytes);
+    EXPECT_EQ(1u, counter.references);
 }
 
 TEST_F(ReferenceScannerTests, ShouldScanReferenceArrays)
@@ -256,10 +161,11 @@ TEST_F(ReferenceScannerTests, ShouldScanReferenceArrays)
     object.m_pEEType = &SingleReferenceInfo.Type;
     object.Reference = &array;
 
-    _scanner.move(&object);
+    ObjectCounter counter;
+    counter.move(&object);
 
-    EXPECT_EQ(24u + 24u + 40u + 24u, _counter.allocated_bytes);
-    EXPECT_EQ(3u, _counter.references);
+    EXPECT_EQ(24u + 24u + 40u + 24u, counter.allocated_bytes);
+    EXPECT_EQ(3u, counter.references);
 }
 
 TEST_F(ReferenceScannerTests, ShouldScanInheritedReferences)
@@ -271,10 +177,11 @@ TEST_F(ReferenceScannerTests, ShouldScanInheritedReferences)
     derived.m_pEEType = &DerivedClassInfo.Type;
     derived.BaseReference = &empty;
 
-    _scanner.move(&derived);
+    ObjectCounter counter;
+    counter.move(&derived);
 
-    EXPECT_EQ(48u + 24u, _counter.allocated_bytes);
-    EXPECT_EQ(2u, _counter.references);
+    EXPECT_EQ(48u + 24u, counter.allocated_bytes);
+    EXPECT_EQ(2u, counter.references);
 }
 
 TEST_F(ReferenceScannerTests, ShouldScanTypesWithValueArrays)
@@ -287,8 +194,9 @@ TEST_F(ReferenceScannerTests, ShouldScanTypesWithValueArrays)
     object.m_pEEType = &SingleReferenceInfo.Type;
     object.Reference = &array;
 
-    _scanner.move(&object);
+    ObjectCounter counter;
+    counter.move(&object);
 
-    EXPECT_EQ(24u + 24u + 12u, _counter.allocated_bytes);
-    EXPECT_EQ(2u, _counter.references);
+    EXPECT_EQ(24u + 24u + 12u, counter.allocated_bytes);
+    EXPECT_EQ(2u, counter.references);
 }
