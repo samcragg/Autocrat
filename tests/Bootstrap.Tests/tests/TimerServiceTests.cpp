@@ -3,9 +3,9 @@
 #include <chrono>
 #include <gtest/gtest.h>
 #include <cpp_mock.h>
+#include "TestMocks.h"
 #include "pal.h"
 #include "pal_mock.h"
-#include "thread_pool.h"
 
 using namespace std::chrono_literals;
 
@@ -13,16 +13,6 @@ class MockPalService : public pal_service
 {
 public:
     MockMethod(std::chrono::microseconds, current_time, ())
-};
-
-
-class MockThreadPool : public autocrat::thread_pool
-{
-public:
-    void enqueue(callback_function callback, std::any&& data) override
-    {
-        callback(data);
-    }
 };
 
 namespace

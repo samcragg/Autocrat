@@ -6,8 +6,8 @@
 #include <functional>
 #include <gtest/gtest.h>
 #include <cpp_mock.h>
+#include "TestMocks.h"
 #include "pal_mock.h"
-#include "thread_pool.h"
 
 
 class MockSocket : public pal_socket
@@ -17,15 +17,6 @@ public:
     MockMethod(pal::socket_handle, create_udp_socket, ());
     MockMethod(std::optional<pal::poll_event>, get_poll_event, (const pal::socket_handle&));
     MockMethod(int, recv_from, (const pal::socket_handle&, char*, std::size_t, pal::socket_address*));
-};
-
-class MockThreadPool : public autocrat::thread_pool
-{
-public:
-    void enqueue(callback_function callback, std::any&& data) override
-    {
-        callback(data);
-    }
 };
 
 namespace

@@ -3,17 +3,18 @@
 
 #include <cstdint>
 #include <unordered_map>
+#include "collections.h"
 #include "defines.h"
+#include "managed_interop.h"
 #include "method_handles.h"
+#include "thread_pool.h"
 
 namespace autocrat
 {
-    class thread_pool;
-
     /**
      * Exposes functionality for obtaining worker services.
      */
-    class worker_service
+    class worker_service : public lifetime_service
     {
     public:
         MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(worker_service)
@@ -31,6 +32,9 @@ namespace autocrat
          */
         MOCKABLE_METHOD void* get_worker(const void* type);
 
+        void on_begin_work(std::size_t thread_id) override;
+        void on_end_work(std::size_t thread_id) override;
+
         /**
          * Registers the specified constructor.
          * @param type        The type of the worker returned by the constructor.
@@ -38,10 +42,23 @@ namespace autocrat
          */
         MOCKABLE_METHOD void register_type(const void* type, construct_worker constructor);
     private:
-        void* make_worker(std::uintptr_t type);
+        using type_handle = std::uintptr_t;
 
-        std::unordered_map<std::uintptr_t, construct_worker> _constructors;
-        std::unordered_map<std::uintptr_t, void*> _workers;
+        struct worker_info
+        {
+            type_handle type;
+            object_serializer serializer;
+            void* object;
+        };
+
+        void* load_worker(worker_info& info);
+        void* make_worker(type_handle type);
+        void save_worker(worker_info& info);
+
+        static thread_local small_vector<worker_info*>* thread_allocated_workers;
+        dynamic_array<small_vector<worker_info*>> _allocated_workers;
+        std::unordered_map<type_handle, construct_worker> _constructors;
+        std::unordered_map<type_handle, worker_info> _workers;
     };
 }
 
