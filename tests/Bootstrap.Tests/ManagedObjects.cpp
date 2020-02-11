@@ -8,6 +8,6 @@ EEType boxed_int32_type = { 0u, 16648u, 24u, &value_type, 0u, 0u, 0u, nullptr };
 EEType array_int32_type = { 4u, 258u, 24u, &boxed_int32_type, 0u, 0u, 0u, nullptr };
 EEType SingleReferenceArrayType = { 8u, 290u, 24u, &SingleReferenceInfo.Type, 0u, 0u, 0u, nullptr };
 
-BaseClassInfoType BaseClassInfo;
-DerivedClassInfoType DerivedClassInfo;
-SingleReferenceInfoType SingleReferenceInfo;
+BaseClassInfoType BaseClassInfo = {};
+DerivedClassInfoType DerivedClassInfo = {};
+SingleReferenceInfoType SingleReferenceInfo = {};
