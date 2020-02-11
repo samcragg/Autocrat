@@ -9,52 +9,117 @@ namespace autocrat
 {
     /**
      * Represents a small chunk of memory.
+     * @tparam Size The number of bytes to store in the pool.
      */
+    template <std::size_t Size>
     struct pool_node
     {
-        constexpr static std::size_t capacity = 1024;
+        using this_type = pool_node<Size>;
 
-        pool_node* allocated_list;
-        pool_node* next;
-        std::array<std::byte, capacity> buffer;
+        constexpr static std::size_t capacity = Size;
+
+        this_type* allocated_list;
+        this_type* next;
+        std::array<std::byte, Size> buffer;
         std::byte* data;
     };
 
     /**
      * Represents a pool of memory nodes.
+     * @tparam NodeSize The size, in bytes, of the nodes for the pool.
      * @remarks This class is designed to be thread-safe.
      */
+    template <std::size_t NodeSize>
     class node_pool
     {
     public:
+        using node_type = pool_node<NodeSize>;
+
         /**
          * Initializes a new instance of the `node_pool` class.
          */
-        node_pool();
+        node_pool() :
+            _free_list(nullptr),
+            _root(nullptr)
+        {
+        }
 
         /**
          * Destroys the `node_pool` instance.
          */
-        ~node_pool() noexcept;
+        ~node_pool() noexcept
+        {
+            node_type* node = _root.load();
+            while (node != nullptr)
+            {
+                node_type* next = node->allocated_list;
+                delete node;
+                node = next;
+            }
+        }
 
         /**
          * Gets a node from this instance, allocating a new one is non are
          * available.
          * @returns A node from the pool if available; otherwise, a new node.
          */
-        pool_node* acquire();
+        node_type* acquire()
+        {
+            node_type* node = get_from_free_list();
+            if (node == nullptr)
+            {
+                node = allocate_new();
+            }
+
+            node->data = node->buffer.data();
+            node->next = nullptr;
+            return node;
+        }
 
         /**
          * Adds the specified node to this instance, allowing it to be reused.
          * @param node The node to return to the pool.
          */
-        void release(pool_node* node);
+        void release(node_type* node)
+        {
+            node_type* free = _free_list.load();
+            do
+            {
+                node->next = free;
+            } while (!_free_list.compare_exchange_weak(free, node));
+        }
     private:
-        pool_node* allocate_new();
-        pool_node* get_from_free_list();
+        node_type* allocate_new()
+        {
+            node_type* node = new node_type();
+            node_type* root = _root.load();
+            do
+            {
+                node->allocated_list = root;
+            } while (!_root.compare_exchange_weak(root, node));
 
-        std::atomic<pool_node*> _free_list;
-        std::atomic<pool_node*> _root;
+            return node;
+        }
+
+        node_type* get_from_free_list()
+        {
+            node_type* free = _free_list.load();
+            node_type* next;
+            do
+            {
+                if (free == nullptr)
+                {
+                    return nullptr;
+                }
+
+                next = free->next;
+            } while (!_free_list.compare_exchange_weak(free, next));
+
+            return free;
+        }
+
+        std::atomic<node_type*> _free_list;
+        std::atomic<node_type*> _root;
     };
 
     /**
@@ -64,6 +129,7 @@ namespace autocrat
     class memory_pool_buffer
     {
     public:
+        using pool_type = node_pool<1024u>;
         using value_type = std::byte;
 
         /**
@@ -105,11 +171,13 @@ namespace autocrat
          */
         std::size_t size() const noexcept;
     private:
-        void ensure_space_to_write();
-        pool_node* release_node(pool_node* node);
+        using node_type = pool_type::node_type;
 
-        pool_node* _head;
-        pool_node* _tail;
+        void ensure_space_to_write();
+        node_type* release_node(node_type* node);
+
+        node_type* _head;
+        node_type* _tail;
         std::size_t _count;
     };
 }

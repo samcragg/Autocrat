@@ -6,7 +6,8 @@
 class NodePoolTests : public testing::Test
 {
 protected:
-    autocrat::node_pool _pool;
+    using node_pool = autocrat::node_pool<32u>;
+    node_pool _pool;
 };
 
 TEST_F(NodePoolTests, AcquireShouldReuseNodes)
@@ -24,7 +25,7 @@ TEST_F(NodePoolTests, DestructorShouldReleaseAllTheNodes)
 {
     std::size_t before_bytes = allocated_bytes();
     {
-        autocrat::node_pool pool;
+        node_pool pool;
         EXPECT_NE(nullptr, pool.acquire());
         EXPECT_NE(nullptr, pool.acquire());
     }
