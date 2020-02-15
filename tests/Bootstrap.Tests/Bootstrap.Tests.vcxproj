@@ -102,6 +102,7 @@
     <ClCompile Include="pal_mock.cpp" />
     <ClCompile Include="tests\DynamicArrayTests.cpp" />
     <ClCompile Include="tests\FixedHashmapTests.cpp" />
+    <ClCompile Include="tests\GcServiceTests.cpp" />
     <ClCompile Include="tests\MemoryPoolTests.cpp" />
     <ClCompile Include="tests\NodePoolTests.cpp" />
     <ClCompile Include="tests\ObjectSerializerTests.cpp" />

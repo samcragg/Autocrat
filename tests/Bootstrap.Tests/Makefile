@@ -19,6 +19,7 @@ TESTS = \
  tests/ArrayPoolTests.cpp \
  tests/BoundedQueueTests.cpp \
  tests/DynamicArrayTests.cpp \
+ tests/GcServiceTests.cpp \
  tests/FixedHashmapTests.cpp \
  tests/ManagedArrayTests.cpp \
  tests/MemoryPoolTests.cpp \
