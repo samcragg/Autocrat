@@ -43,8 +43,6 @@ namespace autocrat
          */
         using callback_function = void(*)(std::any& param);
 
-        MOCKABLE_CONSTRUCTOR(thread_pool)
-
         /**
          * Constructs a new instance of the `thread_pool` class.
          * @param cpu_id  The index of the first core to bind to.

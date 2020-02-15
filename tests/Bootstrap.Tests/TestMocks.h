@@ -6,6 +6,10 @@
 class MockThreadPool : public autocrat::thread_pool
 {
 public:
+    MockThreadPool() : autocrat::thread_pool(0u, 0u)
+    {
+    }
+
     void enqueue(callback_function callback, std::any&& data) override
     {
         callback(data);
