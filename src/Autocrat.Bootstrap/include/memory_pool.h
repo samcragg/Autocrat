@@ -3,6 +3,7 @@
 
 #include <array>
 #include <atomic>
+#include <cassert>
 #include <cstddef>
 
 namespace autocrat
@@ -20,8 +21,11 @@ namespace autocrat
 
         this_type* allocated_list;
         this_type* next;
-        std::array<std::byte, Size> buffer;
         std::byte* data;
+        std::array<std::byte, Size> buffer;
+#ifndef NDEBUG
+        bool is_free;
+#endif
     };
 
     /**
@@ -53,6 +57,7 @@ namespace autocrat
             while (node != nullptr)
             {
                 node_type* next = node->allocated_list;
+                assert(next != node);
                 delete node;
                 node = next;
             }
@@ -71,6 +76,10 @@ namespace autocrat
                 node = allocate_new();
             }
 
+#ifndef NDEBUG
+            node->is_free = false;
+#endif
+
             node->data = node->buffer.data();
             node->next = nullptr;
             return node;
@@ -82,6 +91,11 @@ namespace autocrat
          */
         void release(node_type* node)
         {
+#ifndef NDEBUG
+            assert(!node->is_free);
+            node->is_free = true;
+#endif
+
             node_type* free = _free_list.load();
             do
             {
