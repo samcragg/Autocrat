@@ -31,7 +31,7 @@ namespace autocrat
          */
         void check_and_dispatch()
         {
-            ((check_and_dispatch(std::get<std::unique_ptr<Services>>(_services).get())), ...);
+            invoke_all<has_check_and_dispatch>([](auto& service) { service.check_and_dispatch(); });
         }
 
         /**
@@ -50,6 +50,7 @@ namespace autocrat
         void initialize()
         {
             _services = std::make_tuple(std::make_unique<Services>(_thread_pool.get())...);
+            invoke_all<is_base_of_lifetime_service>([this](auto& service) { _thread_pool->add_observer(&service); });
         }
 
         /**
@@ -65,14 +66,45 @@ namespace autocrat
     private:
         GIVE_ACCESS_TO_MOCKS
 
-        template <class Service, bool HasMethod = std::is_member_function_pointer_v<decltype(&Service::check_and_dispatch)>>
-        static void check_and_dispatch(Service* service)
+        template <class Service, class Fallback = void>
+        struct has_check_and_dispatch : std::false_type
         {
-            service->check_and_dispatch();
+        };
+
+        template <class Service>
+        struct has_check_and_dispatch<
+            Service,
+            typename std::enable_if<std::is_member_function_pointer_v<decltype(&Service::check_and_dispatch)>>::type>
+            : std::true_type
+        {
+        };
+
+        template <class Service>
+        struct is_base_of_lifetime_service : std::is_base_of<lifetime_service, Service>
+        {
+        };
+
+        template <template<class> class Pred, class Action>
+        void invoke_all(Action action)
+        {
+            ((invoke<Pred<Services>>(
+                std::get<std::unique_ptr<Services>>(_services),
+                action
+                )), ...);
         }
 
-        static void check_and_dispatch(void*)
+        template <class Pred, class Service, class Action>
+        void invoke(const std::unique_ptr<Service>& service, Action action)
         {
+            if constexpr (Pred::value)
+            {
+                action(*service);
+            }
+            else
+            {
+                ((void)action);
+                ((void)service);
+            }
         }
 
         std::tuple<std::unique_ptr<Services>...> _services;
