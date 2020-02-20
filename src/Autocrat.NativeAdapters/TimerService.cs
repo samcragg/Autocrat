@@ -12,7 +12,7 @@ namespace Autocrat.NativeAdapters
     /// <summary>
     /// Allows the handling of timing events.
     /// </summary>
-    [RewriteInterface(typeof(INetworkService))]
+    [RewriteInterface(typeof(ITimerService))]
     public static class TimerService
     {
         // The docs for TimeSpan state a tick represents 100 nanoseconds
