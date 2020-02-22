@@ -49,7 +49,7 @@ namespace Autocrat.Compiler
         /// <returns>A list of all classes that implement the specified type.</returns>
         public virtual IReadOnlyCollection<INamedTypeSymbol> FindClasses(ITypeSymbol interfaceType)
         {
-            if (this.interfaceClasses.TryGetValue(interfaceType, out HashSet<INamedTypeSymbol> mappedClasses))
+            if (this.interfaceClasses.TryGetValue(interfaceType, out HashSet<INamedTypeSymbol>? mappedClasses))
             {
                 return mappedClasses;
             }
@@ -75,7 +75,7 @@ namespace Autocrat.Compiler
 
         private void RegisterMapping(INamedTypeSymbol classType, INamedTypeSymbol interfaceType)
         {
-            if (!this.interfaceClasses.TryGetValue(interfaceType, out HashSet<INamedTypeSymbol> mappedClasses))
+            if (!this.interfaceClasses.TryGetValue(interfaceType, out HashSet<INamedTypeSymbol>? mappedClasses))
             {
                 mappedClasses = new HashSet<INamedTypeSymbol>();
                 this.interfaceClasses.Add(interfaceType, mappedClasses);

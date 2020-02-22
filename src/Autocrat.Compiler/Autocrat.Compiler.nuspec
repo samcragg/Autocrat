@@ -11,10 +11,10 @@
 
   <files>
     <file src="..\Autocrat.Bootstrap\bin\*" target="content/bootstrap" />
-    <file src="bin\Publish\*.config" target="tasks/netcoreapp2.1" />
-    <file src="bin\Publish\*.dll" target="tasks/netcoreapp2.1" />
-    <file src="bin\Publish\*.json" target="tasks/netcoreapp2.1" />
-    <file src="bin\Publish\runtimes\**" target="tasks/netcoreapp2.1/runtimes" />
+    <file src="bin\Publish\*.config" target="tasks/netcoreapp3.1" />
+    <file src="bin\Publish\*.dll" target="tasks/netcoreapp3.1" />
+    <file src="bin\Publish\*.json" target="tasks/netcoreapp3.1" />
+    <file src="bin\Publish\runtimes\**" target="tasks/netcoreapp3.1/runtimes" />
     <file src="PackageFiles\ManagedToNative.csproj" target="content" />
     <file src="PackageFiles\NativeCompile.Linux.targets" target="content" />
     <file src="PackageFiles\NativeCompile.Windows.targets" target="content" />

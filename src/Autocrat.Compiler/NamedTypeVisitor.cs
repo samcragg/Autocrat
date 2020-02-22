@@ -76,7 +76,7 @@ namespace Autocrat.Compiler
 
             public ITypeSymbol? FindClassForInterface(ITypeSymbol symbol)
             {
-                if (this.owner.interfacesToRewrite.TryGetValue(symbol, out ITypeSymbol classSymbol))
+                if (this.owner.interfacesToRewrite.TryGetValue(symbol, out ITypeSymbol? classSymbol))
                 {
                     return classSymbol;
                 }
