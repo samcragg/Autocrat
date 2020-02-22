@@ -48,7 +48,14 @@ namespace Autocrat.Compiler
 
             ServiceFactory factory = ServiceFactory(compilation);
 
-            this.generatedCode.AddRange(compilation.SyntaxTrees);
+            // Fix encoding issue:
+            // https://github.com/dotnet/roslyn/issues/24045
+            foreach (SyntaxTree tree in compilation.SyntaxTrees)
+            {
+                this.generatedCode.Add(
+                    CSharpSyntaxTree.Create((CSharpSyntaxNode)tree.GetRoot(), encoding: Encoding.UTF8));
+            }
+
             this.RewriteInitializers(factory, compilation);
             this.RewriteNativeAdapters(factory);
             this.SaveCompilationMetadata(compilation);
@@ -131,7 +138,7 @@ int main()
             if (generator.HasCode)
             {
                 compilation = compilation.AddSyntaxTrees(
-                    CSharpSyntaxTree.Create(generator.Generate()));
+                    CSharpSyntaxTree.Create(generator.Generate(), encoding: Encoding.UTF8));
             }
 
             return compilation;
@@ -153,7 +160,7 @@ int main()
             if (generator.HasCode)
             {
                 this.generatedCode.Add(
-                    CSharpSyntaxTree.Create(generator.Generate()));
+                    CSharpSyntaxTree.Create(generator.Generate(), encoding: Encoding.UTF8));
             }
         }
 
