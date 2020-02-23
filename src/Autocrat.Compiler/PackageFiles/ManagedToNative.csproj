@@ -7,7 +7,10 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <ILCompilerVersion>1.0.0-alpha-28010-01</ILCompilerVersion>
+    
+    <!-- Check via https://dotnetfeed.blob.core.windows.net/dotnet-core/flatcontainer/microsoft.dotnet.ilcompiler/index.json -->
+    <ILCompilerVersion>1.0.0-alpha-28622-01</ILCompilerVersion>
+
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
     <IlcDisableReflection>true</IlcDisableReflection>
     <NativeLib>Static</NativeLib>
