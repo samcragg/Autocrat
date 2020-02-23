@@ -48,14 +48,7 @@ namespace Autocrat.Compiler
 
             ServiceFactory factory = ServiceFactory(compilation);
 
-            // Fix encoding issue:
-            // https://github.com/dotnet/roslyn/issues/24045
-            foreach (SyntaxTree tree in compilation.SyntaxTrees)
-            {
-                this.generatedCode.Add(
-                    CSharpSyntaxTree.Create((CSharpSyntaxNode)tree.GetRoot(), encoding: Encoding.UTF8));
-            }
-
+            this.generatedCode.AddRange(compilation.SyntaxTrees);
             this.RewriteInitializers(factory, compilation);
             this.RewriteNativeAdapters(factory);
             this.SaveCompilationMetadata(compilation);
@@ -74,10 +67,10 @@ namespace Autocrat.Compiler
 
             CSharpCompilation compilation = CSharpCompilation
                 .Create("AutocratGeneratedAssembly", options: options)
-                .AddReferences(this.references)
-                .AddSyntaxTrees(this.generatedCode);
+                .AddReferences(this.references);
 
             compilation = this.AddCallbackAdapters(compilation);
+            compilation = this.AddGeneratedCode(compilation);
             compilation = this.AddRegisterWorkerTypes(compilation);
 
             EmitResult result = compilation.Emit(destination, pdb);
@@ -128,6 +121,20 @@ int main()
                 .WithMembers(SingletonList<MemberDeclarationSyntax>(nativeClass)));
 
             return compilation.AddSyntaxTrees(tree);
+        }
+
+        private CSharpCompilation AddGeneratedCode(CSharpCompilation compilation)
+        {
+            // Fix encoding issue:
+            // https://github.com/dotnet/roslyn/issues/24045
+            var trees = new SyntaxTree[this.generatedCode.Count];
+            for (int i = 0; i < trees.Length; i++)
+            {
+                SyntaxTree original = this.generatedCode[i];
+                trees[i] = CSharpSyntaxTree.Create((CSharpSyntaxNode)original.GetRoot(), encoding: Encoding.UTF8);
+            }
+
+            return compilation.AddSyntaxTrees(trees);
         }
 
         private CSharpCompilation AddRegisterWorkerTypes(CSharpCompilation compilation)
