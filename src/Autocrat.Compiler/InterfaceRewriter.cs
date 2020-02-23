@@ -8,6 +8,7 @@ namespace Autocrat.Compiler
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using NLog;
     using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
@@ -36,6 +37,7 @@ namespace Autocrat.Compiler
         // This allows the class "implementing" the interface to control how
         // the native method that actually uses the handle gets called (for
         // example, to convert .NET types to native primitive types)
+        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
         private readonly NativeDelegateRewriter delegateRewriter;
         private readonly IKnownTypes knownTypes;
         private readonly SemanticModel model;
@@ -82,6 +84,7 @@ namespace Autocrat.Compiler
                             ParseTypeName(classType.ToDisplayString()),
                             member.Name);
 
+                        Logger.Debug("Changing invocation of {class}.{method}", type.Type, member.Name);
                         return InvocationExpression(newMethod, this.TransformArguments(node.ArgumentList));
                     }
                 }
