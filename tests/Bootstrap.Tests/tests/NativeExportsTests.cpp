@@ -6,6 +6,12 @@
 #include "mock_method_handles.h"
 #include "mock_services.h"
 
+struct typed_reference
+{
+    void* value;
+    void* type;
+};
+
 using namespace std::chrono_literals;
 
 class NativeExportsTests : public testing::Test
@@ -21,7 +27,11 @@ TEST_F(NativeExportsTests, LoadObjectShouldReturnTheValue)
         .With(&type)
         .Return(&worker);
 
-    void* result = load_object(&type);
+    void* result;
+    typed_reference tr = {};
+    tr.value = &result;
+
+    load_object(&type, &tr);
 
     EXPECT_EQ(&worker, result);
 }

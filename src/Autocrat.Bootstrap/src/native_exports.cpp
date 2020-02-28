@@ -2,12 +2,22 @@
 #include "native_exports.h"
 #include "services.h"
 
+struct typed_reference
+{
+    void* value;
+    void* type;
+};
+
 extern "C"
 {
-    void* CDECL load_object(const void* type)
+    void CDECL load_object(const void* type, typed_reference* result)
     {
         auto* service = autocrat::global_services.get_service<autocrat::worker_service>();
-        return service->get_worker(type);
+        void* worker = service->get_worker(type);
+
+        // result hold a reference to a local managed variable, which is an
+        // object reference. So it's a pointer to a pointer, hence the cast
+        *static_cast<void**>(result->value) = worker;
     }
 
     void CDECL register_constructor(const void* type, std::int32_t handle)

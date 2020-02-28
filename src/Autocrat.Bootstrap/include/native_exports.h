@@ -4,10 +4,12 @@
 #include <cstdint>
 #include "defines.h"
 
+struct typed_reference;
+
 extern "C"
 {
     // Autocrat.NativeAdapters.WorkerFactory.GetWorker
-    extern void* CDECL load_object(const void* type);
+    extern void CDECL load_object(const void* type, typed_reference* result);
 
     // Autocrat.NativeAdapters.WorkerFactory.RegisterConstructor
     extern void CDECL register_constructor(const void* type, std::int32_t handle);
