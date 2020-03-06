@@ -23,6 +23,7 @@ class WorkerServiceTests : public testing::Test
 protected:
     WorkerServiceTests() :
         _service(&_thread_pool),
+        _worker_id("id"),
         _worker_type(0)
     {
         _service.on_begin_work(0u);
@@ -41,8 +42,9 @@ protected:
         managed_worker.reset();
     }
 
-    MockThreadPool _thread_pool;
+    FakeThreadPool _thread_pool;
     autocrat::worker_service _service;
+    std::string_view _worker_id;
     int _worker_type;
 };
 
@@ -52,8 +54,8 @@ TEST_F(WorkerServiceTests, ShouldReturnTheExistingWorker)
     reinterpret_cast<Object*>(managed_worker.get())->m_pEEType = &object_type;
     _service.register_type(&_worker_type, &create_worker);
 
-    void* first = _service.get_worker(&_worker_type);
-    void* second = _service.get_worker(&_worker_type);
+    void* first = _service.get_worker(&_worker_type, _worker_id);
+    void* second = _service.get_worker(&_worker_type, _worker_id);
 
     EXPECT_EQ(first, second);
 }
@@ -66,7 +68,7 @@ TEST_F(WorkerServiceTests, ShouldSaveAndRestoreTheWorkerState)
     base_class->BaseInteger = 123;
 
     _service.register_type(&_worker_type, &create_worker);
-    void* object = _service.get_worker(&_worker_type);
+    void* object = _service.get_worker(&_worker_type, _worker_id);
     EXPECT_EQ(base_class, object);
 
     // Reset the service to force it to save the worker. We'll also prevent
@@ -76,7 +78,7 @@ TEST_F(WorkerServiceTests, ShouldSaveAndRestoreTheWorkerState)
     managed_worker.reset();
     _service.on_begin_work(0u);
 
-    object = _service.get_worker(&_worker_type);
+    object = _service.get_worker(&_worker_type, _worker_id);
     base_class = reinterpret_cast<BaseClass*>(object);
     EXPECT_EQ(&BaseClassInfo.Type, base_class->m_pEEType);
     EXPECT_EQ(123, base_class->BaseInteger);
@@ -84,5 +86,5 @@ TEST_F(WorkerServiceTests, ShouldSaveAndRestoreTheWorkerState)
 
 TEST_F(WorkerServiceTests, ShouldThrowIfTheConstructorIsNotRegistered)
 {
-    EXPECT_THROW(_service.get_worker(&_worker_type), std::invalid_argument);
+    EXPECT_THROW(_service.get_worker(&_worker_type, _worker_id), std::invalid_argument);
 }

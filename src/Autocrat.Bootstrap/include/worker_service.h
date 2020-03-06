@@ -2,6 +2,8 @@
 #define WORKER_SERVICE_H
 
 #include <cstdint>
+#include <string>
+#include <string_view>
 #include <unordered_map>
 #include "collections.h"
 #include "defines.h"
@@ -30,7 +32,8 @@ namespace autocrat
          * @param type The type of the worker to return.
          * @returns A managed object of the specified type.
          */
-        MOCKABLE_METHOD void* get_worker(const void* type);
+        // TODO: C++ 20 span would be better than string_view
+        MOCKABLE_METHOD void* get_worker(const void* type, std::string_view id);
 
         void on_begin_work(std::size_t thread_id) override;
         void on_end_work(std::size_t thread_id) override;
@@ -52,13 +55,13 @@ namespace autocrat
         };
 
         void* load_worker(worker_info& info);
-        void* make_worker(type_handle type);
+        void* make_worker(type_handle type, std::string id);
         void save_worker(worker_info& info);
 
         static thread_local small_vector<worker_info*>* thread_allocated_workers;
         dynamic_array<small_vector<worker_info*>> _allocated_workers;
         std::unordered_map<type_handle, construct_worker> _constructors;
-        std::unordered_map<type_handle, worker_info> _workers;
+        std::unordered_multimap<std::string, worker_info> _workers;
     };
 }
 

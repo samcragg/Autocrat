@@ -27,7 +27,7 @@ public:
 class mock_worker_service : public autocrat::worker_service
 {
 public:
-    MockMethod(void*, get_worker, (const void*))
+    MockMethod(void*, get_worker, (const void*, std::string_view))
     MockMethod(void, register_type, (const void*, construct_worker))
 };
 

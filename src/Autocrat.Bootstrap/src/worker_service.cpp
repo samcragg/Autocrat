@@ -21,18 +21,23 @@ namespace autocrat
     {
     }
 
-    void* worker_service::get_worker(const void* type_ptr)
+    void* worker_service::get_worker(const void* type_ptr, std::string_view id)
     {
         std::uintptr_t type = get_type(type_ptr);
-        auto existing = _workers.find(type);
-        if (existing == _workers.end())
+
+        // TODO: C++ 20 would allow the use of string_view here
+        auto workers = _workers.equal_range(std::string(id.begin(), id.end()));
+
+        for (auto& it = workers.first; it != workers.second; ++it)
         {
-            return make_worker(type);
+            worker_info& worker = it->second;
+            if (worker.type == type)
+            {
+                return load_worker(worker);
+            }
         }
-        else
-        {
-            return load_worker(existing->second);
-        }
+
+        return make_worker(type, std::string(id.begin(), id.end()));
     }
 
     void worker_service::on_begin_work(std::size_t thread_id)
@@ -69,7 +74,7 @@ namespace autocrat
         return info.object;
     }
 
-    void* worker_service::make_worker(type_handle type)
+    void* worker_service::make_worker(type_handle type, std::string id)
     {
         auto constructor = _constructors.find(type);
         if (constructor == _constructors.end())
@@ -77,8 +82,8 @@ namespace autocrat
             throw std::invalid_argument("Type has not been registered");
         }
 
-        auto pair = _workers.emplace(type, worker_info());
-        auto& info = pair.first->second;
+        auto it = _workers.emplace(std::move(id), worker_info());
+        auto& info = it->second;
         info.type = type;
         info.object = constructor->second();
 
