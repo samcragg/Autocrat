@@ -159,9 +159,12 @@ namespace autocrat
          * @param size The capacity for the array.
          */
         explicit dynamic_array(std::size_t size) :
-            _count(size),
-            _elements(std::make_unique<T[]>(size))
+            _count(size)
         {
+            if (size)
+            {
+                _elements = std::make_unique<T[]>(size);
+            }
         }
 
         reference operator[](std::size_t index) noexcept
