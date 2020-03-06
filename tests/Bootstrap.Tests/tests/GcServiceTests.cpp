@@ -31,7 +31,7 @@ class GcServiceTests : public testing::Test
 protected:
     static constexpr std::size_t large_allocation = 200'000u;
     static constexpr std::size_t small_allocation = 200u;
-    MockThreadPool _threadPool;
+    FakeThreadPool _threadPool;
 };
 
 TEST_F(GcServiceTests, AllocateShouldAllocateMultipleSmallBuffers)

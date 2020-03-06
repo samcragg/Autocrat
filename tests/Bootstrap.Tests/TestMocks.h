@@ -3,10 +3,10 @@
 
 #include "thread_pool.h"
 
-class MockThreadPool : public autocrat::thread_pool
+class FakeThreadPool : public autocrat::thread_pool
 {
 public:
-    MockThreadPool() : autocrat::thread_pool(0u, 0u)
+    FakeThreadPool() : autocrat::thread_pool(0u, 0u)
     {
     }
 

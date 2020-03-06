@@ -46,7 +46,7 @@ protected:
 
     autocrat::network_service _service;
     MockSocket _socket;
-    MockThreadPool _thread_pool;
+    FakeThreadPool _thread_pool;
 };
 
 TEST_F(NetworkServiceTests, ShouldInvokeTheHandlerWithTheReadData)

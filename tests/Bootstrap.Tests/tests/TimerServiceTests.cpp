@@ -42,7 +42,7 @@ protected:
 
     autocrat::timer_service _service;
     MockPalService _pal;
-    MockThreadPool _thread_pool;
+    FakeThreadPool _thread_pool;
 };
 
 TEST_F(TimerServiceTests, ShouldInvokeTheCallbackAfterTheInitialDelay)
