@@ -51,7 +51,7 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
-        /// Gets the generic arguments passed into <see cref="IWorkerFactory.GetWorker{T}"/>.
+        /// Gets the generic arguments passed into the IWorkerFactory::GetWorker methods.
         /// </summary>
         public virtual IReadOnlyCollection<INamedTypeSymbol> WorkerTypes => this.workerTypes;
 

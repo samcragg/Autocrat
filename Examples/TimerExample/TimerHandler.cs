@@ -19,7 +19,7 @@
             // Temporary workaround until the GC is handled by the native code
             GC.TryStartNoGCRegion(1024 * 1024);
 
-            TimerState state = this.workerFactory.GetWorker<TimerState>();
+            TimerState state = this.workerFactory.GetWorker<TimerState>(token);
             state.InvocationCount++;
 
             Console.WriteLine("{0}: {1}", now, state.InvocationCount);
