@@ -1,23 +1,45 @@
+#include <string_view>
 #include "method_handles.h"
 #include "native_exports.h"
 #include "services.h"
 
-struct typed_reference
+namespace
 {
-    void* value;
-    void* type;
-};
+    void load_object(const void* type, typed_reference* result, std::string_view id)
+    {
+        auto* service = autocrat::global_services.get_service<autocrat::worker_service>();
+        void* worker = service->get_worker(type, id);
+
+        // result holds a reference to a local managed variable, which is an
+        // object reference. So it's a pointer to a pointer, hence the cast
+        *static_cast<void**>(result->value) = worker;
+    }
+}
 
 extern "C"
 {
-    void CDECL load_object(const void* type, typed_reference* result)
+    void CDECL load_object_guid(const void* type, managed_guid* id, typed_reference* result)
     {
-        auto* service = autocrat::global_services.get_service<autocrat::worker_service>();
-        void* worker = service->get_worker(type);
+        load_object(
+            type,
+            result,
+            std::string_view(reinterpret_cast<char*>(&id->data), sizeof(id->data)));
+    }
 
-        // result hold a reference to a local managed variable, which is an
-        // object reference. So it's a pointer to a pointer, hence the cast
-        *static_cast<void**>(result->value) = worker;
+    void CDECL load_object_int64(const void* type, std::int64_t id, typed_reference* result)
+    {
+        load_object(
+            type,
+            result,
+            std::string_view(reinterpret_cast<char*>(&id), sizeof(id)));
+    }
+
+    void CDECL load_object_string(const void* type, managed_string* id, typed_reference* result)
+    {
+        load_object(
+            type,
+            result,
+            std::string_view(reinterpret_cast<char*>(id->data), id->length * sizeof(char16_t)));
     }
 
     void CDECL register_constructor(const void* type, std::int32_t handle)

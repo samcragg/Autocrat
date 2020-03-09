@@ -100,5 +100,8 @@
     <ClInclude Include="include\memory_pool.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\managed_types.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -3,37 +3,59 @@
 #include <chrono>
 #include <gtest/gtest.h>
 #include <cpp_mock.h>
+#include "managed_types.h"
 #include "mock_method_handles.h"
 #include "mock_services.h"
 
-struct typed_reference
-{
-    void* value;
-    void* type;
-};
-
 using namespace std::chrono_literals;
+using cpp_mock::_;
 
 class NativeExportsTests : public testing::Test
 {
 protected:
+    template <class Fn>
+    void TestLoadObject(Fn load_object)
+    {
+        int type = 0;
+        int worker = 0;
+        When(mock_global_services.worker_service().get_worker)
+            .With(&type, _)
+            .Return(&worker);
+
+        void* result;
+        typed_reference tr = {};
+        tr.value = &result;
+        
+        load_object(&type, &tr);
+
+        EXPECT_EQ(&worker, result);
+    }
 };
 
-TEST_F(NativeExportsTests, LoadObjectShouldReturnTheValue)
+TEST_F(NativeExportsTests, LoadObjectGuidShouldReturnTheValue)
 {
-    int type = 0;
-    int worker = 0;
-    When(mock_global_services.worker_service().get_worker)
-        .With(&type)
-        .Return(&worker);
+    TestLoadObject([](auto type, auto tr)
+        {
+            managed_guid guid = {};
+            load_object_guid(type, &guid, tr);
+        });
+}
 
-    void* result;
-    typed_reference tr = {};
-    tr.value = &result;
+TEST_F(NativeExportsTests, LoadObjectInt64ShouldReturnTheValue)
+{
+    TestLoadObject([](auto type, auto tr)
+        {
+            load_object_int64(type, 0u, tr);
+        });
+}
 
-    load_object(&type, &tr);
-
-    EXPECT_EQ(&worker, result);
+TEST_F(NativeExportsTests, LoadObjectStringShouldReturnTheValue)
+{
+    TestLoadObject([](auto type, auto tr)
+        {
+            managed_string str = {};
+            load_object_string(type, &str, tr);
+        });
 }
 
 TEST_F(NativeExportsTests, RegisterConstructorShouldAddTheMethodHandle)

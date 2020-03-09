@@ -3,13 +3,18 @@
 
 #include <cstdint>
 #include "defines.h"
-
-struct typed_reference;
+#include "managed_types.h"
 
 extern "C"
 {
-    // Autocrat.NativeAdapters.WorkerFactory.GetWorker
-    extern void CDECL load_object(const void* type, typed_reference* result);
+    // Autocrat.NativeAdapters.WorkerFactory.LoadObjectGuid
+    extern void CDECL load_object_guid(const void* type, managed_guid* id, typed_reference* result);
+
+    // Autocrat.NativeAdapters.WorkerFactory.LoadObjectInt64
+    extern void CDECL load_object_int64(const void* type, std::int64_t id, typed_reference* result);
+
+    // Autocrat.NativeAdapters.WorkerFactory.LoadObjectString
+    extern void CDECL load_object_string(const void* type, managed_string* id, typed_reference* result);
 
     // Autocrat.NativeAdapters.WorkerFactory.RegisterConstructor
     extern void CDECL register_constructor(const void* type, std::int32_t handle);
