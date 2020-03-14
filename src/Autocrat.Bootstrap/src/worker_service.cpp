@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <stdexcept>
 #include "worker_service.h"
 
@@ -14,10 +13,8 @@ namespace
 
 namespace autocrat
 {
-    thread_local small_vector<worker_service::worker_info*>* worker_service::thread_allocated_workers;
-
     worker_service::worker_service(thread_pool* pool) :
-        _allocated_workers(pool->size())
+        base_type(pool)
     {
     }
 
@@ -40,22 +37,15 @@ namespace autocrat
         return make_worker(type, std::string(id.begin(), id.end()));
     }
 
-    void worker_service::on_begin_work(std::size_t thread_id)
-    {
-        thread_allocated_workers = &_allocated_workers[thread_id];
-    }
-
     void worker_service::on_end_work(std::size_t thread_id)
     {
-        assert(thread_allocated_workers == &_allocated_workers[thread_id]);
-        UNUSED(thread_id);
-
-        for (worker_info* info : *thread_allocated_workers)
+        for (worker_info* info : *thread_storage)
         {
             save_worker(*info);
         }
 
-        thread_allocated_workers->clear();
+        thread_storage->clear();
+        base_type::on_end_work(thread_id);
     }
 
     void worker_service::register_type(const void* type, construct_worker constructor)
@@ -68,13 +58,13 @@ namespace autocrat
         if (info.object == nullptr)
         {
             info.object = info.serializer.restore();
-            thread_allocated_workers->emplace_back(&info);
+            thread_storage->emplace_back(&info);
         }
 
         return info.object;
     }
 
-    void* worker_service::make_worker(type_handle type, std::string id)
+    void* worker_service::make_worker(worker_info::type_handle type, std::string id)
     {
         auto constructor = _constructors.find(type);
         if (constructor == _constructors.end())
@@ -87,7 +77,7 @@ namespace autocrat
         info.type = type;
         info.object = constructor->second();
 
-        thread_allocated_workers->emplace_back(&info);
+        thread_storage->emplace_back(&info);
         return info.object;
     }
 

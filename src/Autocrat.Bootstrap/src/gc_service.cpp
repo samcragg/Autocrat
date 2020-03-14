@@ -1,31 +1,14 @@
-#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <new>
-#include "collections.h"
 #include "defines.h"
 #include "gc_service.h"
-#include "memory_pool.h"
 
 namespace
 {
-    using pool_type = autocrat::node_pool<1024u * 1024u>;
-
-    struct large_allocation
-    {
-        alignas(std::max_align_t) large_allocation* previous;
-    };
-
-    struct memory_allocations
-    {
-        pool_type::node_type* head;
-        pool_type::node_type* tail;
-        large_allocation* large_objects;
-    };
+    using namespace autocrat::detail;
 
     pool_type global_pool;
-    autocrat::dynamic_array<memory_allocations> thread_allocations;
-    thread_local memory_allocations* current_allocations;
 
     std::size_t align_up(std::size_t value)
     {
@@ -108,32 +91,32 @@ namespace
 
 namespace autocrat
 {
-    gc_service::gc_service(thread_pool* pool)
+    namespace detail
     {
-        std::size_t pool_size = pool->size();
-        thread_allocations = decltype(thread_allocations)(pool_size);
-
-        // Preallocate some memory for all the threads
-        for (std::size_t i = 0; i != pool_size; ++i)
+        memory_allocations::memory_allocations() :
+            large_objects(nullptr)
         {
-            memory_allocations& allocations = thread_allocations[i];
-            allocations = {};
-            allocations.head = global_pool.acquire();
-            allocations.tail = allocations.head;
+            // Pre-allocate some memory
+            head = global_pool.acquire();
+            tail = head;
+        }
+
+        memory_allocations::~memory_allocations()
+        {
+            // Allow the destructor to run more than once (this happens during
+            // unit testing)
+            if (head != nullptr)
+            {
+                free_allocations(*this);
+                global_pool.release(head);
+                head = nullptr;
+            }
         }
     }
 
-    gc_service::~gc_service() noexcept
+    gc_service::gc_service(thread_pool* pool) :
+        base_type(pool)
     {
-        for (auto& allocations : thread_allocations)
-        {
-            free_allocations(allocations);
-            global_pool.release(allocations.head);
-        }
-
-        // Allow the destructor to run more than once (this happens during unit
-        // testing)
-        thread_allocations = {};
     }
 
     void* gc_service::allocate(std::size_t size)
@@ -141,26 +124,19 @@ namespace autocrat
         if (size > 102'400u)
         {
             // This will zero out the memory it returns
-            return allocate_large(current_allocations->large_objects, size);
+            return allocate_large(thread_storage->large_objects, size);
         }
         else
         {
-            std::byte* memory = allocate_small(current_allocations->tail, size);
-            std::fill_n(memory, size, std::byte{});
+            std::byte* memory = allocate_small(thread_storage->tail, size);
+            std::fill_n(memory, size, std::byte{}); // TODO: Zero the memory in bulk when it is freed
             return memory;
         }
     }
 
-    void gc_service::on_begin_work(std::size_t thread_id)
-    {
-        current_allocations = thread_allocations.data() + thread_id;
-    }
-
     void gc_service::on_end_work(std::size_t thread_id)
     {
-        assert(current_allocations == (thread_allocations.data() + thread_id));
-        UNUSED(thread_id);
-
-        free_allocations(*current_allocations);
+        free_allocations(*thread_storage);
+        base_type::on_end_work(thread_id);
     }
 }

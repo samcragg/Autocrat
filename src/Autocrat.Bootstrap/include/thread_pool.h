@@ -3,6 +3,7 @@
 
 #include <any>
 #include <atomic>
+#include <cassert>
 #include <thread>
 #include <tuple>
 #include "collections.h"
@@ -85,6 +86,54 @@ namespace autocrat
         small_vector<lifetime_service*> _observers;
         dynamic_array<std::thread> _threads;
         std::uint32_t _wait_handle;
+    };
+
+    /**
+     * Provides a base class for services requiring storage specific to each
+     * thread in the thread pool.
+     * @tparam T The type to store per thread.
+     */
+    template <class T>
+    class thread_specific_storage : public lifetime_service
+    {
+    public:
+        void on_begin_work(std::size_t thread_id) override
+        {
+            assert(thread_storage == nullptr);
+            thread_storage = &_storage[thread_id];
+        }
+
+        void on_end_work(std::size_t thread_id) override
+        {
+            assert(thread_storage == &_storage[thread_id]);
+            UNUSED(thread_id);
+
+            thread_storage = nullptr;
+        }
+    protected:
+        MOCKABLE_CONSTRUCTOR(thread_specific_storage)
+
+        /**
+         * Constructs a new instance of the `thread_specific_storage` class.
+         * @param pool Used to dispatch work to.
+         */
+        explicit thread_specific_storage(thread_pool* pool) :
+            _storage(pool->size())
+        {
+        }
+
+#ifdef UNIT_TESTS
+        virtual ~thread_specific_storage()
+        {
+            thread_storage = nullptr;
+        }
+#else
+        ~thread_specific_storage() = default;
+#endif
+
+        static thread_local inline T* thread_storage;
+    private:
+        dynamic_array<T> _storage;
     };
 }
 

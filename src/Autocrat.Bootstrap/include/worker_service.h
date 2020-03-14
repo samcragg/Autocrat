@@ -13,12 +13,26 @@
 
 namespace autocrat
 {
+    namespace detail
+    {
+        struct worker_info
+        {
+            using type_handle = std::uintptr_t;
+
+            type_handle type;
+            object_serializer serializer;
+            void* object;
+        };
+    }
+
     /**
      * Exposes functionality for obtaining worker services.
      */
-    class worker_service : public lifetime_service
+    class worker_service : public thread_specific_storage<small_vector<detail::worker_info*>>
     {
     public:
+        using base_type = thread_specific_storage<small_vector<detail::worker_info*>>;
+
         MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(worker_service)
 
         /**
@@ -35,7 +49,6 @@ namespace autocrat
         // TODO: C++ 20 span would be better than string_view
         MOCKABLE_METHOD void* get_worker(const void* type, std::string_view id);
 
-        void on_begin_work(std::size_t thread_id) override;
         void on_end_work(std::size_t thread_id) override;
 
         /**
@@ -45,22 +58,13 @@ namespace autocrat
          */
         MOCKABLE_METHOD void register_type(const void* type, construct_worker constructor);
     private:
-        using type_handle = std::uintptr_t;
-
-        struct worker_info
-        {
-            type_handle type;
-            object_serializer serializer;
-            void* object;
-        };
+        using worker_info = detail::worker_info;
 
         void* load_worker(worker_info& info);
-        void* make_worker(type_handle type, std::string id);
+        void* make_worker(worker_info::type_handle type, std::string id);
         void save_worker(worker_info& info);
 
-        static thread_local small_vector<worker_info*>* thread_allocated_workers;
-        dynamic_array<small_vector<worker_info*>> _allocated_workers;
-        std::unordered_map<type_handle, construct_worker> _constructors;
+        std::unordered_map<worker_info::type_handle, construct_worker> _constructors;
         std::unordered_multimap<std::string, worker_info> _workers;
     };
 }

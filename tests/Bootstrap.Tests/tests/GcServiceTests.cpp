@@ -87,5 +87,4 @@ TEST_F(GcServiceTests, OnEndWorkShouldReleaseAllTheMemory)
     gc.on_end_work(0);
     std::size_t after_bytes = allocated_bytes();
     EXPECT_EQ(before_bytes, after_bytes);
-    EXPECT_EQ(small, gc.allocate(small_allocation));
 }
