@@ -20,6 +20,7 @@ namespace
 
     void* allocate_large(large_allocation*& allocation, std::size_t size)
     {
+        // We must return zero-filled memory, hence calloc
         void* raw = std::calloc(sizeof(large_allocation) + size, sizeof(std::byte));
         if (raw == nullptr)
         {
@@ -33,7 +34,7 @@ namespace
         }
 
         allocation = memory;
-        return memory + 1;
+        return memory + 1; // The actual memory is after the large_allocation, hence +1
     }
 
     std::byte* allocate_small(pool_type::node_type*& tail, std::size_t size)
@@ -78,7 +79,7 @@ namespace
             node = next;
         }
 
-        allocations.head->data = allocations.head->buffer.data(); 
+        allocations.head->clear_data();
         allocations.tail = allocations.head;
     }
 
@@ -123,14 +124,11 @@ namespace autocrat
     {
         if (size > 102'400u)
         {
-            // This will zero out the memory it returns
             return allocate_large(thread_storage->large_objects, size);
         }
         else
         {
-            std::byte* memory = allocate_small(thread_storage->tail, size);
-            std::fill_n(memory, size, std::byte{}); // TODO: Zero the memory in bulk when it is freed
-            return memory;
+            return allocate_small(thread_storage->tail, size);
         }
     }
 

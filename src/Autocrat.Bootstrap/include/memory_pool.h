@@ -1,6 +1,7 @@
 #ifndef MEMORY_POOL_H
 #define MEMORY_POOL_H
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cassert>
@@ -19,6 +20,24 @@ namespace autocrat
 
         constexpr static std::size_t capacity = Size;
 
+        /**
+         * Initializes a new instance of the `pool_node` class.
+         */
+        pool_node() :
+            buffer {}
+        {
+            data = buffer.data();
+        }
+
+        /**
+         * Zero-fills the buffer and resets data to the beginning.
+         */
+        void clear_data()
+        {
+            std::fill(buffer.data(), data, std::byte {});
+            data = buffer.data();
+        }
+
         this_type* allocated_list;
         this_type* next;
         std::byte* data;
@@ -31,7 +50,8 @@ namespace autocrat
     /**
      * Represents a pool of memory nodes.
      * @tparam NodeSize The size, in bytes, of the nodes for the pool.
-     * @remarks This class is designed to be thread-safe.
+     * @remarks This class is designed to be thread-safe. All nodes returned
+     *          will have their buffer zero-filled.
      */
     template <std::size_t NodeSize>
     class node_pool
@@ -80,7 +100,6 @@ namespace autocrat
             node->is_free = false;
 #endif
 
-            node->data = node->buffer.data();
             node->next = nullptr;
             return node;
         }
@@ -95,6 +114,9 @@ namespace autocrat
             assert(!node->is_free);
             node->is_free = true;
 #endif
+            // We optimize for allocations by clearing the memory now, as this
+            // code is executed after the user code, so we're not time critical
+            node->clear_data();
 
             node_type* free = _free_list.load();
             do
