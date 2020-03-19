@@ -65,6 +65,8 @@ int autocrat_main()
     managed_exports::OnConfigurationLoaded();
 
     program_running = true;
+    spdlog::info("Initialization complete, program started");
+
     pal::set_close_signal_handler(&on_close_callback);
     std::printf("Press ctrl-c to exit\n");
     run_program_loop();
