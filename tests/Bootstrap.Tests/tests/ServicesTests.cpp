@@ -11,6 +11,7 @@ struct MockThreadPool
     }
 
     MockMethod(void, add_observer, (autocrat::lifetime_service*), )
+    MockMethod(void, start, (), )
 
     int constructor_value;
 };
@@ -68,6 +69,13 @@ TEST_F(ServicesTests, InitializeShouldCreateNewInstances)
 
     EXPECT_NE(nullptr, instance);
     EXPECT_EQ(123, instance->thread_pool->constructor_value);
+}
+
+TEST_F(ServicesTests, InitializeShouldStartTheThreadPool)
+{
+    _services.initialize();
+
+    Verify(_services.get_service<MockService>()->thread_pool->start);
 }
 
 TEST_F(ServicesTests, InitializeShouldSubscribeLifetimeServices)

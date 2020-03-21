@@ -74,6 +74,14 @@ namespace autocrat
          * @returns The number of worker threads.
          */
         MOCKABLE_METHOD std::size_t size() const noexcept;
+
+        /**
+         * Starts the background threads and, therefore, processing of work.
+         * @remarks This method blocks until all the background threads have
+         *          completed initialization and, therefore, are ready for
+         *          processing work.
+         */
+        MOCKABLE_METHOD void start();
     private:
         using work_item = std::tuple<callback_function, std::any>;
         void invoke_work_item(std::size_t index, work_item& item) const;
@@ -81,9 +89,11 @@ namespace autocrat
         void wait_for_work();
 
         std::atomic_bool _is_running;
+        std::atomic_uint32_t _initialized;
         std::atomic_uint32_t _sleeping;
         bounded_queue<work_item, 1024> _work;
         small_vector<lifetime_service*> _observers;
+        std::size_t _starting_cpu;
         dynamic_array<std::thread> _threads;
         std::uint32_t _wait_handle;
     };

@@ -51,6 +51,7 @@ namespace autocrat
         {
             _services = std::make_tuple(std::make_unique<Services>(_thread_pool.get())...);
             invoke_all<is_base_of_lifetime_service>([this](auto& service) { _thread_pool->add_observer(&service); });
+            _thread_pool->start();
         }
 
         /**

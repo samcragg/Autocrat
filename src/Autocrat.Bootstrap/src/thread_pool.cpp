@@ -1,23 +1,30 @@
+#include <mutex>
 #include <spdlog/spdlog.h>
+#include "managed_exports.h"
 #include "pal.h"
 #include "pause.h"
 #include "thread_pool.h"
+
+namespace
+{
+    void initialize_thread()
+    {
+        static std::mutex thread_initializing;
+        std::scoped_lock lock(thread_initializing);
+        managed_exports::InitializeManagedThread();
+    }
+}
 
 namespace autocrat
 {
     thread_pool::thread_pool(std::size_t cpu_id, ::size_t threads) :
         _is_running(true),
+        _initialized(0),
         _sleeping(0),
+        _starting_cpu(cpu_id),
         _threads(threads),
         _wait_handle(0)
     {
-        spdlog::info("Creating {} threads with affinity starting from {}", threads, cpu_id);
-
-        for (std::size_t i = 0; i != threads; ++i)
-        {
-            _threads[i] = std::thread(&thread_pool::perform_work, this, i);
-            pal::set_affinity(_threads[i], cpu_id + i);
-        }
     }
 
     thread_pool::~thread_pool() noexcept
@@ -32,7 +39,10 @@ namespace autocrat
         {
             try
             {
-                thread.join();
+                if (thread.joinable())
+                {
+                    thread.join();
+                }
             }
             catch (...)
             {
@@ -60,6 +70,24 @@ namespace autocrat
         return _threads.size();
     }
 
+    void thread_pool::start()
+    {
+        spdlog::info("Creating {} threads with affinity starting from {}", _threads.size(), _starting_cpu);
+
+        for (std::size_t i = 0; i != _threads.size(); ++i)
+        {
+            _threads[i] = std::thread(&thread_pool::perform_work, this, i);
+            pal::set_affinity(_threads[i], _starting_cpu + i);
+        }
+
+        while (_initialized != _threads.size())
+        {
+            std::this_thread::yield();
+        }
+
+        spdlog::debug("Thread pool initialized");
+    }
+
     void thread_pool::invoke_work_item(std::size_t index, work_item& item) const
     {
         for (lifetime_service* observer : _observers)
@@ -79,6 +107,14 @@ namespace autocrat
     {
         const std::uint32_t maximum_spins = 1000;
         std::uint32_t spin_count = 0;
+
+        initialize_thread();
+        ++_initialized;
+
+        // Allow other threads to run and, more importantly, the switch to the
+        // desired CPU affinity (when the threads started we could be on any
+        // core initially)
+        std::this_thread::yield();
 
         while (_is_running)
         {

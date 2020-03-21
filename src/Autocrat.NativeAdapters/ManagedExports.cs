@@ -22,5 +22,16 @@ namespace Autocrat.NativeAdapters
         {
             return typeof(byte[]).TypeHandle.Value;
         }
+
+        /// <summary>
+        /// Initialize managed resources for the current thread.
+        /// </summary>
+        [NativeCallable(EntryPoint = "InitializeManagedThread", CallingConvention = CallingConvention.Cdecl)]
+        public static void InitializeManagedThread()
+        {
+            // We don't need to do anything here - the act of calling a managed
+            // method is enough for the CoreRT interop to do it's one time
+            // initialize on the thread
+        }
     }
 }

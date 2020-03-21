@@ -11,6 +11,16 @@
 
 using namespace std::chrono_literals;
 
+namespace
+{
+    std::size_t initialized_called_count;
+
+    extern "C" void CDECL InitializeManagedThread()
+    {
+        initialized_called_count++;
+    }
+}
+
 class MockLifetimeService : public autocrat::lifetime_service
 {
 public:
@@ -21,8 +31,10 @@ public:
 class ThreadPoolTests : public testing::Test
 {
 public:
+    static constexpr std::size_t thread_count = 2;
+
     ThreadPoolTests() :
-        _pool(0, 2)
+        _pool(0, thread_count)
     {
     }
 
@@ -64,6 +76,7 @@ TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceBeforeAndAfterWork)
 
     _pool.add_observer(&service);
     _pool.enqueue(&CheckLifetimeService, std::make_tuple(&service, &condition));
+    _pool.start();
     auto result = condition.wait_for(lock, 20ms);
 
     EXPECT_EQ(std::cv_status::no_timeout, result);
@@ -82,8 +95,18 @@ TEST_F(ThreadPoolTests, ShouldPerformTheWorkOnASeparateThread)
     auto worker_future = worker_promise->get_future();
 
     _pool.enqueue(&SetThreadId, worker_promise);
+    _pool.start();
     std::future_status wait_result = worker_future.wait_for(20ms);
 
     ASSERT_EQ(std::future_status::ready, wait_result);
     EXPECT_NE(std::this_thread::get_id(), worker_future.get());
+}
+
+TEST_F(ThreadPoolTests, StartShouldInitializeManagedThreads)
+{
+    initialized_called_count = 0;
+
+    _pool.start();
+
+    EXPECT_EQ(initialized_called_count, initialized_called_count);
 }
