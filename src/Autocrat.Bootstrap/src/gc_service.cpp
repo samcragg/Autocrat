@@ -6,9 +6,8 @@
 
 namespace
 {
-    using namespace autocrat::detail;
-
-    pool_type global_pool;
+    using pool_type = autocrat::gc_heap::pool_type;
+    autocrat::gc_heap::pool_type global_pool;
 
     std::size_t align_up(std::size_t value)
     {
@@ -17,8 +16,32 @@ namespace
         assert(result >= value); // check for overflow
         return result;
     }
+}
 
-    void* allocate_large(large_allocation*& allocation, std::size_t size)
+namespace autocrat
+{
+    gc_heap::gc_heap() :
+        _large_objects(nullptr)
+    {
+        // Pre-allocate some memory
+        _head = global_pool.acquire();
+        _tail = _head;
+    }
+
+    gc_heap::~gc_heap()
+    {
+        // Allow the destructor to run more than once (this happens during
+        // unit testing)
+        if (_head != nullptr)
+        {
+            free_large();
+            free_small();
+            global_pool.release(_head);
+            _head = nullptr;
+        }
+    }
+
+    void* gc_heap::allocate_large(std::size_t size)
     {
         // We must return zero-filled memory, hence calloc
         void* raw = std::calloc(sizeof(large_allocation) + size, sizeof(std::byte));
@@ -28,35 +51,37 @@ namespace
         }
 
         auto memory = static_cast<large_allocation*>(raw);
-        if (allocation != nullptr)
+        if (_large_objects != nullptr)
         {
-            allocation->previous = memory;
+            _large_objects->previous = memory;
         }
 
-        allocation = memory;
+        _large_objects = memory;
         return memory + 1; // The actual memory is after the large_allocation, hence +1
     }
 
-    std::byte* allocate_small(pool_type::node_type*& tail, std::size_t size)
+    std::byte* gc_heap::allocate_small(std::size_t size)
     {
         size = align_up(size);
-        std::size_t used = tail->data - tail->buffer.data();
-        std::size_t available = tail->capacity - used;
+        assert(size < pool_type::node_type::capacity);
+
+        std::size_t used = _tail->data - _tail->buffer.data();
+        std::size_t available = _tail->capacity - used;
         if (available < size)
         {
-            pool_type::node_type* previous = tail;
-            tail = global_pool.acquire();
-            previous->next = tail;
+            pool_type::node_type* previous = _tail;
+            _tail = global_pool.acquire();
+            previous->next = _tail;
         }
 
-        std::byte* memory = tail->data;
-        tail->data += size;
+        std::byte* memory = _tail->data;
+        _tail->data += size;
         return memory;
     }
 
-    void free_large_allocations(memory_allocations& allocations)
+    void gc_heap::free_large()
     {
-        large_allocation* current = allocations.large_objects;
+        large_allocation* current = _large_objects;
         while (current != nullptr)
         {
             large_allocation* previous = current->previous;
@@ -64,14 +89,13 @@ namespace
             current = previous;
         }
 
-        allocations.large_objects = nullptr;
+        _large_objects = nullptr;
     }
 
-    void free_nodes(memory_allocations& allocations)
+    void gc_heap::free_small()
     {
-        // The gc_service constructor always allocates at least one node, so
-        // we know head won't be empty
-        pool_type::node_type* node = allocations.head->next;
+        // We always allocates at least one node, so we know head won't be empty
+        pool_type::node_type* node = _head->next;
         while (node != nullptr)
         {
             pool_type::node_type* next = node->next;
@@ -79,40 +103,8 @@ namespace
             node = next;
         }
 
-        allocations.head->clear_data();
-        allocations.tail = allocations.head;
-    }
-
-    void free_allocations(memory_allocations& allocations)
-    {
-        free_large_allocations(allocations);
-        free_nodes(allocations);
-    }
-}
-
-namespace autocrat
-{
-    namespace detail
-    {
-        memory_allocations::memory_allocations() :
-            large_objects(nullptr)
-        {
-            // Pre-allocate some memory
-            head = global_pool.acquire();
-            tail = head;
-        }
-
-        memory_allocations::~memory_allocations()
-        {
-            // Allow the destructor to run more than once (this happens during
-            // unit testing)
-            if (head != nullptr)
-            {
-                free_allocations(*this);
-                global_pool.release(head);
-                head = nullptr;
-            }
-        }
+        _head->clear_data();
+        _tail = _head;
     }
 
     gc_service::gc_service(thread_pool* pool) :
@@ -124,17 +116,18 @@ namespace autocrat
     {
         if (size > 102'400u)
         {
-            return allocate_large(thread_storage->large_objects, size);
+            return thread_storage->allocate_large(size);
         }
         else
         {
-            return allocate_small(thread_storage->tail, size);
+            return thread_storage->allocate_small(size);
         }
     }
 
     void gc_service::on_end_work(std::size_t thread_id)
     {
-        free_allocations(*thread_storage);
+        thread_storage->free_large();
+        thread_storage->free_small();
         base_type::on_end_work(thread_id);
     }
 }

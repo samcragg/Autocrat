@@ -8,34 +8,51 @@
 
 namespace autocrat
 {
-    namespace detail
+    class gc_service;
+
+    /**
+     * Represents an area of managed memory.
+     */
+    class gc_heap
     {
+    public:
         using pool_type = autocrat::node_pool<1024u * 1024u>;
+
+        /**
+         * Constructs a new instance of the `gc_heap` class.
+         */
+        gc_heap();
+
+        /**
+         * Destroys the `gc_heap` instance.
+         */
+        ~gc_heap();
+    private:
+        friend gc_service;
 
         struct large_allocation
         {
             alignas(std::max_align_t) large_allocation* previous;
         };
 
-        struct memory_allocations
-        {
-            memory_allocations();
-            ~memory_allocations();
+        void* allocate_large(std::size_t size);
+        std::byte* allocate_small(std::size_t size);
+        void free_large();
+        void free_small();
 
-            pool_type::node_type* head;
-            pool_type::node_type* tail;
-            large_allocation* large_objects;
-        };
-    }
+        pool_type::node_type* _head;
+        pool_type::node_type* _tail;
+        large_allocation* _large_objects;
+    };
 
     /**
      * Manages the managed memory and performs automatic garbage collection
      * when the memory is no longer required.
      */
-    class gc_service : public thread_specific_storage<detail::memory_allocations>
+    class gc_service : public thread_specific_storage<gc_heap>
     {
     public:
-        using base_type = thread_specific_storage<detail::memory_allocations>;
+        using base_type = thread_specific_storage<gc_heap>;
 
         MOCKABLE_CONSTRUCTOR(gc_service)
 
