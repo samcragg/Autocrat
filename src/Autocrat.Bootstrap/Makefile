@@ -28,5 +28,5 @@ $(OUTPUT_LIB): $(OBJECTS)
 
 .PHONY: clean
 clean:
-	@rm -r $(OBJ_DIR)/*.o
+	@find $(OBJ_DIR) -type f -name '*.o' -delete
 	@rm -f $(OUTPUT_LIB)

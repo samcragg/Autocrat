@@ -69,6 +69,6 @@ $(TEST_PROGRAM): $(OBJECTS)
 
 .PHONY: clean
 clean:
-	@rm -rf $(OBJ_DIR)
+	@find $(OBJ_DIR) -type f -name '*.o' -delete
 	@rm -f $(TEST_PROGRAM)
 	@rm -f $(TEST_OUTPUT)
