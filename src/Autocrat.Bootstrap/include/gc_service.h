@@ -27,6 +27,18 @@ namespace autocrat
          * Destroys the `gc_heap` instance.
          */
         ~gc_heap();
+
+        gc_heap(const gc_heap&) = delete;
+        gc_heap& operator=(const gc_heap&) = delete;
+
+        gc_heap(gc_heap&& other) noexcept;
+        gc_heap& operator=(gc_heap&& other) noexcept;
+
+        /**
+         * Exchanges the contents of this instance and `other`.
+         * @param other The instance to exchange contents with.
+         */
+        void swap(gc_heap& other) noexcept;
     private:
         friend gc_service;
 
@@ -70,6 +82,18 @@ namespace autocrat
         MOCKABLE_METHOD void* allocate(std::size_t size);
 
         void on_end_work(std::size_t thread_id) override;
+
+        /**
+         * Resets the current threads heap to an empty instance.
+         * @returns The previous memory allocations.
+         */
+        MOCKABLE_METHOD gc_heap reset_heap();
+
+        /**
+         * Sets the current threads head to the specified memory.
+         * @param heap Contains the memory allocations.
+         */
+        MOCKABLE_METHOD void set_heap(gc_heap&& heap);
     };
 }
 

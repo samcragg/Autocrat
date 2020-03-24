@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <new>
@@ -30,8 +31,7 @@ namespace autocrat
 
     gc_heap::~gc_heap()
     {
-        // Allow the destructor to run more than once (this happens during
-        // unit testing)
+        // _head will be null if we were constructed via the move constructor
         if (_head != nullptr)
         {
             free_large();
@@ -39,6 +39,29 @@ namespace autocrat
             global_pool.release(_head);
             _head = nullptr;
         }
+    }
+
+    gc_heap::gc_heap(gc_heap&& other) noexcept :
+        _head(nullptr),
+        _tail(nullptr),
+        _large_objects(nullptr)
+    {
+        swap(other);
+    }
+
+    gc_heap& gc_heap::operator=(gc_heap&& other) noexcept
+    {
+        assert(&other != this);
+        swap(other);
+        return *this;
+    }
+
+    void gc_heap::swap(gc_heap& other) noexcept
+    {
+        using std::swap;
+        swap(_head, other._head);
+        swap(_tail, other._tail);
+        swap(_large_objects, other._large_objects);
     }
 
     void* gc_heap::allocate_large(std::size_t size)
@@ -114,6 +137,8 @@ namespace autocrat
 
     void* gc_service::allocate(std::size_t size)
     {
+        assert(thread_storage != nullptr); // Check on_begin_work was called first
+
         if (size > 102'400u)
         {
             return thread_storage->allocate_large(size);
@@ -129,5 +154,21 @@ namespace autocrat
         thread_storage->free_large();
         thread_storage->free_small();
         base_type::on_end_work(thread_id);
+    }
+
+    gc_heap gc_service::reset_heap()
+    {
+        assert(thread_storage != nullptr); // Check on_begin_work was called first
+
+        gc_heap current(std::move(*thread_storage));
+        *thread_storage = gc_heap();
+        return current;
+    }
+
+    void gc_service::set_heap(gc_heap&& heap)
+    {
+        assert(thread_storage != nullptr); // Check on_begin_work was called first
+
+        *thread_storage = std::move(heap);
     }
 }

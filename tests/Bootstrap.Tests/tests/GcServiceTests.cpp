@@ -30,7 +30,7 @@ class GcServiceTests : public testing::Test
 {
 protected:
     static constexpr std::size_t large_allocation = 200'000u;
-    static constexpr std::size_t small_allocation = 200u;
+    static constexpr std::size_t small_allocation = 192u; // Must be divisible by 16
     FakeThreadPool _threadPool;
 };
 
@@ -87,4 +87,22 @@ TEST_F(GcServiceTests, OnEndWorkShouldReleaseAllTheMemory)
     gc.on_end_work(0);
     std::size_t after_bytes = allocated_bytes();
     EXPECT_EQ(before_bytes, after_bytes);
+}
+
+TEST_F(GcServiceTests, ShouldBeAbleToUseDifferentHeaps)
+{
+    autocrat::gc_service gc(&_threadPool);
+    gc.on_begin_work(0);
+
+    auto first = static_cast<std::byte*>(gc.allocate(small_allocation));
+    auto second = static_cast<std::byte*>(gc.allocate(small_allocation));
+    EXPECT_EQ(first + small_allocation, second);
+
+    autocrat::gc_heap heap = gc.reset_heap();
+    auto new_heap = static_cast<std::byte*>(gc.allocate(small_allocation));
+    EXPECT_NE(second + small_allocation, new_heap);
+
+    gc.set_heap(std::move(heap));
+    auto original_heap = static_cast<std::byte*>(gc.allocate(small_allocation));
+    EXPECT_EQ(second + small_allocation, original_heap);
 }
