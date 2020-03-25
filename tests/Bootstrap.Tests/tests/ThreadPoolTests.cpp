@@ -15,7 +15,7 @@ namespace
 {
     std::size_t initialized_called_count;
 
-    extern "C" void CDECL InitializeManagedThread()
+    void initialize_method()
     {
         initialized_called_count++;
     }
@@ -76,7 +76,7 @@ TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceBeforeAndAfterWork)
 
     _pool.add_observer(&service);
     _pool.enqueue(&CheckLifetimeService, std::make_tuple(&service, &condition));
-    _pool.start();
+    _pool.start(&initialize_method);
     auto result = condition.wait_for(lock, 20ms);
 
     EXPECT_EQ(std::cv_status::no_timeout, result);
@@ -95,7 +95,7 @@ TEST_F(ThreadPoolTests, ShouldPerformTheWorkOnASeparateThread)
     auto worker_future = worker_promise->get_future();
 
     _pool.enqueue(&SetThreadId, worker_promise);
-    _pool.start();
+    _pool.start(&initialize_method);
     std::future_status wait_result = worker_future.wait_for(20ms);
 
     ASSERT_EQ(std::future_status::ready, wait_result);
@@ -106,7 +106,7 @@ TEST_F(ThreadPoolTests, StartShouldInitializeManagedThreads)
 {
     initialized_called_count = 0;
 
-    _pool.start();
+    _pool.start(&initialize_method);
 
     EXPECT_EQ(initialized_called_count, initialized_called_count);
 }

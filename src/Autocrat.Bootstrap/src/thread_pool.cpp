@@ -1,18 +1,12 @@
 #include <mutex>
 #include <spdlog/spdlog.h>
-#include "managed_exports.h"
 #include "pal.h"
 #include "pause.h"
 #include "thread_pool.h"
 
 namespace
 {
-    void initialize_thread()
-    {
-        static std::mutex thread_initializing;
-        std::scoped_lock lock(thread_initializing);
-        managed_exports::InitializeManagedThread();
-    }
+    static std::mutex thread_initializing;
 }
 
 namespace autocrat
@@ -70,13 +64,13 @@ namespace autocrat
         return _threads.size();
     }
 
-    void thread_pool::start()
+    void thread_pool::start(initialize_function initialize)
     {
         spdlog::info("Creating {} threads with affinity starting from {}", _threads.size(), _starting_cpu);
 
         for (std::size_t i = 0; i != _threads.size(); ++i)
         {
-            _threads[i] = std::thread(&thread_pool::perform_work, this, i);
+            _threads[i] = std::thread(&thread_pool::perform_work, this, i, initialize);
             pal::set_affinity(_threads[i], _starting_cpu + i);
         }
 
@@ -103,16 +97,20 @@ namespace autocrat
         }
     }
 
-    void thread_pool::perform_work(std::size_t index)
+    void thread_pool::perform_work(std::size_t index, initialize_function initialize)
     {
         const std::uint32_t maximum_spins = 1000;
         std::uint32_t spin_count = 0;
 
-        initialize_thread();
-        ++_initialized;
+        {
+            std::scoped_lock lock(thread_initializing);
+            spdlog::debug("Initializing thread {}", index);
+            initialize();
+            ++_initialized;
+        }
 
         // Allow other threads to run and, more importantly, the switch to the
-        // desired CPU affinity (when the threads started we could be on any
+        // desired CPU affinity (when the thread's started we could be on any
         // core initially)
         std::this_thread::yield();
 

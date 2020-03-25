@@ -39,10 +39,16 @@ namespace autocrat
     {
     public:
         /**
-         * Represents the function signature to of methods to invoke on the
+         * Represents the function signature of methods to invoke on the
          * background threads.
          */
         using callback_function = void(*)(std::any& param);
+
+        /**
+         * Represents the function signature of methods to invoke during
+         * background thread initialization.
+         */
+        using initialize_function = void(*)();
 
         /**
          * Constructs a new instance of the `thread_pool` class.
@@ -81,11 +87,11 @@ namespace autocrat
          *          completed initialization and, therefore, are ready for
          *          processing work.
          */
-        MOCKABLE_METHOD void start();
+        MOCKABLE_METHOD void start(initialize_function initialize);
     private:
         using work_item = std::tuple<callback_function, std::any>;
         void invoke_work_item(std::size_t index, work_item& item) const;
-        void perform_work(std::size_t index);
+        void perform_work(std::size_t index, initialize_function initialize);
         void wait_for_work();
 
         std::atomic_bool _is_running;
