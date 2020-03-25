@@ -8,6 +8,7 @@
 #include "pal.h"
 #include "pause.h"
 #include "services.h"
+#include "thread_pool.h"
 
 namespace autocrat
 {
@@ -17,6 +18,7 @@ namespace autocrat
 namespace
 {
     std::atomic_bool program_running;
+    autocrat::gc_heap global_heap;
 
     void initialize_logging()
     {
@@ -30,6 +32,14 @@ namespace
             std::fprintf(stderr, "Unable to initialize logging: %s\n", ex.what());
             std::exit(1);
         }
+    }
+
+    void initialize_managed_thread()
+    {
+        auto gc = autocrat::global_services.get_service<autocrat::gc_service>();
+        gc->set_heap(std::move(global_heap));
+        managed_exports::InitializeManagedThread();
+        global_heap = gc->reset_heap();
     }
 
     void on_close_callback()
@@ -51,12 +61,25 @@ namespace
         autocrat::global_services.initialize_thread_pool(0, 1);
         autocrat::global_services.initialize();
     }
+
+    void setup_threads()
+    {
+        global_heap = autocrat::global_services.get_service<autocrat::gc_service>()->reset_heap();
+        initialize_managed_thread(); // Initialize the current thread
+
+        autocrat::global_services.get_thread_pool().start(initialize_managed_thread);
+    }
 }
 
 int autocrat_main()
 {
     initialize_logging();
+
+    spdlog::debug("Creating native services");
     setup_services();
+
+    spdlog::debug("Setting up native/manage transition for threads");
+    setup_threads();
 
     spdlog::debug("Registering worker type constructors");
     managed_exports::RegisterWorkerTypes();

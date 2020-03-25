@@ -45,13 +45,20 @@ namespace autocrat
         }
 
         /**
+         * Gets the thread pool.
+         */
+        ThreadPool& get_thread_pool()
+        {
+            return *_thread_pool;
+        }
+
+        /**
          * Initializes the service classes.
          */
         void initialize()
         {
             _services = std::make_tuple(std::make_unique<Services>(_thread_pool.get())...);
             invoke_all<is_base_of_lifetime_service>([this](auto& service) { _thread_pool->add_observer(&service); });
-            _thread_pool->start();
         }
 
         /**
