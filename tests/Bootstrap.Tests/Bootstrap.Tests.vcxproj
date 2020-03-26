@@ -90,6 +90,7 @@
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\array_pool.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\gc_service.cpp" />
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\locks.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\managed_interop.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\memory_pool.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\native_exports.cpp" />
@@ -104,6 +105,7 @@
     <ClCompile Include="mock_method_handles.cpp" />
     <ClCompile Include="pal_mock.cpp" />
     <ClCompile Include="tests\DynamicArrayTests.cpp" />
+    <ClCompile Include="tests\ExclusiveLockTests.cpp" />
     <ClCompile Include="tests\FixedHashmapTests.cpp" />
     <ClCompile Include="tests\GcServiceTests.cpp" />
     <ClCompile Include="tests\MemoryPoolTests.cpp" />

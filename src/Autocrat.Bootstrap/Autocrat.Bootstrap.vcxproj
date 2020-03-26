@@ -75,6 +75,7 @@
   <ItemGroup>
     <ClCompile Include="src\array_pool.cpp" />
     <ClCompile Include="src\gc_service.cpp" />
+    <ClCompile Include="src\locks.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\managed_interop.cpp" />
     <ClCompile Include="src\memory_pool.cpp" />
@@ -90,6 +91,7 @@
     <ClInclude Include="include\collections.h" />
     <ClInclude Include="include\defines.h" />
     <ClInclude Include="include\gc_service.h" />
+    <ClInclude Include="include\locks.h" />
     <ClInclude Include="include\managed_exports.h" />
     <ClInclude Include="include\managed_interop.h" />
     <ClInclude Include="include\managed_types.h" />

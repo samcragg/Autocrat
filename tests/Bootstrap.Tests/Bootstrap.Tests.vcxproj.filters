@@ -132,5 +132,11 @@
     <ClCompile Include="tests\GcServiceTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\locks.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\ExclusiveLockTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

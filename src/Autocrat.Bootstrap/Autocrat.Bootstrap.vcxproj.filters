@@ -44,6 +44,9 @@
     <ClCompile Include="src\memory_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\locks.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\method_handles.h">
@@ -101,6 +104,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\managed_types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\locks.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
