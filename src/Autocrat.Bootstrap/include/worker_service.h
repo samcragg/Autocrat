@@ -7,31 +7,38 @@
 #include <unordered_map>
 #include "collections.h"
 #include "defines.h"
+#include "locks.h"
 #include "managed_interop.h"
 #include "method_handles.h"
 #include "thread_pool.h"
 
 namespace autocrat
 {
-    namespace detail
-    {
-        struct worker_info
-        {
-            using type_handle = std::uintptr_t;
+    class worker_service;
 
-            type_handle type;
-            object_serializer serializer;
-            void* object;
-        };
-    }
+    /**
+     * Contains information about a managed worker.
+     */
+    class worker_info
+    {
+    public:
+        using type_handle = std::uintptr_t;
+    private:
+        friend class worker_service;
+
+        type_handle type;
+        object_serializer serializer;
+        void* object;
+        exclusive_lock lock;
+    };
 
     /**
      * Exposes functionality for obtaining worker services.
      */
-    class worker_service : public thread_specific_storage<small_vector<detail::worker_info*>>
+    class worker_service : public thread_specific_storage<small_vector<worker_info*>>
     {
     public:
-        using base_type = thread_specific_storage<small_vector<detail::worker_info*>>;
+        using base_type = thread_specific_storage<small_vector<worker_info*>>;
 
         MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(worker_service)
 
@@ -58,8 +65,6 @@ namespace autocrat
          */
         MOCKABLE_METHOD void register_type(const void* type, construct_worker constructor);
     private:
-        using worker_info = detail::worker_info;
-
         void* load_worker(worker_info& info);
         void* make_worker(worker_info::type_handle type, std::string id);
         void save_worker(worker_info& info);

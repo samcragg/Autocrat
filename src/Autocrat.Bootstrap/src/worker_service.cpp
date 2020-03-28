@@ -72,7 +72,13 @@ namespace autocrat
             throw std::invalid_argument("Type has not been registered");
         }
 
-        auto it = _workers.emplace(std::move(id), worker_info());
+        // We can't move a worker_info due to the lock, so create it in place
+        // with this slightly awkward syntax
+        auto it = _workers.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(std::move(id)),
+            std::forward_as_tuple());
+
         auto& info = it->second;
         info.type = type;
         info.object = constructor->second();
