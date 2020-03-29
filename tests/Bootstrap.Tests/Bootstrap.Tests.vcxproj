@@ -121,6 +121,7 @@
     <ClCompile Include="tests\PalSocketTests.cpp" />
     <ClCompile Include="tests\PalThreadTests.cpp" />
     <ClCompile Include="tests\ServicesTests.cpp" />
+    <ClCompile Include="tests\SharedSpinLockTests.cpp" />
     <ClCompile Include="tests\SmallVectorTests.cpp" />
     <ClCompile Include="tests\SmartPtrTests.cpp" />
     <ClCompile Include="tests\ThreadPoolTests.cpp" />

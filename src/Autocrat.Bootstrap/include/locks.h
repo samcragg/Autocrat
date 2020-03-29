@@ -33,6 +33,38 @@ namespace autocrat
         std::atomic_uint32_t _owner_id;
         std::uint32_t _lock_count; 
     };
+
+    /**
+     * Represents a light-weight shareable lock.
+     * @remarks This class provides allows shared and exclusive locking of a
+     *          resource but does not allow recursive locking by the same
+     *          thread in exclusive mode.
+     */
+    class shared_spin_lock
+    {
+    public:
+        /**
+         * Locks the instance for exclusive ownership.
+         */
+        void lock();
+
+        /**
+         * Locks the instance for shared ownership.
+         */
+        void lock_shared();
+
+        /**
+         * Unlocks the instance from exclusive ownership.
+         */
+        void unlock();
+
+        /**
+         * Unlocks the instance from shared ownership.
+         */
+        void unlock_shared();
+    private:
+        std::atomic_uint32_t _counter = 0;
+    };
 }
 
 #endif

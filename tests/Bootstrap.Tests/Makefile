@@ -33,6 +33,7 @@ TESTS = \
  tests/PalThreadTests.cpp \
  tests/ReferenceScannerTests.cpp \
  tests/ServicesTests.cpp \
+ tests/SharedSpinLockTests.cpp \
  tests/SmallVectorTests.cpp \
  tests/SmartPtrTests.cpp \
  tests/ThreadPoolTests.cpp \
