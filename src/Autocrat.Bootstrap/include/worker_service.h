@@ -14,6 +14,26 @@
 
 namespace autocrat
 {
+    namespace detail
+    {
+        struct worker_key
+        {
+            using type_handle = std::uintptr_t;
+            type_handle type;
+            std::string id;
+        };
+
+        struct worker_key_equal
+        {
+            bool operator()(const worker_key& a, const worker_key& b) const;
+        };
+
+        struct worker_key_hash
+        {
+            std::size_t operator()(const worker_key& key) const;
+        };
+    }
+
     class worker_service;
 
     /**
@@ -22,11 +42,9 @@ namespace autocrat
     class worker_info
     {
     public:
-        using type_handle = std::uintptr_t;
     private:
         friend class worker_service;
 
-        type_handle type;
         object_serializer serializer;
         void* object;
         exclusive_lock lock;
@@ -39,6 +57,7 @@ namespace autocrat
     {
     public:
         using base_type = thread_specific_storage<small_vector<worker_info*>>;
+        using worker_collection = dynamic_array<worker_info*>;
 
         MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(worker_service)
 
@@ -65,12 +84,21 @@ namespace autocrat
          */
         MOCKABLE_METHOD void register_type(const void* type, construct_worker constructor);
     private:
-        void* load_worker(worker_info& info);
-        void* make_worker(worker_info::type_handle type, std::string id);
+        using worker_key = detail::worker_key;
+
+        bool find_existing(worker_key::type_handle type, std::string_view id, void*& result) const;
+        void* load_worker(worker_info& info) const;
+        void* make_worker(worker_key&& key);
         void save_worker(worker_info& info);
 
-        std::unordered_map<worker_info::type_handle, construct_worker> _constructors;
-        std::unordered_multimap<std::string, worker_info> _workers;
+        std::unordered_map<worker_key::type_handle, construct_worker> _constructors;
+        std::unordered_map<
+            worker_key,
+            worker_info,
+            detail::worker_key_hash,
+            detail::worker_key_equal> _workers;
+
+        mutable shared_spin_lock _workers_lock;
     };
 }
 

@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <mutex>
+#include <shared_mutex>
 #include <stdexcept>
 #include "worker_service.h"
 
@@ -13,6 +15,20 @@ namespace
 
 namespace autocrat
 {
+    namespace detail
+    {
+        bool worker_key_equal::operator()(const worker_key& a, const worker_key& b) const
+        {
+            return (a.type == b.type) && (a.id == b.id);
+        }
+
+        std::size_t worker_key_hash::operator()(const worker_key& key) const
+        {
+            std::hash<std::string> id_hasher;
+            return (key.type * 31u) + id_hasher(key.id);
+        }
+    }
+
     worker_service::worker_service(thread_pool* pool) :
         base_type(pool)
     {
@@ -21,20 +37,15 @@ namespace autocrat
     void* worker_service::get_worker(const void* type_ptr, std::string_view id)
     {
         std::uintptr_t type = get_type(type_ptr);
-
-        // TODO: C++ 20 would allow the use of string_view here
-        auto workers = _workers.equal_range(std::string(id.begin(), id.end()));
-
-        for (auto& it = workers.first; it != workers.second; ++it)
+        void* worker = nullptr;
+        if (find_existing(type, id, worker))
         {
-            worker_info& worker = it->second;
-            if (worker.type == type)
-            {
-                return load_worker(worker);
-            }
+            return worker;
         }
-
-        return make_worker(type, std::string(id.begin(), id.end()));
+        else
+        {
+            return make_worker({ type, std::string(id.begin(), id.end()) });
+        }
     }
 
     void worker_service::on_end_work(std::size_t thread_id)
@@ -53,8 +64,29 @@ namespace autocrat
         _constructors.try_emplace(get_type(type), constructor);
     }
 
-    void* worker_service::load_worker(worker_info& info)
+    bool worker_service::find_existing(worker_key::type_handle type, std::string_view id, void*& result) const
     {
+        std::shared_lock<decltype(_workers_lock)> lock(_workers_lock);
+
+        // TODO: C++ 20 would allow the use of a different key type here, one using string_view
+        auto it = _workers.find({ type, std::string(id.begin(), id.end()) });
+        if (it != _workers.end())
+        {
+            lock.unlock();
+            result = load_worker(const_cast<worker_info&>(it->second));
+            return true;
+        }
+
+        return false;
+    }
+
+    void* worker_service::load_worker(worker_info& info) const
+    {
+        if (!info.lock.try_lock())
+        {
+            return nullptr;
+        }
+
         if (info.object == nullptr)
         {
             info.object = info.serializer.restore();
@@ -64,32 +96,45 @@ namespace autocrat
         return info.object;
     }
 
-    void* worker_service::make_worker(worker_info::type_handle type, std::string id)
+    void* worker_service::make_worker(worker_key&& key)
     {
-        auto constructor = _constructors.find(type);
-        if (constructor == _constructors.end())
+        worker_key::type_handle constructor_type = key.type;
+
+        std::unique_lock<decltype(_workers_lock)> lock(_workers_lock);
+        auto [it, inserted] = _workers.try_emplace(std::move(key));
+        if (!inserted)
         {
-            throw std::invalid_argument("Type has not been registered");
+            lock.unlock();
+            return load_worker(it->second);
         }
+        else
+        {
+            // We need to release the _worker_lock ASAP, so lock the worker to
+            // prevent anyone else playing with it so we can unlock the workers
+            // and then we can run the construction without holding any other
+            // thread up. Note we can't use the iterator after we've called
+            // unlock, as another thread could then insert something that
+            // causes a rehash to invalidate it.
+            auto& worker = it->second;
+            worker.lock.try_lock();
+            lock.unlock();
 
-        // We can't move a worker_info due to the lock, so create it in place
-        // with this slightly awkward syntax
-        auto it = _workers.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(std::move(id)),
-            std::forward_as_tuple());
+            auto constructor = _constructors.find(constructor_type);
+            if (constructor == _constructors.end())
+            {
+                throw std::invalid_argument("Type has not been registered");
+            }
 
-        auto& info = it->second;
-        info.type = type;
-        info.object = constructor->second();
-
-        thread_storage->emplace_back(&info);
-        return info.object;
+            worker.object = constructor->second();
+            thread_storage->emplace_back(&worker);
+            return worker.object;
+        }
     }
 
     void worker_service::save_worker(worker_info& info)
     {
         info.serializer.save(info.object);
         info.object = nullptr;
+        info.lock.unlock();
     }
 }
