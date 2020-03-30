@@ -42,6 +42,7 @@ namespace autocrat
 
     void exclusive_lock::unlock()
     {
+        assert(_lock_count > 0);
         assert(_owner_id.load() == get_current_thread_id());
 
         --_lock_count;
@@ -101,11 +102,13 @@ namespace autocrat
         // which is fine as it will decrement it, so we can't just blank out the
         // value but instead subtract it so the reader will still see it's
         // incremented value
+        assert(_counter & writer_bit);
         _counter.fetch_sub(writer_bit, std::memory_order_release);
     }
 
     void shared_spin_lock::unlock_shared()
     {
+        assert(_counter > 0);
         _counter.fetch_sub(1, std::memory_order_release);
     }
 }
