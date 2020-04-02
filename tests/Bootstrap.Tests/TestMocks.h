@@ -17,7 +17,7 @@ public:
 
     std::size_t size() const noexcept override
     {
-        return 1u;
+        return 2u;
     }
 };
 

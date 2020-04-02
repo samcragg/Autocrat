@@ -2,6 +2,7 @@
 #define WORKER_SERVICE_H
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -57,6 +58,7 @@ namespace autocrat
     {
     public:
         using base_type = thread_specific_storage<small_vector<worker_info*>>;
+        using object_collection = dynamic_array<void*>;
         using worker_collection = dynamic_array<worker_info*>;
 
         MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(worker_service)
@@ -83,6 +85,20 @@ namespace autocrat
          * @param constructor The method to construct a new managed instance.
          */
         MOCKABLE_METHOD void register_type(const void* type, construct_worker constructor);
+
+        /**
+         * Releases the workers held by the current thread.
+         * @returns The workers that were locked by the current thread.
+         */
+        worker_collection release_locked();
+
+        /**
+         * Attempts to lock all the specified workers and associates them with
+         * the current thread.
+         * @param workers The collection of workers to take ownership of.
+         * @returns The managed objects of the loaded workers.
+         */
+        std::optional<object_collection> try_lock(const worker_collection& workers);
     private:
         using worker_key = detail::worker_key;
 

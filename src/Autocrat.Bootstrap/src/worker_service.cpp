@@ -64,6 +64,61 @@ namespace autocrat
         _constructors.try_emplace(get_type(type), constructor);
     }
 
+    auto worker_service::release_locked() -> worker_collection
+    {
+        auto locked_workers = thread_storage;
+        worker_collection workers(locked_workers->size());
+
+        worker_info** dest = workers.data();
+        for (worker_info* worker : *locked_workers)
+        {
+            save_worker(*worker);
+            *dest++ = worker;
+        }
+
+        locked_workers->clear();
+        return workers;
+    }
+
+    auto worker_service::try_lock(const worker_collection& workers) -> std::optional<object_collection>
+    {
+        // Since the workers locks are recursive, we can go through and try to
+        // lock them all. If that works we can then call load_worker, which
+        // will lock it again. This means it's locked twice so we need to
+        // unlock it once inside this method, which also allows us to handle
+        // the case that we only locked some of them and, therefore, need to
+        // unlock them again.
+        std::size_t locked_count = 0;
+        for (; locked_count != workers.size(); ++locked_count)
+        {
+            if (!workers[locked_count]->lock.try_lock())
+            {
+                break;
+            }
+        }
+
+        std::optional<object_collection> result = std::nullopt;
+        if (locked_count == workers.size())
+        {
+            // We locked them all so now we can do the expensive loading
+            object_collection objects(workers.size());
+            for (std::size_t i = 0; i != workers.size(); ++i)
+            {
+                objects[i] = load_worker(*workers[i]);
+                assert(objects[i] != nullptr);
+            }
+
+            result = std::move(objects);
+        }
+
+        for (std::size_t i = 0; i != locked_count; ++i)
+        {
+            workers[i]->lock.unlock();
+        }
+
+        return result;
+    }
+
     bool worker_service::find_existing(worker_key::type_handle type, std::string_view id, void*& result) const
     {
         std::shared_lock<decltype(_workers_lock)> lock(_workers_lock);
