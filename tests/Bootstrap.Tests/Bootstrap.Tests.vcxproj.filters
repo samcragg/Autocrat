@@ -141,5 +141,8 @@
     <ClCompile Include="tests\SharedSpinLockTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\ObjectScannerTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

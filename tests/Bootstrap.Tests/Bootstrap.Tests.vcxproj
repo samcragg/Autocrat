@@ -110,6 +110,7 @@
     <ClCompile Include="tests\GcServiceTests.cpp" />
     <ClCompile Include="tests\MemoryPoolTests.cpp" />
     <ClCompile Include="tests\NodePoolTests.cpp" />
+    <ClCompile Include="tests\ObjectScannerTests.cpp" />
     <ClCompile Include="tests\ObjectSerializerTests.cpp" />
     <ClCompile Include="tests\ReferenceScannerTests.cpp" />
     <ClCompile Include="tests\ArrayPoolTests.cpp" />

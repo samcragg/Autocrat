@@ -6,6 +6,21 @@
 #include "managed_interop.h"
 #include "services.h"
 
+namespace
+{
+    struct gc_header
+    {
+        std::uint32_t padding;
+        std::uint32_t sync_block;
+    };
+    static_assert(sizeof(gc_header) == 8u);
+
+    // Note that we don't need this to be thread safe - it's OK if two threads
+    // use the same value, as they won't be scanning the same area of managed
+    // memory and, therefore, can't mark another threads object as scanned.
+    std::uint32_t scan_counter = 0u;
+}
+
 namespace autocrat
 {
     namespace detail
@@ -270,6 +285,60 @@ namespace autocrat
             memory_pool_buffer* _buffer;
             std::size_t _objects;
         };
+    }
+
+    void object_scanner::scan(void* object)
+    {
+        // We increase the scan counter by 2 each time so that we can always
+        // OR it with 1, which prevents us from ever using 0 as our version
+        // number (if we initialized the counter to non-zero value and just
+        // incremented it each time, it would eventually overflow to 0). Also
+        // note that we don't care about thread safety; it's OK to use the same
+        // number on multiple threads
+        scan_counter += 2;
+        _version = scan_counter | 0x1;
+
+        move(object);
+    }
+
+    std::optional<void*> object_scanner::get_moved_location(void* object)
+    {
+        // Before each object is the GC header
+        gc_header& header = static_cast<gc_header*>(object)[-1];
+        if (header.padding == _version)
+        {
+            return object;
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+
+    void* object_scanner::get_reference(void* object, std::size_t offset)
+    {
+        void* address_of_field = static_cast<std::byte*>(object) + offset;
+        on_field(address_of_field);
+        return *static_cast<void**>(address_of_field);
+    }
+
+    void* object_scanner::move_object(void* object, std::size_t size)
+    {
+        on_object(object, size);
+
+        // We mark the object as moved inside the GC header space that proceeds
+        // each object
+        gc_header& header = static_cast<gc_header*>(object)[-1];
+        header.padding = _version;
+        return object;
+    }
+
+    void object_scanner::set_moved_location(void*, void*)
+    {
+    }
+
+    void object_scanner::set_reference(void*, std::size_t, void*)
+    {
     }
 
     void* object_serializer::restore()

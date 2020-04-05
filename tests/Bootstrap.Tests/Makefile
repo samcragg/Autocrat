@@ -27,6 +27,7 @@ TESTS = \
  tests/MemoryPoolTests.cpp \
  tests/NativeExportsTests.cpp \
  tests/NodePoolTests.cpp \
+ tests/ObjectScannerTests.cpp \
  tests/ObjectSerializerTests.cpp \
  tests/PalServicesTests.cpp \
  tests/PalSocketTests.cpp \
