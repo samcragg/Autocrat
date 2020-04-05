@@ -1,5 +1,6 @@
 #include "worker_service.h"
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -104,13 +105,16 @@ TEST_F(WorkerServiceTests, ReleaseLockedShouldReturnAllLockedWorkers)
     _service.register_type(&worker_object, &create_worker_object);
 
     // Lock the workers (including double locking, which is supported)
-    _service.get_worker(&worker_class, _worker_id);
-    _service.get_worker(&worker_object, _worker_id);
+    void* class_ptr = _service.get_worker(&worker_class, _worker_id);
+    void* object_ptr = _service.get_worker(&worker_object, _worker_id);
     _service.get_worker(&worker_object, _worker_id); // Lock again
 
-    autocrat::worker_service::worker_collection workers = _service.release_locked();
+    auto [objects, workers] = _service.release_locked();
 
+    EXPECT_EQ(2u, objects.size());
     EXPECT_EQ(2u, workers.size());
+    EXPECT_NE(objects.end(), std::find(objects.begin(), objects.end(), class_ptr));
+    EXPECT_NE(objects.end(), std::find(objects.begin(), objects.end(), object_ptr));
 }
 
 TEST_F(WorkerServiceTests, ShouldSaveAndRestoreTheWorkerState)
@@ -135,7 +139,7 @@ TEST_F(WorkerServiceTests, TryLockShouldLockAndReturnTheManagedObjects)
 {
     _service.register_type(&_worker_type, &create_worker_object);
     _service.get_worker(&_worker_type, _worker_id);
-    autocrat::worker_service::worker_collection workers = _service.release_locked();
+    auto workers = std::get<autocrat::worker_service::worker_collection>(_service.release_locked());
 
     AssertWorkerLocked(&_worker_type, false);
     auto result = _service.try_lock(workers);
@@ -150,7 +154,7 @@ TEST_F(WorkerServiceTests, TryLockShouldReturnEmptyIfTheObjectIsLocked)
 {
     _service.register_type(&_worker_type, &create_worker_object);
     _service.get_worker(&_worker_type, _worker_id);
-    autocrat::worker_service::worker_collection workers = _service.release_locked();
+    auto workers = std::get<autocrat::worker_service::worker_collection>(_service.release_locked());
 
     // Cause another thread to lock the worker
     std::mutex mutex;

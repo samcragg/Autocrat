@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include "collections.h"
 #include "defines.h"
@@ -90,7 +91,7 @@ namespace autocrat
          * Releases the workers held by the current thread.
          * @returns The workers that were locked by the current thread.
          */
-        worker_collection release_locked();
+        std::tuple<object_collection, worker_collection> release_locked();
 
         /**
          * Attempts to lock all the specified workers and associates them with

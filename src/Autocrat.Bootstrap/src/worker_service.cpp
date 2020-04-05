@@ -64,20 +64,23 @@ namespace autocrat
         _constructors.try_emplace(get_type(type), constructor);
     }
 
-    auto worker_service::release_locked() -> worker_collection
+    auto worker_service::release_locked() -> std::tuple<object_collection, worker_collection>
     {
         auto locked_workers = thread_storage;
+        object_collection objects(locked_workers->size());
         worker_collection workers(locked_workers->size());
 
-        worker_info** dest = workers.data();
+        void** object_it = objects.data();
+        worker_info** worker_it = workers.data();
         for (worker_info* worker : *locked_workers)
         {
+            *object_it++ = worker->object;
+            *worker_it++ = worker;
             save_worker(*worker);
-            *dest++ = worker;
         }
 
         locked_workers->clear();
-        return workers;
+        return std::make_tuple(std::move(objects), std::move(workers));
     }
 
     auto worker_service::try_lock(const worker_collection& workers) -> std::optional<object_collection>
