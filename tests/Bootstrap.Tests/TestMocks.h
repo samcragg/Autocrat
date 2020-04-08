@@ -12,6 +12,7 @@ public:
 
     void enqueue(callback_function callback, std::any&& data) override
     {
+        enqueue_count++;
         callback(data);
     }
 
@@ -19,6 +20,8 @@ public:
     {
         return 2u;
     }
+
+    std::size_t enqueue_count = 0u;
 };
 
 #endif

@@ -47,6 +47,9 @@
     <ClCompile Include="src\locks.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\task_service.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\method_handles.h">
@@ -107,6 +110,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\locks.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\task_service.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

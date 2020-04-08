@@ -9,10 +9,10 @@
 class FakeScanner : public autocrat::object_scanner
 {
 public:
-    std::unordered_set<void*> fields;
+    std::unordered_set<void**> fields;
     std::vector<std::tuple<void*, std::size_t>> objects;
 protected:
-    void on_field(void* field) override
+    void on_field(void** field) override
     {
         bool inserted = fields.insert(field).second;
         EXPECT_TRUE(inserted);

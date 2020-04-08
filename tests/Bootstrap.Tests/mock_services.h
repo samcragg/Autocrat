@@ -8,6 +8,15 @@ class mock_gc_service : public autocrat::gc_service
 {
 public:
     MockMethod(void*, allocate, (std::size_t))
+
+    autocrat::gc_heap reset_heap() override
+    {
+        return autocrat::gc_heap();
+    }
+
+    void set_heap(autocrat::gc_heap&&) override
+    {
+    }
 };
 
 class mock_network_service : public autocrat::network_service
@@ -29,6 +38,32 @@ class mock_worker_service : public autocrat::worker_service
 public:
     MockMethod(void*, get_worker, (const void*, std::string_view))
     MockMethod(void, register_type, (const void*, construct_worker))
+    
+    std::tuple<object_collection, worker_collection> release_locked() override
+    {
+        object_collection objects(1u);
+        objects[0] = original_worker;
+        return std::make_tuple(std::move(objects), worker_collection(1u));
+    }
+
+    std::optional<object_collection> try_lock(const worker_collection&) override
+    {
+        if (is_locked)
+        {
+            is_locked = false;
+            return std::nullopt;
+        }
+        else
+        {
+            object_collection objects(1u);
+            objects[0] = locked_worker;
+            return std::move(objects);
+        }
+    }
+
+    bool is_locked = false;
+    void* locked_worker = nullptr;
+    void* original_worker = nullptr;
 };
 
 class mock_services : public autocrat::global_services_type

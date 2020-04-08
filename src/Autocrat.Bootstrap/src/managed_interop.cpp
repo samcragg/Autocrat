@@ -318,8 +318,9 @@ namespace autocrat
     void* object_scanner::get_reference(void* object, std::size_t offset)
     {
         void* address_of_field = static_cast<std::byte*>(object) + offset;
-        on_field(address_of_field);
-        return *static_cast<void**>(address_of_field);
+        void** field = static_cast<void**>(address_of_field);
+        on_field(field);
+        return *field;
     }
 
     void* object_scanner::move_object(void* object, std::size_t size)

@@ -4,6 +4,15 @@
 #include <cstddef>
 #include <cstdint>
 
+struct managed_delegate
+{
+    void* ee_type;
+    void* target;
+    void* method_base;
+    void* method_ptr;
+    void* method_ptr_aux;
+};
+
 struct managed_guid
 {
     std::byte data[16];

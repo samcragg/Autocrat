@@ -12,6 +12,7 @@ SOURCES = \
  src/native_exports.cpp \
  src/network_service.cpp \
  src/pal_posix.cpp \
+ src/task_service.cpp \
  src/thread_pool.cpp \
  src/timer_service.cpp \
  src/worker_service.cpp

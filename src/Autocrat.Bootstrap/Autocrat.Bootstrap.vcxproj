@@ -82,6 +82,7 @@
     <ClCompile Include="src\native_exports.cpp" />
     <ClCompile Include="src\network_service.cpp" />
     <ClCompile Include="src\pal_win32.cpp" />
+    <ClCompile Include="src\task_service.cpp" />
     <ClCompile Include="src\thread_pool.cpp" />
     <ClCompile Include="src\timer_service.cpp" />
     <ClCompile Include="src\worker_service.cpp" />
@@ -104,6 +105,7 @@
     <ClInclude Include="include\pause.h" />
     <ClInclude Include="include\services.h" />
     <ClInclude Include="include\smart_ptr.h" />
+    <ClInclude Include="include\task_service.h" />
     <ClInclude Include="include\thread_pool.h" />
     <ClInclude Include="include\timer_service.h" />
     <ClInclude Include="include\worker_service.h" />

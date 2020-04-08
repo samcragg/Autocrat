@@ -144,5 +144,11 @@
     <ClCompile Include="tests\ObjectScannerTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\task_service.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\TaskServiceTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

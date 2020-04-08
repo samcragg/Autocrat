@@ -12,6 +12,7 @@ SRCS = \
  $(SRC_DIR)/native_exports.cpp \
  $(SRC_DIR)/network_service.cpp \
  $(SRC_DIR)/pal_posix.cpp \
+ $(SRC_DIR)/task_service.cpp \
  $(SRC_DIR)/thread_pool.cpp \
  $(SRC_DIR)/timer_service.cpp \
  $(SRC_DIR)/worker_service.cpp
@@ -37,6 +38,7 @@ TESTS = \
  tests/SharedSpinLockTests.cpp \
  tests/SmallVectorTests.cpp \
  tests/SmartPtrTests.cpp \
+ tests/TaskServiceTests.cpp \
  tests/ThreadPoolTests.cpp \
  tests/TimerServiceTests.cpp \
  tests/WorkerServiceTests.cpp \

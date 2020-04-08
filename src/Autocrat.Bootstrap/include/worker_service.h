@@ -91,7 +91,7 @@ namespace autocrat
          * Releases the workers held by the current thread.
          * @returns The workers that were locked by the current thread.
          */
-        std::tuple<object_collection, worker_collection> release_locked();
+        MOCKABLE_METHOD std::tuple<object_collection, worker_collection> release_locked();
 
         /**
          * Attempts to lock all the specified workers and associates them with
@@ -99,7 +99,7 @@ namespace autocrat
          * @param workers The collection of workers to take ownership of.
          * @returns The managed objects of the loaded workers.
          */
-        std::optional<object_collection> try_lock(const worker_collection& workers);
+        MOCKABLE_METHOD std::optional<object_collection> try_lock(const worker_collection& workers);
     private:
         using worker_key = detail::worker_key;
 

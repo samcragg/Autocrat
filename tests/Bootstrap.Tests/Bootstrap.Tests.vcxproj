@@ -96,6 +96,7 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\native_exports.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\network_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\pal_win32.cpp" />
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\task_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\thread_pool.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\timer_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\worker_service.cpp" />
@@ -125,6 +126,7 @@
     <ClCompile Include="tests\SharedSpinLockTests.cpp" />
     <ClCompile Include="tests\SmallVectorTests.cpp" />
     <ClCompile Include="tests\SmartPtrTests.cpp" />
+    <ClCompile Include="tests\TaskServiceTests.cpp" />
     <ClCompile Include="tests\ThreadPoolTests.cpp" />
     <ClCompile Include="tests\TimerServiceTests.cpp" />
     <ClCompile Include="tests\WorkerServiceTests.cpp" />

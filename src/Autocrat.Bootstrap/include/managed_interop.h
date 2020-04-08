@@ -47,9 +47,9 @@ namespace autocrat
     protected:
         /**
          * Called when a reference field inside an object is scanned.
-         * @param field The location of the field.
+         * @param field A pointer to the field which points to an object.
          */
-        virtual void on_field(void* field) = 0;
+        virtual void on_field(void** field) = 0;
 
         /**
          * Called when an object is scanned.
