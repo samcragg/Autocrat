@@ -26,6 +26,13 @@ public:
     MockMethod(void, check_and_dispatch, ())
 };
 
+class mock_task_service : public autocrat::task_service
+{
+public:
+    MockMethod(void, enqueue, (managed_delegate*, void*))
+    MockMethod(void, start_new, (managed_delegate*))
+};
+
 class mock_timer_service : public autocrat::timer_service
 {
 public:
@@ -74,6 +81,7 @@ public:
         _services = std::make_tuple(
             std::make_unique<mock_gc_service>(),
             std::make_unique<mock_network_service>(),
+            std::make_unique<mock_task_service>(),
             std::make_unique<mock_timer_service>(),
             std::make_unique<mock_worker_service>()
         );
@@ -94,6 +102,12 @@ public:
     {
         return *static_cast<mock_network_service*>(
             get_service<autocrat::network_service>());
+    }
+
+    mock_task_service& task_service()
+    {
+        return *static_cast<mock_task_service*>(
+            get_service<autocrat::task_service>());
     }
 
     mock_timer_service& timer_service()

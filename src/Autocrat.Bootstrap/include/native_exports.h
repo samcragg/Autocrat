@@ -24,6 +24,12 @@ extern "C"
 
     // Autocrat.NativeAdapters.NetworkService::OnDataReceived
     extern void CDECL register_udp_data_received(std::int32_t port, std::int32_t handle);
+
+    // Autocrat.NativeAdapters.TaskServiceSynchronizationContext::TaskEnqueue
+    extern void CDECL task_enqueue(managed_delegate* callback, void* state);
+
+    // Autocrat.NativeAdapters.TaskServiceSynchronizationContext::TaskStartNew
+    extern void CDECL task_start_new(managed_delegate* action);
 }
 
 #endif

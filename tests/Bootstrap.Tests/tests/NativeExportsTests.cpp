@@ -93,3 +93,24 @@ TEST_F(NativeExportsTests, RegisterUdpDataReceivedShouldAddTheMethodHandle)
     Verify(mock_global_services.network_service().add_udp_callback)
         .With(static_cast<std::uint16_t>(123), method);
 }
+
+TEST_F(NativeExportsTests, TaskEnqueueShouldEnqueueTheCallbackAndState)
+{
+    managed_delegate callback = {};
+    int state = {};
+
+    task_enqueue(&callback, &state);
+
+    Verify(mock_global_services.task_service().enqueue)
+        .With(&callback, &state);
+}
+
+TEST_F(NativeExportsTests, TaskStartNewShouldStartTheAction)
+{
+    managed_delegate action = {};
+
+    task_start_new(&action);
+
+    Verify(mock_global_services.task_service().start_new)
+        .With(&action);
+}

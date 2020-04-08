@@ -69,4 +69,14 @@ extern "C"
             callback
         );
     }
+
+    void CDECL task_enqueue(managed_delegate* callback, void* state)
+    {
+        autocrat::global_services.get_service<autocrat::task_service>()->enqueue(callback, state);
+    }
+
+    void CDECL task_start_new(managed_delegate* action)
+    {
+        autocrat::global_services.get_service<autocrat::task_service>()->start_new(action);
+    }
 }

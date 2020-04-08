@@ -1,6 +1,7 @@
 #ifndef TASK_SERVICE_H
 #define TASK_SERVICE_H
 
+#include "defines.h"
 #include "managed_types.h"
 
 namespace autocrat
@@ -13,6 +14,8 @@ namespace autocrat
     class task_service
     {
     public:
+        MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(task_service)
+
         /**
          * Constructs a new instance of the `task_service` class.
          * @param pool Used to dispatch work to.
@@ -24,13 +27,13 @@ namespace autocrat
          * @param callback The delegate to invoke.
          * @param state    The object to pass to the delegate.
          */
-        void enqueue(managed_delegate* callback, void* state);
+        MOCKABLE_METHOD void enqueue(managed_delegate* callback, void* state);
 
         /**
          * Queues the specified work on the thread pool.
          * @param action The delegate to invoke.
          */
-        void start_new(managed_delegate* action);
+        MOCKABLE_METHOD void start_new(managed_delegate* action);
     private:
         thread_pool* _thread_pool;
     };

@@ -7,6 +7,7 @@
 #include "defines.h"
 #include "gc_service.h"
 #include "network_service.h"
+#include "task_service.h"
 #include "thread_pool.h"
 #include "timer_service.h"
 #include "worker_service.h"
@@ -123,6 +124,7 @@ namespace autocrat
         thread_pool,
         gc_service,
         network_service,
+        task_service,
         timer_service,
         worker_service>;
 
