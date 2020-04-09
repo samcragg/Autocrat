@@ -7,6 +7,7 @@ namespace Autocrat.NativeAdapters
 {
     using System;
     using System.Runtime.InteropServices;
+    using System.Threading.Tasks;
     using Autocrat.Abstractions;
 
     /// <summary>
@@ -19,37 +20,49 @@ namespace Autocrat.NativeAdapters
         // marshal it. Therefore, the GetWorker methods pass a reference to
         // their local variable so the native code can change that instead.
 
-        /// <inheritdoc cref="IWorkerFactory.GetWorker{T}(Guid)"/>
-        public static unsafe T GetWorker<T>(Guid id)
+        /// <inheritdoc cref="IWorkerFactory.GetWorkerAsync{T}(Guid)"/>
+        public static async Task<T> GetWorkerAsync<T>(Guid id)
             where T : class
         {
-            object? result = null;
-            TypedReference tr = __makeref(result);
-            NativeMethods.LoadObjectGuid(NativeHelpers.GetHandle<T>(), &id, &tr);
-            return (T)result!;
+            IntPtr handle = NativeHelpers.GetHandle<T>();
+            object? worker = LoadObjectGuid(handle, id);
+            while (worker == null)
+            {
+                await Task.Yield();
+                worker = LoadObjectGuid(handle, id);
+            }
+
+            return (T)worker;
         }
 
-        /// <inheritdoc cref="IWorkerFactory.GetWorker{T}(long)"/>
-        public static unsafe T GetWorker<T>(long id)
+        /// <inheritdoc cref="IWorkerFactory.GetWorkerAsync{T}(long)"/>
+        public static async Task<T> GetWorkerAsync<T>(long id)
             where T : class
         {
-            object? result = null;
-            TypedReference tr = __makeref(result);
-            NativeMethods.LoadObjectInt64(NativeHelpers.GetHandle<T>(), id, &tr);
-            return (T)result!;
+            IntPtr handle = NativeHelpers.GetHandle<T>();
+            object? worker = LoadObjectInt64(handle, id);
+            while (worker == null)
+            {
+                await Task.Yield();
+                worker = LoadObjectInt64(handle, id);
+            }
+
+            return (T)worker;
         }
 
-        /// <inheritdoc cref="IWorkerFactory.GetWorker{T}(string)"/>
-        public static unsafe T GetWorker<T>(string id)
+        /// <inheritdoc cref="IWorkerFactory.GetWorkerAsync{T}(string)"/>
+        public static async Task<T> GetWorkerAsync<T>(string id)
             where T : class
         {
-            object? result = null;
-            TypedReference tr = __makeref(result);
-            NativeMethods.LoadObjectString(
-                NativeHelpers.GetHandle<T>(),
-                NativeHelpers.GetObject(__makeref(id)),
-                &tr);
-            return (T)result!;
+            IntPtr handle = NativeHelpers.GetHandle<T>();
+            object? worker = LoadObjectString(handle, id);
+            while (worker == null)
+            {
+                await Task.Yield();
+                worker = LoadObjectString(handle, id);
+            }
+
+            return (T)worker;
         }
 
         /// <summary>
@@ -59,10 +72,36 @@ namespace Autocrat.NativeAdapters
         /// <param name="methodHandle">The method to call to construct the type.</param>
         public static void RegisterConstructor<T>(int methodHandle)
         {
-            NativeMethods.RegisterObjectConstructor(
+            NativeMethods.RegisterConstructor(
                 NativeHelpers.GetHandle<T>(),
                 methodHandle);
         }
+
+        private static unsafe object? LoadObjectGuid(IntPtr type, Guid id)
+        {
+            object? result = null;
+            TypedReference tr = __makeref(result);
+            NativeMethods.LoadObjectGuid(type, &id, &tr);
+            return result;
+        }
+
+        private static unsafe object? LoadObjectInt64(IntPtr type, long id)
+        {
+            object? result = null;
+            TypedReference tr = __makeref(result);
+            NativeMethods.LoadObjectInt64(type, id, &tr);
+            return result;
+        }
+
+        private static unsafe object? LoadObjectString(IntPtr type, string id)
+        {
+            object? result = null;
+            TypedReference tr = __makeref(result);
+            NativeMethods.LoadObjectString(type, NativeHelpers.GetObject(__makeref(id)), &tr);
+            return result;
+        }
+
+#pragma warning disable S3218 // Inner class members should not shadow outer class "static" or type members
 
         private static unsafe class NativeMethods
         {
@@ -76,7 +115,9 @@ namespace Autocrat.NativeAdapters
             public static extern void LoadObjectString(IntPtr type, void* id, void* result);
 
             [DllImport("*", CallingConvention = CallingConvention.Cdecl, EntryPoint = "register_constructor")]
-            public static extern void RegisterObjectConstructor(IntPtr type, int methodHandle);
+            public static extern void RegisterConstructor(IntPtr type, int methodHandle);
         }
+
+#pragma warning restore S3218 // Inner class members should not shadow outer class "static" or type members
     }
 }

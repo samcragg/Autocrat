@@ -14,11 +14,13 @@
             public void ShouldExtractUniqueTypes()
             {
                 Compilation compilation = CompilationHelper.CompileCode(@"
+using System.Threading.Tasks;
+
 namespace Autocrat.Abstractions
 {
     public interface IWorkerFactory
     {
-        void GetWorker<T>();
+        Task<T> GetWorkerAsync<T>();
     }
 }
 
@@ -32,11 +34,11 @@ namespace TestNamespace
 
     public class ExampleClass
     {
-        public void ExampleMethod(IWorkerFactory factory)
+        public async Task ExampleMethod(IWorkerFactory factory)
         {
-            factory.GetWorker<Worker1>();
-            factory.GetWorker<Worker2>();
-            factory.GetWorker<Worker1>();
+            await factory.GetWorkerAsync<Worker1>();
+            await factory.GetWorkerAsync<Worker2>();
+            await factory.GetWorkerAsync<Worker1>();
         }
     }
 }");

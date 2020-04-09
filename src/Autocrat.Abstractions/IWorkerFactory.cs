@@ -6,6 +6,7 @@
 namespace Autocrat.Abstractions
 {
     using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Allows the creation of worker objects.
@@ -17,8 +18,8 @@ namespace Autocrat.Abstractions
         /// </summary>
         /// <typeparam name="T">The type to return.</typeparam>
         /// <param name="id">The identifier of the worker.</param>
-        /// <returns>An instance of the specified type.</returns>
-        public T GetWorker<T>(Guid id)
+        /// <returns>A task that represents an instance of the specified type.</returns>
+        public Task<T> GetWorkerAsync<T>(Guid id)
             where T : class;
 
         /// <summary>
@@ -26,8 +27,8 @@ namespace Autocrat.Abstractions
         /// </summary>
         /// <typeparam name="T">The type to return.</typeparam>
         /// <param name="id">The identifier of the worker.</param>
-        /// <returns>An instance of the specified type.</returns>
-        public T GetWorker<T>(long id)
+        /// <returns>A task that represents an instance of the specified type.</returns>
+        public Task<T> GetWorkerAsync<T>(long id)
             where T : class;
 
         /// <summary>
@@ -35,8 +36,8 @@ namespace Autocrat.Abstractions
         /// </summary>
         /// <typeparam name="T">The type to return.</typeparam>
         /// <param name="id">The identifier of the worker.</param>
-        /// <returns>An instance of the specified type.</returns>
-        public T GetWorker<T>(string id)
+        /// <returns>A task that represents an instance of the specified type.</returns>
+        public Task<T> GetWorkerAsync<T>(string id)
             where T : class;
     }
 }

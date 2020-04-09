@@ -69,7 +69,7 @@ namespace Autocrat.Compiler
                 if (info.Symbol?.Kind == SymbolKind.Method)
                 {
                     var method = (IMethodSymbol)info.Symbol;
-                    if (string.Equals(method.Name, nameof(IWorkerFactory.GetWorker), StringComparison.Ordinal) &&
+                    if (string.Equals(method.Name, nameof(IWorkerFactory.GetWorkerAsync), StringComparison.Ordinal) &&
                         SymbolEqualityComparer.Default.Equals(method.ContainingType, this.workerFactoryInterface))
                     {
                         var type = (INamedTypeSymbol)method.TypeArguments[0];
