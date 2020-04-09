@@ -25,7 +25,7 @@ namespace Autocrat.NativeAdapters
         {
             object? result = null;
             TypedReference tr = __makeref(result);
-            NativeMethods.LoadObjectGuid(GetHandle<T>(), &id, &tr);
+            NativeMethods.LoadObjectGuid(NativeHelpers.GetHandle<T>(), &id, &tr);
             return (T)result!;
         }
 
@@ -35,7 +35,7 @@ namespace Autocrat.NativeAdapters
         {
             object? result = null;
             TypedReference tr = __makeref(result);
-            NativeMethods.LoadObjectInt64(GetHandle<T>(), id, &tr);
+            NativeMethods.LoadObjectInt64(NativeHelpers.GetHandle<T>(), id, &tr);
             return (T)result!;
         }
 
@@ -45,8 +45,10 @@ namespace Autocrat.NativeAdapters
         {
             object? result = null;
             TypedReference tr = __makeref(result);
-            TypedReference stringRef = __makeref(id);
-            NativeMethods.LoadObjectString(GetHandle<T>(), **(void***)&stringRef, &tr);
+            NativeMethods.LoadObjectString(
+                NativeHelpers.GetHandle<T>(),
+                NativeHelpers.GetObject(__makeref(id)),
+                &tr);
             return (T)result!;
         }
 
@@ -57,12 +59,9 @@ namespace Autocrat.NativeAdapters
         /// <param name="methodHandle">The method to call to construct the type.</param>
         public static void RegisterConstructor<T>(int methodHandle)
         {
-            NativeMethods.RegisterObjectConstructor(GetHandle<T>(), methodHandle);
-        }
-
-        private static IntPtr GetHandle<T>()
-        {
-            return typeof(T).TypeHandle.Value;
+            NativeMethods.RegisterObjectConstructor(
+                NativeHelpers.GetHandle<T>(),
+                methodHandle);
         }
 
         private static unsafe class NativeMethods

@@ -7,6 +7,7 @@ namespace Autocrat.NativeAdapters
 {
     using System;
     using System.Runtime.InteropServices;
+    using System.Threading;
 
     /// <summary>
     /// Contains helper method for native code to access managed information.
@@ -29,9 +30,8 @@ namespace Autocrat.NativeAdapters
         [NativeCallable(EntryPoint = "InitializeManagedThread", CallingConvention = CallingConvention.Cdecl)]
         public static void InitializeManagedThread()
         {
-            // We don't need to do anything here - the act of calling a managed
-            // method is enough for the CoreRT interop to do it's one time
-            // initialize on the thread
+            SynchronizationContext.SetSynchronizationContext(
+                new TaskServiceSynchronizationContext());
         }
     }
 }
