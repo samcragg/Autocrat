@@ -1,6 +1,7 @@
 ﻿namespace Compiler.Tests
 {
     using System.Linq;
+    using Autocrat.Abstractions;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -8,6 +9,13 @@
 
     internal sealed class CompilationHelper
     {
+        public static Compilation AddAbstractionsAssembly(Compilation compilation)
+        {
+            return compilation.AddReferences(
+                MetadataReference.CreateFromFile(
+                    typeof(IInitializer).Assembly.Location));
+        }
+
         public static void AssertExportedAs(MemberDeclarationSyntax member, string expected)
         {
             // All exported methods must be public and static
