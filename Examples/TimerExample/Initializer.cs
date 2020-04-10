@@ -15,7 +15,7 @@
         public void OnConfigurationLoaded()
         {
             var handler = new TimerHandler(null);
-            this.timerService.RegisterRepeat(TimeSpan.FromSeconds(1), handler.OnTimer);
+            this.timerService.RegisterRepeat(TimeSpan.FromSeconds(1), handler.OnTimerAsync);
             Console.WriteLine("Registered timer");
         }
     }
