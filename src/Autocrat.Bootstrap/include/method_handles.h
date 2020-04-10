@@ -8,9 +8,16 @@
 #include <cstdint>
 #include <variant>
 
+// Returns the managed object
 using construct_worker = void* (*)();
-using timer_method = void (*)(std::int32_t);
-using udp_data_received_method = void (*)(std::int32_t, const void*);
+
+// Accepts the timer handle
+// Returns a Task
+using timer_method = void* (*)(std::int32_t);
+
+// Accepts the port number and byte array
+// Returns a Task
+using udp_data_received_method = void* (*)(std::int32_t, const void*);
 
 using method_types = std::variant<
     construct_worker,

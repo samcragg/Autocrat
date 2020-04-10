@@ -5,10 +5,13 @@
 
 namespace Autocrat.Abstractions
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Represents a method that handles timer events.
     /// </summary>
     /// <param name="token">The token returned when registering the callback.</param>
-    [NativeDelegate("void {0}(std::int32_t)")]
-    public delegate void TimerCallback(int token);
+    /// <returns>A Task representing the asynchronous operation.</returns>
+    [NativeDelegate("void* {0}(std::int32_t)")]
+    public delegate Task TimerCallback(int token);
 }

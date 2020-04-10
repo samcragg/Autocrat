@@ -69,9 +69,10 @@ TEST_F(NativeExportsTests, RegisterConstructorShouldAddTheMethodHandle)
     Verify(mock_global_services.worker_service().register_type)
         .With(&type, method);
 }
+
 TEST_F(NativeExportsTests, RegisterTimerShouldAddTheMethodHandle)
 {
-    timer_method method = [](std::int32_t) {};
+    timer_method method = [](std::int32_t) -> void* { return nullptr; };
     method_registration registration = method_registration::register_method(method);
 
     When(mock_global_services.timer_service().add_timer_callback)
@@ -85,7 +86,7 @@ TEST_F(NativeExportsTests, RegisterTimerShouldAddTheMethodHandle)
 
 TEST_F(NativeExportsTests, RegisterUdpDataReceivedShouldAddTheMethodHandle)
 {
-    udp_data_received_method method = [](std::int32_t, const void*) {};
+    udp_data_received_method method = [](std::int32_t, const void*) -> void* { return nullptr; };
     method_registration registration = method_registration::register_method(method);
 
     register_udp_data_received(123, registration.index());

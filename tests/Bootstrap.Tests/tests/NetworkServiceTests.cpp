@@ -23,9 +23,10 @@ namespace
 {
     std::function<void(std::int32_t, const void*)> on_udp_callback;
 
-    void udp_callback(std::int32_t port, const void* data)
+    void* udp_callback(std::int32_t port, const void* data)
     {
         on_udp_callback(port, data);
+        return nullptr;
     }
 }
 

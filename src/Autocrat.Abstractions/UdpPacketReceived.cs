@@ -5,11 +5,14 @@
 
 namespace Autocrat.Abstractions
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Called when a UDP packet is received.
     /// </summary>
     /// <param name="port">The port the data was received on.</param>
     /// <param name="data">The raw bytes received.</param>
-    [NativeDelegate("void {0}(std::int32_t, const void*)")]
-    public delegate void UdpPacketReceived(int port, byte[] data);
+    /// <returns>A Task representing the asynchronous operation.</returns>
+    [NativeDelegate("void* {0}(std::int32_t, const void*)")]
+    public delegate Task UdpPacketReceived(int port, byte[] data);
 }

@@ -19,9 +19,10 @@ namespace
 {
     std::function<void(std::int32_t)> on_timer_callback;
 
-    void timer_callback(std::int32_t handle)
+    void* timer_callback(std::int32_t handle)
     {
         on_timer_callback(handle);
+        return nullptr;
     }
 }
 
