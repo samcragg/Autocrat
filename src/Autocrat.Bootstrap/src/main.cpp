@@ -34,12 +34,19 @@ namespace
         }
     }
 
-    void initialize_managed_thread()
+    void initialize_managed_thread(autocrat::gc_service* gc)
     {
-        auto gc = autocrat::global_services.get_service<autocrat::gc_service>();
         gc->set_heap(std::move(global_heap));
         managed_exports::InitializeManagedThread();
         global_heap = gc->reset_heap();
+    }
+
+    void initialize_managed_thread(std::size_t thread_id)
+    {
+        autocrat::gc_service* gc = autocrat::global_services.get_service<autocrat::gc_service>();
+        gc->on_begin_work(thread_id);
+        initialize_managed_thread(gc);
+        gc->on_end_work(thread_id);
     }
 
     void on_close_callback()
@@ -64,10 +71,21 @@ namespace
 
     void setup_threads()
     {
-        global_heap = autocrat::global_services.get_service<autocrat::gc_service>()->reset_heap();
-        initialize_managed_thread(); // Initialize the current thread
+        autocrat::gc_service* gc = autocrat::global_services.get_service<autocrat::gc_service>();
+        gc->on_begin_work(autocrat::lifetime_service::global_thread_id);
+        global_heap = gc->reset_heap();
+        initialize_managed_thread(gc); // Initialize the current thread
 
         autocrat::global_services.get_thread_pool().start(initialize_managed_thread);
+    }
+
+    void shutdown()
+    {
+        autocrat::gc_service* gc = autocrat::global_services.get_service<autocrat::gc_service>();
+        gc->set_heap(std::move(global_heap));
+        gc->on_end_work(autocrat::lifetime_service::global_thread_id);
+
+        spdlog::shutdown();
     }
 }
 
@@ -95,6 +113,6 @@ int autocrat_main()
     run_program_loop();
 
     spdlog::info("Exiting");
-    spdlog::shutdown();
+    shutdown();
     return 0;
 }

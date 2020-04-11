@@ -4,6 +4,7 @@
 #include <any>
 #include <atomic>
 #include <cassert>
+#include <limits>
 #include <thread>
 #include <tuple>
 #include "collections.h"
@@ -17,6 +18,11 @@ namespace autocrat
     class lifetime_service
     {
     public:
+        /**
+         * Represents the ID of the global thread
+         */
+        static constexpr std::size_t global_thread_id = std::numeric_limits<std::size_t>::max();
+
         /**
          * Called when a work item is about to be invoked.
          * @param thread_id The id of the thread that will run the work item.
@@ -48,7 +54,7 @@ namespace autocrat
          * Represents the function signature of methods to invoke during
          * background thread initialization.
          */
-        using initialize_function = void(*)();
+        using initialize_function = void(*)(std::size_t thread_id);
 
         /**
          * Constructs a new instance of the `thread_pool` class.
@@ -115,13 +121,15 @@ namespace autocrat
     public:
         void on_begin_work(std::size_t thread_id) override
         {
+            // We store the global thread in the first slot (_storage[0]),
+            // therefore, add one to the thread_id to skip over it
             assert(thread_storage == nullptr);
-            thread_storage = &_storage[thread_id];
+            thread_storage = &_storage[thread_id + 1u];
         }
 
         void on_end_work(std::size_t thread_id) override
         {
-            assert(thread_storage == &_storage[thread_id]);
+            assert(thread_storage == &_storage[thread_id + 1u]);
             UNUSED(thread_id);
 
             thread_storage = nullptr;
@@ -134,7 +142,7 @@ namespace autocrat
          * @param pool Used to dispatch work to.
          */
         explicit thread_specific_storage(thread_pool* pool) :
-            _storage(pool->size())
+            _storage(pool->size() + 1u) // Allow for the global thread
         {
         }
 

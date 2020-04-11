@@ -105,7 +105,7 @@ namespace autocrat
         {
             std::scoped_lock lock(thread_initializing);
             spdlog::debug("Initializing thread {}", index);
-            initialize();
+            initialize(index);
             ++_initialized;
         }
 

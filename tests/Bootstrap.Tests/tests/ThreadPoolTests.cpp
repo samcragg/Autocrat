@@ -15,7 +15,7 @@ namespace
 {
     std::size_t initialized_called_count;
 
-    void initialize_method()
+    void initialize_method(std::size_t)
     {
         initialized_called_count++;
     }
