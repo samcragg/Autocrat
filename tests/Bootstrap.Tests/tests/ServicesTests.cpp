@@ -34,8 +34,8 @@ struct MockLifetimeService : autocrat::lifetime_service
     {
     }
 
-    MockMethod(void, on_begin_work, (std::size_t))
-    MockMethod(void, on_end_work, (std::size_t))
+    MockMethod(void, begin_work, (std::size_t))
+    MockMethod(void, end_work, (std::size_t))
 
     MockThreadPool* thread_pool;
 };

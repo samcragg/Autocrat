@@ -58,7 +58,8 @@ namespace autocrat
     class worker_service : public thread_specific_storage<small_vector<worker_info*>>
     {
     public:
-        using base_type = thread_specific_storage<small_vector<worker_info*>>;
+        using storage_type = small_vector<worker_info*>;
+        using base_type = thread_specific_storage<storage_type>;
         using object_collection = dynamic_array<void*>;
         using worker_collection = dynamic_array<worker_info*>;
 
@@ -77,8 +78,6 @@ namespace autocrat
          */
         // TODO: C++ 20 span would be better than string_view
         MOCKABLE_METHOD void* get_worker(const void* type, std::string_view id);
-
-        void on_end_work(std::size_t thread_id) override;
 
         /**
          * Registers the specified constructor.
@@ -100,6 +99,9 @@ namespace autocrat
          * @returns The managed objects of the loaded workers.
          */
         MOCKABLE_METHOD std::optional<object_collection> try_lock(const worker_collection& workers);
+    protected:
+        void on_begin_work(storage_type* storage) override;
+        void on_end_work(storage_type* storage) override;
     private:
         using worker_key = detail::worker_key;
 

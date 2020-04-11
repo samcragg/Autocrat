@@ -43,7 +43,7 @@ protected:
         _worker_id("id"),
         _worker_type(0)
     {
-        _service.on_begin_work(0u);
+        _service.begin_work(0u);
 
         When(mock_global_services.gc_service().allocate)
             .Do([this](std::size_t size)
@@ -55,7 +55,7 @@ protected:
 
     ~WorkerServiceTests()
     {
-        _service.on_end_work(0u);
+        _service.end_work(0u);
         worker_class.reset();
         worker_object.reset();
     }
@@ -65,9 +65,9 @@ protected:
         void* worker = nullptr;
         std::thread thread([&]()
             {
-                _service.on_begin_work(1u);
+                _service.begin_work(1u);
                 worker = _service.get_worker(type, _worker_id);
-                _service.on_end_work(1u);
+                _service.end_work(1u);
             });
         thread.join();
 
@@ -124,8 +124,8 @@ TEST_F(WorkerServiceTests, ShouldSaveAndRestoreTheWorkerState)
     EXPECT_EQ(worker_class.get(), object);
 
     // Reset the service to force it to save the worker
-    _service.on_end_work(0u);
-    _service.on_begin_work(0u);
+    _service.end_work(0u);
+    _service.begin_work(0u);
 
     object = _service.get_worker(&_worker_type, _worker_id);
     EXPECT_EQ(_allocated_bytes.get(), object);
@@ -162,13 +162,13 @@ TEST_F(WorkerServiceTests, TryLockShouldReturnEmptyIfTheObjectIsLocked)
     std::atomic_bool worker_locked = false;
     std::thread lock_worker([&]()
         {
-            _service.on_begin_work(1u);
+            _service.begin_work(1u);
             _service.get_worker(&_worker_type, _worker_id);
             worker_locked = true;
 
             // Wait for the test to finish so we know to exit
             std::unique_lock<std::mutex> wait_for_end_of_test(mutex);
-            _service.on_end_work(1u);
+            _service.end_work(1u);
         });
 
     while (!worker_locked)

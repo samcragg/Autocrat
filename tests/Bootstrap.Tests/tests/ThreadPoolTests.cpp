@@ -24,8 +24,8 @@ namespace
 class MockLifetimeService : public autocrat::lifetime_service
 {
 public:
-    MockMethod(void, on_begin_work, (std::size_t))
-    MockMethod(void, on_end_work, (std::size_t))
+    MockMethod(void, begin_work, (std::size_t))
+    MockMethod(void, end_work, (std::size_t))
 };
 
 class ThreadPoolTests : public testing::Test
@@ -54,8 +54,8 @@ namespace
     void CheckLifetimeService(std::any& arg)
     {
         auto [service, condition] = std::any_cast<lifetime_condition_tuple>(arg);
-        Verify(service->on_begin_work).Times(1);
-        Verify(service->on_end_work).Times(0);
+        Verify(service->begin_work).Times(1);
+        Verify(service->end_work).Times(0);
 
         std::unique_lock<std::mutex> lock(condition_mutex);
         condition->notify_all();
@@ -86,7 +86,7 @@ TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceBeforeAndAfterWork)
     // notified the condition_variable, it could still be running the rest of
     // the code). Just give it a tiny bit of time to know it's finished.
     std::this_thread::sleep_for(10ms);
-    Verify(service.on_end_work).Times(1);
+    Verify(service.end_work).Times(1);
 }
 
 TEST_F(ThreadPoolTests, ShouldPerformTheWorkOnASeparateThread)

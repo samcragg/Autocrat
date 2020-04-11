@@ -137,38 +137,38 @@ namespace autocrat
 
     void* gc_service::allocate(std::size_t size)
     {
-        assert(thread_storage != nullptr); // Check on_begin_work was called first
-
+        gc_heap* storage = get_thread_storage();
         if (size > 102'400u)
         {
-            return thread_storage->allocate_large(size);
+            return storage->allocate_large(size);
         }
         else
         {
-            return thread_storage->allocate_small(size);
+            return storage->allocate_small(size);
         }
-    }
-
-    void gc_service::on_end_work(std::size_t thread_id)
-    {
-        thread_storage->free_large();
-        thread_storage->free_small();
-        base_type::on_end_work(thread_id);
     }
 
     gc_heap gc_service::reset_heap()
     {
-        assert(thread_storage != nullptr); // Check on_begin_work was called first
-
-        gc_heap current(std::move(*thread_storage));
-        *thread_storage = gc_heap();
+        gc_heap* storage = get_thread_storage();
+        gc_heap current(std::move(*storage));
+        *storage = gc_heap();
         return current;
     }
 
     void gc_service::set_heap(gc_heap&& heap)
     {
-        assert(thread_storage != nullptr); // Check on_begin_work was called first
+        *get_thread_storage() = std::move(heap);
+    }
 
-        *thread_storage = std::move(heap);
+
+    void gc_service::on_begin_work(gc_heap*)
+    {
+    }
+
+    void gc_service::on_end_work(gc_heap* heap)
+    {
+        heap->free_large();
+        heap->free_small();
     }
 }

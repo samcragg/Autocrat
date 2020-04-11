@@ -44,9 +44,9 @@ namespace
     void initialize_managed_thread(std::size_t thread_id)
     {
         autocrat::gc_service* gc = autocrat::global_services.get_service<autocrat::gc_service>();
-        gc->on_begin_work(thread_id);
+        gc->begin_work(thread_id);
         initialize_managed_thread(gc);
-        gc->on_end_work(thread_id);
+        gc->end_work(thread_id);
     }
 
     void on_close_callback()
@@ -72,7 +72,7 @@ namespace
     void setup_threads()
     {
         autocrat::gc_service* gc = autocrat::global_services.get_service<autocrat::gc_service>();
-        gc->on_begin_work(autocrat::lifetime_service::global_thread_id);
+        gc->begin_work(autocrat::lifetime_service::global_thread_id);
         global_heap = gc->reset_heap();
         initialize_managed_thread(gc); // Initialize the current thread
 
@@ -83,7 +83,7 @@ namespace
     {
         autocrat::gc_service* gc = autocrat::global_services.get_service<autocrat::gc_service>();
         gc->set_heap(std::move(global_heap));
-        gc->on_end_work(autocrat::lifetime_service::global_thread_id);
+        gc->end_work(autocrat::lifetime_service::global_thread_id);
 
         spdlog::shutdown();
     }

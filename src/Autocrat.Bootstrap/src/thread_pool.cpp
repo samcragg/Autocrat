@@ -86,14 +86,14 @@ namespace autocrat
     {
         for (lifetime_service* observer : _observers)
         {
-            observer->on_begin_work(index);
+            observer->begin_work(index);
         }
 
         std::get<callback_function>(item)(std::get<std::any>(item));
         
         for (lifetime_service* observer : _observers)
         {
-            observer->on_end_work(index);
+            observer->end_work(index);
         }
     }
 

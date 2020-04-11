@@ -48,17 +48,6 @@ namespace autocrat
         }
     }
 
-    void worker_service::on_end_work(std::size_t thread_id)
-    {
-        for (worker_info* info : *thread_storage)
-        {
-            save_worker(*info);
-        }
-
-        thread_storage->clear();
-        base_type::on_end_work(thread_id);
-    }
-
     void worker_service::register_type(const void* type, construct_worker constructor)
     {
         _constructors.try_emplace(get_type(type), constructor);
@@ -66,7 +55,7 @@ namespace autocrat
 
     auto worker_service::release_locked() -> std::tuple<object_collection, worker_collection>
     {
-        auto locked_workers = thread_storage;
+        storage_type* locked_workers = get_thread_storage();
         object_collection objects(locked_workers->size());
         worker_collection workers(locked_workers->size());
 
@@ -122,6 +111,21 @@ namespace autocrat
         return result;
     }
 
+    void worker_service::on_begin_work(storage_type*)
+    {
+    }
+
+    void worker_service::on_end_work(storage_type* storage)
+    {
+        for (worker_info* info : *storage)
+        {
+            save_worker(*info);
+        }
+
+        storage->clear();
+    }
+
+
     bool worker_service::find_existing(worker_key::type_handle type, std::string_view id, void*& result) const
     {
         std::shared_lock<decltype(_workers_lock)> lock(_workers_lock);
@@ -148,7 +152,7 @@ namespace autocrat
         if (info.object == nullptr)
         {
             info.object = info.serializer.restore();
-            thread_storage->emplace_back(&info);
+            get_thread_storage()->emplace_back(&info);
         }
 
         return info.object;
@@ -184,7 +188,7 @@ namespace autocrat
             }
 
             worker.object = constructor->second();
-            thread_storage->emplace_back(&worker);
+            get_thread_storage()->emplace_back(&worker);
             return worker.object;
         }
     }

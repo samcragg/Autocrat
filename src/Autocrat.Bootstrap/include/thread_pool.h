@@ -27,13 +27,13 @@ namespace autocrat
          * Called when a work item is about to be invoked.
          * @param thread_id The id of the thread that will run the work item.
          */
-        virtual void on_begin_work(std::size_t thread_id) = 0;
+        virtual void begin_work(std::size_t thread_id) = 0;
 
         /**
          * Called when a work item has completed.
          * @param thread_id The if of the thread that ran the work item.
          */
-        virtual void on_end_work(std::size_t thread_id) = 0;
+        virtual void end_work(std::size_t thread_id) = 0;
     protected:
         ~lifetime_service() = default;
     };
@@ -119,19 +119,24 @@ namespace autocrat
     class thread_specific_storage : public lifetime_service
     {
     public:
-        void on_begin_work(std::size_t thread_id) override
+        void begin_work(std::size_t thread_id) override final
         {
+            assert(thread_storage == nullptr);
+
             // We store the global thread in the first slot (_storage[0]),
             // therefore, add one to the thread_id to skip over it
-            assert(thread_storage == nullptr);
-            thread_storage = &_storage[thread_id + 1u];
+            T* storage = &_storage[thread_id + 1u];
+            thread_storage = storage;
+            on_begin_work(storage);
         }
 
-        void on_end_work(std::size_t thread_id) override
+        void end_work(std::size_t thread_id) override final
         {
-            assert(thread_storage == &_storage[thread_id + 1u]);
+            T* storage = &_storage[thread_id + 1u];
+            assert(thread_storage == storage);
             UNUSED(thread_id);
 
+            on_end_work(storage);
             thread_storage = nullptr;
         }
     protected:
@@ -155,8 +160,16 @@ namespace autocrat
         ~thread_specific_storage() = default;
 #endif
 
-        static thread_local inline T* thread_storage;
+        virtual void on_begin_work(T* storage) = 0;
+        virtual void on_end_work(T* storage) = 0;
+
+        T* get_thread_storage() const
+        {
+            assert(thread_storage != nullptr); // Missing call to on_begin_work
+            return thread_storage;
+        }
     private:
+        static thread_local inline T* thread_storage;
         dynamic_array<T> _storage;
     };
 }

@@ -81,8 +81,6 @@ namespace autocrat
          */
         MOCKABLE_METHOD void* allocate(std::size_t size);
 
-        void on_end_work(std::size_t thread_id) override;
-
         /**
          * Resets the current threads heap to an empty instance.
          * @returns The previous memory allocations.
@@ -94,6 +92,9 @@ namespace autocrat
          * @param heap Contains the memory allocations.
          */
         MOCKABLE_METHOD void set_heap(gc_heap&& heap);
+    protected:
+        void on_begin_work(gc_heap* heap) override;
+        void on_end_work(gc_heap* heap) override;
     };
 }
 
