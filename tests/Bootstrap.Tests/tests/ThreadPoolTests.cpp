@@ -89,6 +89,30 @@ TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceBeforeAndAfterWork)
     Verify(service.end_work).Times(1);
 }
 
+TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceInOrder)
+{
+    std::atomic_int order = 0;
+    MockLifetimeService service1;
+    MockLifetimeService service2;
+
+    // Check that the end is called in reverse order to begin
+    When(service1.begin_work).Do([&](std::size_t) { EXPECT_EQ(0, order); order++; });
+    When(service2.begin_work).Do([&](std::size_t) { EXPECT_EQ(1, order); order++; });
+    When(service2.end_work).Do([&](std::size_t) { EXPECT_EQ(2, order); order++; });
+    When(service1.end_work).Do([&](std::size_t) { EXPECT_EQ(3, order); order++; });
+
+    _pool.add_observer(&service1);
+    _pool.add_observer(&service2);
+
+    _pool.enqueue([](std::any&) {}, 0);
+    _pool.start(&initialize_method);
+
+    while (order != 4)
+    {
+        std::this_thread::yield();
+    }
+}
+
 TEST_F(ThreadPoolTests, ShouldPerformTheWorkOnASeparateThread)
 {
     auto worker_promise = std::make_shared<promise_thread_id>();

@@ -84,16 +84,19 @@ namespace autocrat
 
     void thread_pool::invoke_work_item(std::size_t index, work_item& item) const
     {
-        for (lifetime_service* observer : _observers)
+        std::size_t i = 0;
+        std::size_t size = _observers.size();
+        auto observers = _observers.data();
+        for (; i != size; ++i)
         {
-            observer->begin_work(index);
+            observers[i]->begin_work(index);
         }
 
         std::get<callback_function>(item)(std::get<std::any>(item));
         
-        for (lifetime_service* observer : _observers)
+        while (i-- > 0)
         {
-            observer->end_work(index);
+            observers[i]->end_work(index);
         }
     }
 
