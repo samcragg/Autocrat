@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <new>
+#include "defines.h"
 #include "MemoryMonitor.h"
 
 namespace
@@ -47,6 +48,8 @@ void operator delete(void* ptr, std::size_t bytes) noexcept
 {
     std::size_t original = release(ptr);
     assert((ptr == nullptr) || (original == bytes));
+    UNUSED(original);
+    UNUSED(bytes);
 }
 
 std::size_t allocated_bytes() noexcept
