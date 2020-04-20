@@ -1,13 +1,17 @@
 ﻿namespace Compiler.Tests
 {
+    using System;
+    using System.IO;
     using System.Linq;
+    using System.Reflection;
     using Autocrat.Abstractions;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Microsoft.CodeAnalysis.Emit;
 
-    internal sealed class CompilationHelper
+    internal static class CompilationHelper
     {
         public static Compilation AddAbstractionsAssembly(Compilation compilation)
         {
@@ -81,6 +85,15 @@
 
             SemanticModel model = compilation.GetSemanticModel(tree);
             return model.GetDeclaredSymbol(type);
+        }
+
+        public static Type GetGeneratedType(Compilation compilation, string className)
+        {
+            using var ms = new MemoryStream();
+            EmitResult result = compilation.Emit(ms);
+            result.Success.Should().BeTrue();
+
+            return Assembly.Load(ms.ToArray()).GetType(className);
         }
     }
 }

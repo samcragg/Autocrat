@@ -1,15 +1,12 @@
 ﻿namespace Compiler.Tests
 {
     using System;
-    using System.IO;
     using System.Linq;
-    using System.Reflection;
     using Autocrat.Compiler;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Microsoft.CodeAnalysis.Emit;
     using NSubstitute;
     using Xunit;
 
@@ -69,15 +66,10 @@ public static class WrapperClass
         return " + identifier.ToString() + @";
     }
 }";
-            Compilation compilation = CompilationHelper.CompileCode(code);
-            using (var ms = new MemoryStream())
-            {
-                EmitResult result = compilation.Emit(ms);
-                result.Success.Should().BeTrue();
-
-                Type wrapperType = Assembly.Load(ms.ToArray()).GetType("WrapperClass");
-                return wrapperType.GetMethod("WrapperMethod").Invoke(null, null);
-            }
+            Type wrapperType = CompilationHelper.GetGeneratedType(
+                CompilationHelper.CompileCode(code),
+                "WrapperClass");
+            return wrapperType.GetMethod("WrapperMethod").Invoke(null, null);
         }
 
         public sealed class GenerateTypeForTests : InstanceBuilderTests
