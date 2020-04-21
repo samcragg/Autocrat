@@ -13,13 +13,6 @@
 
     internal static class CompilationHelper
     {
-        public static Compilation AddAbstractionsAssembly(Compilation compilation)
-        {
-            return compilation.AddReferences(
-                MetadataReference.CreateFromFile(
-                    typeof(IInitializer).Assembly.Location));
-        }
-
         public static void AssertExportedAs(MemberDeclarationSyntax member, string expected)
         {
             // All exported methods must be public and static
@@ -35,21 +28,35 @@
                 .Should().Contain("EntryPoint = \"" + expected + "\"");
         }
 
-        public static Compilation CompileCode(string code, bool allowErrors = false)
+        public static Compilation CompileCode(
+            string code,
+            bool allowErrors = false,
+            bool referenceAbstractions = false)
         {
+            string sdkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
             MetadataReference[] references =
             {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(sdkDirectory + "\\netstandard.dll"),
+                MetadataReference.CreateFromFile(sdkDirectory + "\\System.Private.CoreLib.dll"),
+                MetadataReference.CreateFromFile(sdkDirectory + "\\System.Runtime.dll"),
+                MetadataReference.CreateFromFile(sdkDirectory + "\\System.Text.Json.dll"),
                 MetadataReference.CreateFromFile(typeof(CompilationHelper).Assembly.Location),
             };
 
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
-            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            SyntaxTree tree = CSharpSyntaxTree.ParseText(
+                code,
+                CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp8));
 
-            CSharpCompilation compilation = CSharpCompilation
+            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            Compilation compilation = CSharpCompilation
                 .Create("TestAssembly", options: options)
                 .AddReferences(references)
                 .AddSyntaxTrees(tree);
+
+            if (referenceAbstractions)
+            {
+                compilation = AddAbstractionsAssembly(compilation);
+            }
 
             if (!allowErrors)
             {
@@ -94,6 +101,13 @@
             result.Success.Should().BeTrue();
 
             return Assembly.Load(ms.ToArray()).GetType(className);
+        }
+
+        private static Compilation AddAbstractionsAssembly(Compilation compilation)
+        {
+            return compilation.AddReferences(
+                MetadataReference.CreateFromFile(
+                    typeof(IInitializer).Assembly.Location));
         }
     }
 }

@@ -83,11 +83,13 @@
             [Fact]
             public void ShouldThrowIfTheCodeFailsToCompile()
             {
-                this.generator.Add(CompilationHelper.AddAbstractionsAssembly(CompilationHelper.CompileCode(@"
+                this.generator.Add(CompilationHelper.CompileCode(@"
 public class Test
 {
     public UnknownType Invalid { get; set; }
-}", allowErrors: true)));
+}",
+                    allowErrors: true,
+                    referenceAbstractions: true));
 
                 this.generator.Invoking(g => g.EmitAssembly(Stream.Null, Stream.Null))
                     .Should().Throw<InvalidOperationException>();
@@ -97,8 +99,7 @@ public class Test
             {
                 using (var stream = new MemoryStream())
                 {
-                    this.generator.Add(CompilationHelper.AddAbstractionsAssembly(
-                        CompilationHelper.CompileCode(originalCode)));
+                    this.generator.Add(CompilationHelper.CompileCode(originalCode, referenceAbstractions: true));
 
                     this.generator.EmitAssembly(stream, Stream.Null);
                     return Assembly.Load(stream.ToArray());
@@ -112,10 +113,12 @@ public class Test
             public void ShouldWriteTheNativeImportCode()
             {
                 NativeImportGenerator nativeGenerator = this.factory.GetNativeImportGenerator();
-                this.generator.Add(CompilationHelper.AddAbstractionsAssembly(CompilationHelper.CompileCode(@"
+                this.generator.Add(CompilationHelper.CompileCode(
+                    referenceAbstractions: true,
+                    code: @"
 public class Test
 {
-}")));
+}"));
                 this.generator.EmitNativeCode(Stream.Null);
 
                 nativeGenerator.Received().WriteTo(Stream.Null);
