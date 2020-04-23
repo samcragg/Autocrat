@@ -94,13 +94,12 @@
             return model.GetDeclaredSymbol(type);
         }
 
-        public static Type GetGeneratedType(Compilation compilation, string className)
+        public static Assembly GenerateAssembly(Compilation compilation)
         {
             using var ms = new MemoryStream();
             EmitResult result = compilation.Emit(ms);
             result.Success.Should().BeTrue();
-
-            return Assembly.Load(ms.ToArray()).GetType(className);
+            return Assembly.Load(ms.ToArray());
         }
 
         private static Compilation AddAbstractionsAssembly(Compilation compilation)

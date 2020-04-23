@@ -66,9 +66,9 @@ public static class WrapperClass
         return " + identifier.ToString() + @";
     }
 }";
-            Type wrapperType = CompilationHelper.GetGeneratedType(
-                CompilationHelper.CompileCode(code),
-                "WrapperClass");
+            Type wrapperType = CompilationHelper
+                .GenerateAssembly(CompilationHelper.CompileCode(code))
+                .GetType("WrapperClass");
             return wrapperType.GetMethod("WrapperMethod").Invoke(null, null);
         }
 
