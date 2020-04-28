@@ -33,9 +33,9 @@ namespace Autocrat.Compiler
         /// </summary>
         internal const string ReadMethodName = "Read";
 
-        private readonly List<PropertyInfo> properties = new List<PropertyInfo>();
         private readonly SimpleNameSyntax classType;
         private readonly IdentifierNameSyntax instanceField;
+        private readonly List<PropertyInfo> properties = new List<PropertyInfo>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeserializerGenerator"/> class.
@@ -128,12 +128,133 @@ namespace Autocrat.Compiler
                 .WithBody(Block(body));
         }
 
+        private static MethodDeclarationSyntax CreateReadPropertyValue(PropertyInfo property)
+        {
+            string? readerMethod = GetJsonReaderMethod(property.Type);
+            if (readerMethod == null)
+            {
+                throw new NotImplementedException("Need support for arrays and nested serializers");
+            }
+
+            IdentifierNameSyntax reader = IdentifierName("reader");
+            return DeclareReadMethod(
+                reader,
+                property,
+                accessProperty =>
+                {
+                    //// value = reader.GetXxx()
+                    return ExpressionStatement(AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        accessProperty,
+                        InvokeMethod(reader, readerMethod)));
+                });
+        }
+
+        private static StatementSyntax CreateSwitchOnString(
+            ExpressionSyntax value,
+            IEnumerable<string> cases,
+            Func<string, StatementSyntax> caseStatment,
+            IEnumerable<StatementSyntax> defaultStatements)
+        {
+            IdentifierNameSyntax switchValue = IdentifierName("switchValue");
+            var switchSections = new List<SwitchSectionSyntax>();
+            foreach (string caseValue in cases)
+            {
+                //// case 123 when CaseInsensitiveStringHelper.Equals("ABC", name):
+                int hashCode = CaseInsensitiveStringHelper.GetHashCode(
+                    Encoding.UTF8.GetBytes(caseValue));
+
+                SwitchLabelSyntax switchLabel = CasePatternSwitchLabel(
+                    ConstantPattern(CreateLiteral(hashCode)),
+                    WhenClause(
+                        InvokeMethod(
+                            IdentifierName(nameof(CaseInsensitiveStringHelper)),
+                            nameof(CaseInsensitiveStringHelper.Equals),
+                            CreateLiteral(caseValue.ToUpperInvariant()),
+                            switchValue)),
+                    Token(SyntaxKind.ColonToken));
+
+                switchSections.Add(SwitchSection(
+                    SingletonList(switchLabel),
+                    List(new[]
+                    {
+                        caseStatment(caseValue),
+                        BreakStatement(),
+                    })));
+            }
+
+            //// default:
+            switchSections.Add(SwitchSection(
+                SingletonList<SwitchLabelSyntax>(DefaultSwitchLabel()),
+                List(defaultStatements)));
+
+            //// var switchValue = ...
+            //// switch (CaseInsensitiveStringHelper.GetHashCode(switchValue))
+            return Block(
+                LocalDeclarationStatement(
+                    VariableDeclaration(
+                        IdentifierName("var"),
+                        SingletonSeparatedList(
+                            VariableDeclarator(switchValue.Identifier)
+                            .WithInitializer(EqualsValueClause(value))))),
+                SwitchStatement(
+                    InvokeMethod(
+                        IdentifierName(nameof(CaseInsensitiveStringHelper)),
+                        nameof(CaseInsensitiveStringHelper.GetHashCode),
+                        switchValue),
+                    List(switchSections)));
+        }
+
         private static StatementSyntax CreateThrowFormatException(string message)
         {
             return ThrowStatement(
                 ObjectCreationExpression(IdentifierName(nameof(FormatException)))
                 .WithArgumentList(ArgumentList(SingletonSeparatedList(
                     Argument(CreateLiteral(message))))));
+        }
+
+        private static MethodDeclarationSyntax DeclareReadMethod(
+            IdentifierNameSyntax reader,
+            PropertyInfo property,
+            Func<ExpressionSyntax, StatementSyntax> setProperty)
+        {
+            var body = new List<StatementSyntax>();
+
+            //// reader.Read()
+            body.Add(ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))));
+
+            //// this.instance.Value = ...
+            ExpressionSyntax accessProperty = MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName("instance"),
+                IdentifierName(property.Name));
+
+            StatementSyntax assignProperty = setProperty(accessProperty);
+            if (property.AllowNulls)
+            {
+                //// if (reader.TokenType == JsonTokenType.Null)
+                ////     this.instance.Value = null
+                //// else
+                ////     this.instance.Value = ...
+                body.Add(IfStatement(
+                    CheckTokenType(reader, SyntaxKind.EqualsExpression, JsonTokenType.Null),
+                    ExpressionStatement(
+                        AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            accessProperty,
+                            LiteralExpression(SyntaxKind.NullLiteralExpression))),
+                    ElseClause(assignProperty)));
+            }
+            else
+            {
+                body.Add(assignProperty);
+            }
+
+            return CreateMethod(
+                SyntaxKind.PrivateKeyword,
+                "Read_" + property.Name,
+                reader,
+                body);
         }
 
         private static string? GetJsonReaderMethod(ITypeSymbol typeSymbol)
@@ -291,118 +412,43 @@ namespace Autocrat.Compiler
 
         private MethodDeclarationSyntax CreateReadPropertyMethod()
         {
-            var body = new List<StatementSyntax>();
             IdentifierNameSyntax reader = IdentifierName("reader");
-            IdentifierNameSyntax name = IdentifierName("name");
-
-            SwitchSectionSyntax CreateSwitchSection(PropertyInfo property)
+            StatementSyntax CallReadPropertyValueMethod(string property)
             {
-                //// case 123 when CaseInsensitiveStringHelper.Equals("ABC", name):
-                int hashCode = CaseInsensitiveStringHelper.GetHashCode(
-                    Encoding.UTF8.GetBytes(property.Name));
-
-                SwitchLabelSyntax switchLabel = CasePatternSwitchLabel(
-                    ConstantPattern(CreateLiteral(hashCode)),
-                    WhenClause(
-                        InvokeMethod(
-                            IdentifierName(nameof(CaseInsensitiveStringHelper)),
-                            nameof(CaseInsensitiveStringHelper.Equals),
-                            CreateLiteral(property.Name.ToUpperInvariant()),
-                            name)),
-                    Token(SyntaxKind.ColonToken));
-
                 //// this.Read_Abc(ref reader)
-                //// return
-                var switchStatements = new StatementSyntax[]
-                {
-                    ExpressionStatement(InvocationExpression(IdentifierName("Read_" + property.Name))
-                        .WithArgumentList(ArgumentList(SingletonSeparatedList(
-                            Argument(reader).WithRefKindKeyword(Token(SyntaxKind.RefKeyword)))))),
-                    ReturnStatement(),
-                };
-
-                return SwitchSection(SingletonList(switchLabel), List(switchStatements));
+                return ExpressionStatement(
+                    InvocationExpression(
+                        IdentifierName("Read_" + property),
+                        ArgumentList(SingletonSeparatedList(
+                            Argument(reader)
+                            .WithRefKindKeyword(Token(SyntaxKind.RefKeyword))))));
             }
 
-            //// var name = reader.ValueSpan
-            ExpressionSyntax valueSpan = MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
+            //// default: // Skip unknown properties
+            ////     reader.Read()
+            ////     reader.TrySkip()
+            var defaultStatements = new StatementSyntax[]
+            {
+                ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))),
+                ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.TrySkip))),
+                BreakStatement(),
+            };
+
+            //// switch (reader.ValueSpan)
+            StatementSyntax switchStatment = CreateSwitchOnString(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    reader,
+                    IdentifierName(nameof(Utf8JsonReader.ValueSpan))),
+                this.properties.Select(pi => pi.Name),
+                CallReadPropertyValueMethod,
+                defaultStatements);
+
+            return CreateMethod(
+                SyntaxKind.PrivateKeyword,
+                "ReadProperty",
                 reader,
-                IdentifierName(nameof(Utf8JsonReader.ValueSpan)));
-
-            body.Add(
-                LocalDeclarationStatement(
-                    VariableDeclaration(
-                        IdentifierName("var"),
-                        SingletonSeparatedList(
-                            VariableDeclarator(name.Identifier)
-                            .WithInitializer(EqualsValueClause(valueSpan))))));
-
-            //// switch (CaseInsensitiveStringHelper.GetHashCode(name))
-            body.Add(
-                SwitchStatement(
-                    InvokeMethod(
-                        IdentifierName(nameof(CaseInsensitiveStringHelper)),
-                        nameof(CaseInsensitiveStringHelper.GetHashCode),
-                        name),
-                    List(this.properties.Select(CreateSwitchSection))));
-
-            // Skip unknown properties
-            //// reader.Read()
-            //// reader.TrySkip()
-            body.Add(ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))));
-            body.Add(ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.TrySkip))));
-
-            return CreateMethod(SyntaxKind.PrivateKeyword, "ReadProperty", reader, body);
-        }
-
-        private MethodDeclarationSyntax CreateReadPropertyValue(PropertyInfo property)
-        {
-            // The call to this.classType is just there to stop the warning over instance fields
-            string? readerMethod = GetJsonReaderMethod(property.Type);
-            if (readerMethod == null || this.classType == null)
-            {
-                throw new NotImplementedException("Need support for arrays, enums and nested serializers");
-            }
-
-            var body = new List<StatementSyntax>();
-            IdentifierNameSyntax reader = IdentifierName("reader");
-
-            //// reader.Read()
-            body.Add(ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))));
-
-            //// this.instance.Value = reader.GetXxx()
-            ExpressionSyntax accessProperty = MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                IdentifierName("instance"),
-                IdentifierName(property.Name));
-
-            StatementSyntax setProperty = ExpressionStatement(AssignmentExpression(
-                SyntaxKind.SimpleAssignmentExpression,
-                accessProperty,
-                InvokeMethod(reader, readerMethod)));
-
-            if (property.AllowNulls)
-            {
-                //// if (reader.TokenType == JsonTokenType.Null)
-                ////     this.instance.Value = null
-                //// else
-                ////     this.instance.Value = reader.GetXxx()
-                body.Add(IfStatement(
-                    CheckTokenType(reader, SyntaxKind.EqualsExpression, JsonTokenType.Null),
-                    ExpressionStatement(
-                        AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            accessProperty,
-                            LiteralExpression(SyntaxKind.NullLiteralExpression))),
-                    ElseClause(setProperty)));
-            }
-            else
-            {
-                body.Add(setProperty);
-            }
-
-            return CreateMethod(SyntaxKind.PrivateKeyword, "Read_" + property.Name, reader, body);
+                new[] { switchStatment });
         }
 
         private IEnumerable<MemberDeclarationSyntax> GetMethods()
@@ -413,7 +459,7 @@ namespace Autocrat.Compiler
 
             foreach (PropertyInfo property in this.properties)
             {
-                yield return this.CreateReadPropertyValue(property);
+                yield return CreateReadPropertyValue(property);
             }
         }
 
