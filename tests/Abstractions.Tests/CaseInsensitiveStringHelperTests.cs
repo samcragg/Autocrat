@@ -1,6 +1,5 @@
 ﻿namespace Abstractions.Tests
 {
-    using System;
     using System.Text;
     using Autocrat.Abstractions;
     using FluentAssertions;
@@ -8,35 +7,33 @@
 
     public class CaseInsensitiveStringHelperTests
     {
-        private static ReadOnlySpan<byte> GetBytes(string value)
-        {
-            return Encoding.UTF8.GetBytes(value);
-        }
-
         public sealed class EqualTests : CaseInsensitiveStringHelperTests
         {
             [Fact]
             public void ShouldReturnFalseIfTwoStringsAreNotEqual()
             {
-                bool result = CaseInsensitiveStringHelper.Equals("ONE", GetBytes("TWO"));
-
-                result.Should().BeFalse();
+                AreEqual("ONE", "TWO").Should().BeFalse();
             }
 
             [Fact]
             public void ShouldReturnFalseIfTwoStringsHaveADifferentLength()
             {
-                bool result = CaseInsensitiveStringHelper.Equals("FIRST", GetBytes("SECOND"));
-
-                result.Should().BeFalse();
+                AreEqual("FIRST", "SECOND").Should().BeFalse();
             }
 
             [Fact]
             public void ShouldReturnTrueIfTwoStringsAreEqualButDifferByCase()
             {
-                bool result = CaseInsensitiveStringHelper.Equals("VALUE", GetBytes("value"));
+                AreEqual("VALUE", "value").Should().BeTrue();
+            }
 
-                result.Should().BeTrue();
+            private static bool AreEqual(string a, string b)
+            {
+                bool stringResult = CaseInsensitiveStringHelper.Equals(a, b);
+                bool byteResult = CaseInsensitiveStringHelper.Equals(a, Encoding.UTF8.GetBytes(b));
+
+                stringResult.Should().Be(byteResult);
+                return stringResult;
             }
         }
 
@@ -49,8 +46,8 @@
                 // and still be valid, though not useful. The way the algorithm
                 // is implemented we know for values of the same length it will
                 // produce different results
-                int first = CaseInsensitiveStringHelper.GetHashCode(GetBytes("one"));
-                int second = CaseInsensitiveStringHelper.GetHashCode(GetBytes("two"));
+                int first = GetHashCodeFor("one");
+                int second = GetHashCodeFor("two");
 
                 first.Should().NotBe(second);
             }
@@ -58,10 +55,19 @@
             [Fact]
             public void ShouldReturnTheSameHashCodeForStringsThatHaveDifferentCasing()
             {
-                int lowercase = CaseInsensitiveStringHelper.GetHashCode(GetBytes("value"));
-                int uppercase = CaseInsensitiveStringHelper.GetHashCode(GetBytes("VALUE"));
+                int lowercase = GetHashCodeFor("value");
+                int uppercase = GetHashCodeFor("VALUE");
 
                 lowercase.Should().Be(uppercase);
+            }
+
+            private static int GetHashCodeFor(string value)
+            {
+                int stringResult = CaseInsensitiveStringHelper.GetHashCode(value);
+                int byteResult = CaseInsensitiveStringHelper.GetHashCode(Encoding.UTF8.GetBytes(value));
+
+                stringResult.Should().Be(byteResult);
+                return stringResult;
             }
         }
     }

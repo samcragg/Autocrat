@@ -7,6 +7,7 @@ namespace Autocrat.Abstractions
 {
     using System;
     using System.ComponentModel;
+    using System.Runtime.CompilerServices;
     using static System.Diagnostics.Debug;
 
     /// <summary>
@@ -24,6 +25,9 @@ namespace Autocrat.Abstractions
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class CaseInsensitiveStringHelper
     {
+        private const uint FnvOffsetBasis = 2166136261;
+        private const uint FnvPrime = 16777619;
+
         /// <summary>
         /// Indicates whether two strings are equal.
         /// </summary>
@@ -40,12 +44,9 @@ namespace Autocrat.Abstractions
         /// </remarks>
         public static bool Equals(string value, ReadOnlySpan<byte> other)
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
-
+            AssertNotNull(value);
             Assert(value.ToUpperInvariant() == value, "value must be uppercase");
+
             if (value.Length != other.Length)
             {
                 return false;
@@ -53,13 +54,44 @@ namespace Autocrat.Abstractions
 
             for (int i = 0; i < value.Length; i++)
             {
-                // Make uppercase
-                uint c = other[i];
-                if ((c - 'a') <= ('z' - 'a'))
+                uint c = MakeUpper(other[i]);
+                if (c != value[i])
                 {
-                    c -= 'a' - 'A';
+                    return false;
                 }
+            }
 
+            return true;
+        }
+
+        /// <summary>
+        /// Indicates whether two strings are equal.
+        /// </summary>
+        /// <param name="value">An uppercase string to compare to.</param>
+        /// <param name="other">
+        /// Contains the value to compare to the string.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if the buffer equals the specified string; otherwise
+        /// <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// The string passing in as <c>value</c> MUST already be uppercase.
+        /// </remarks>
+        public static bool Equals(string value, string other)
+        {
+            AssertNotNull(value);
+            AssertNotNull(other);
+            Assert(value.ToUpperInvariant() == value, "value must be uppercase");
+
+            if (value.Length != other.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                uint c = MakeUpper(other[i]);
                 if (c != value[i])
                 {
                     return false;
@@ -78,23 +110,56 @@ namespace Autocrat.Abstractions
         {
             // Fowler–Noll–Vo hash function
             // https://en.wikipedia.org/wiki/Fowler–Noll–Vo_hash_function
-            const uint FnvOffsetBasis = 2166136261;
-            const uint FnvPrime = 16777619;
-
             uint hash = FnvOffsetBasis;
             for (int i = 0; i < value.Length; i++)
             {
                 // Make uppercase
-                uint c = value[i];
-                if ((c - 'a') <= ('z' - 'a'))
-                {
-                    c -= 'a' - 'A';
-                }
-
+                uint c = MakeUpper(value[i]);
                 hash = (hash ^ c) * FnvPrime;
             }
 
             return (int)hash;
+        }
+
+        /// <summary>
+        /// Gets the hash code for the specified string.
+        /// </summary>
+        /// <param name="value">The string.</param>
+        /// <returns>A 32-bit signed integer calculated from the string.</returns>
+        public static int GetHashCode(string value)
+        {
+            AssertNotNull(value);
+
+            // As above method
+            uint hash = FnvOffsetBasis;
+            for (int i = 0; i < value.Length; i++)
+            {
+                uint c = MakeUpper(value[i]);
+                hash = (hash ^ c) * FnvPrime;
+            }
+
+            return (int)hash;
+        }
+
+        private static void AssertNotNull(string value)
+        {
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(value));
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint MakeUpper(uint value)
+        {
+            if ((value - 'a') <= ('z' - 'a'))
+            {
+                return value - ('a' - 'A');
+            }
+            else
+            {
+                return value;
+            }
         }
     }
 }
