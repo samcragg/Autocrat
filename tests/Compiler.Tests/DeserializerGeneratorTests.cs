@@ -74,6 +74,16 @@
         public sealed class GenerateTests : DeserializerGeneratorTests
         {
             [Fact]
+            public void ShouldIgnoreUnknownJsonProperties()
+            {
+                dynamic instance = this.DeserializeJson(
+                    "public int Value { get; set; }",
+                    @"{ ""unknown"":{}, ""value"":123 }");
+
+                ((int)instance.Value).Should().Be(123);
+            }
+
+            [Fact]
             public void ShouldReadByteArrays()
             {
                 string encodedData = Convert.ToBase64String(Encoding.UTF8.GetBytes("Test"));
@@ -131,6 +141,34 @@
                 DateTimeOffset dateTimeOffset = instance.DateTimeOffset;
                 dateTimeOffset.Offset.Should().Be(new TimeSpan(-1, 0, 0));
                 dateTimeOffset.DateTime.Should().Be(new DateTime(2011, 12, 13, 14, 15, 16));
+            }
+
+            [Fact]
+            public void ShouldReadEnumValuesFromNumbers()
+            {
+                string classMembers = @"
+    public enum MyEnum { EnumValue = 2 }
+    public MyEnum EnumProperty { get; set; }";
+
+                dynamic instance = this.DeserializeJson(
+                    classMembers,
+                    @"{ ""enumProperty"":2 }");
+
+                ((string)instance.EnumProperty.ToString()).Should().Be("EnumValue");
+            }
+
+            [Fact]
+            public void ShouldReadEnumValuesFromText()
+            {
+                string classMembers = @"
+    public enum MyEnum { EnumValue }
+    public MyEnum EnumProperty { get; set; }";
+
+                dynamic instance = this.DeserializeJson(
+                    classMembers,
+                    @"{ ""enumProperty"":""enumValue"" }");
+
+                ((string)instance.EnumProperty.ToString()).Should().Be("EnumValue");
             }
 
             [Fact]

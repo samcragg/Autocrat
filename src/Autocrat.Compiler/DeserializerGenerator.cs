@@ -14,6 +14,7 @@ namespace Autocrat.Compiler
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using static System.Diagnostics.Debug;
     using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
@@ -34,6 +35,7 @@ namespace Autocrat.Compiler
         internal const string ReadMethodName = "Read";
 
         private readonly SimpleNameSyntax classType;
+        private readonly SymbolDisplayFormat displayFormat = SymbolDisplayFormat.CSharpErrorMessageFormat;
         private readonly IdentifierNameSyntax instanceField;
         private readonly List<PropertyInfo> properties = new List<PropertyInfo>();
 
@@ -128,28 +130,6 @@ namespace Autocrat.Compiler
                 .WithBody(Block(body));
         }
 
-        private static MethodDeclarationSyntax CreateReadPropertyValue(PropertyInfo property)
-        {
-            string? readerMethod = GetJsonReaderMethod(property.Type);
-            if (readerMethod == null)
-            {
-                throw new NotImplementedException("Need support for arrays and nested serializers");
-            }
-
-            IdentifierNameSyntax reader = IdentifierName("reader");
-            return DeclareReadMethod(
-                reader,
-                property,
-                accessProperty =>
-                {
-                    //// value = reader.GetXxx()
-                    return ExpressionStatement(AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        accessProperty,
-                        InvokeMethod(reader, readerMethod)));
-                });
-        }
-
         private static StatementSyntax CreateSwitchOnString(
             ExpressionSyntax value,
             IEnumerable<string> cases,
@@ -218,10 +198,11 @@ namespace Autocrat.Compiler
             PropertyInfo property,
             Func<ExpressionSyntax, StatementSyntax> setProperty)
         {
-            var body = new List<StatementSyntax>();
-
             //// reader.Read()
-            body.Add(ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))));
+            var body = new List<StatementSyntax>
+            {
+                ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))),
+            };
 
             //// this.instance.Value = ...
             ExpressionSyntax accessProperty = MemberAccessExpression(
@@ -255,6 +236,28 @@ namespace Autocrat.Compiler
                 "Read_" + property.Name,
                 reader,
                 body);
+        }
+
+        private static MethodDeclarationSyntax EmitReadSpecialValue(PropertyInfo property)
+        {
+            string? readerMethod = GetJsonReaderMethod(property.Type);
+            if (readerMethod == null)
+            {
+                throw new NotImplementedException("Need support for arrays and nested serializers");
+            }
+
+            IdentifierNameSyntax reader = IdentifierName("reader");
+            return DeclareReadMethod(
+                reader,
+                property,
+                accessProperty =>
+                {
+                    //// value = reader.GetXxx()
+                    return ExpressionStatement(AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        accessProperty,
+                        InvokeMethod(reader, readerMethod)));
+                });
         }
 
         private static string? GetJsonReaderMethod(ITypeSymbol typeSymbol)
@@ -451,6 +454,85 @@ namespace Autocrat.Compiler
                 new[] { switchStatment });
         }
 
+        private MethodDeclarationSyntax EmitReadEnum(PropertyInfo property)
+        {
+            IdentifierNameSyntax reader = IdentifierName("reader");
+            IdentifierNameSyntax value = IdentifierName("value");
+            var propertyType = (INamedTypeSymbol)property.Type;
+            TypeSyntax enumType = ParseTypeName(
+                propertyType.ToDisplayString(this.displayFormat));
+
+            StatementSyntax ConvertEnumValue(string member)
+            {
+                //// value = EnumType.Member
+                return ExpressionStatement(
+                    AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        value,
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            ParseName(propertyType.ToDisplayString(this.displayFormat)),
+                            IdentifierName(member))));
+            }
+
+            //// switch (reader.GetString())
+            ////     default: throw FormatException(...)
+            StatementSyntax readEnumAsString = CreateSwitchOnString(
+                InvokeMethod(reader, nameof(Utf8JsonReader.GetString)),
+                propertyType.MemberNames,
+                ConvertEnumValue,
+                new[] { CreateThrowFormatException("Invalid enum value") });
+
+            //// value = (EnumType)reader.GetInt32()
+            Assert(propertyType.EnumUnderlyingType != null, "Method should only be called for enum types.");
+            string? readerMethod = GetJsonReaderMethod(propertyType.EnumUnderlyingType);
+            Assert(readerMethod != null, "Missing read integer mapping");
+            StatementSyntax readEnumAsNumber = ExpressionStatement(AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                value,
+                CastExpression(
+                    enumType,
+                    InvokeMethod(reader, readerMethod))));
+
+            //// if (reader.TokenType == JsonTokenType.Number)
+            ////    value = (EnumType)reader.GetInt()
+            //// else
+            ////    switch ...
+            StatementSyntax readValue = IfStatement(
+                CheckTokenType(reader, SyntaxKind.EqualsExpression, JsonTokenType.Number),
+                readEnumAsNumber,
+                ElseClause(readEnumAsString));
+
+            return DeclareReadMethod(
+                reader,
+                property,
+                accessProperty =>
+                {
+                    //// EnumType value
+                    //// if ...
+                    //// this.instance.Value = value
+                    return Block(
+                        LocalDeclarationStatement(
+                            VariableDeclaration(
+                                enumType,
+                                SingletonSeparatedList(VariableDeclarator(value.Identifier)))),
+                        readValue,
+                        ExpressionStatement(AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            accessProperty,
+                            value)));
+                });
+        }
+
+        private MethodDeclarationSyntax EmitReadPropertyValue(PropertyInfo property)
+        {
+            return property.Type.TypeKind switch
+            {
+                TypeKind.Enum => this.EmitReadEnum(property),
+                _ => EmitReadSpecialValue(property),
+            };
+        }
+
         private IEnumerable<MemberDeclarationSyntax> GetMethods()
         {
             MethodDeclarationSyntax readProperty = this.CreateReadPropertyMethod();
@@ -459,7 +541,7 @@ namespace Autocrat.Compiler
 
             foreach (PropertyInfo property in this.properties)
             {
-                yield return CreateReadPropertyValue(property);
+                yield return this.EmitReadPropertyValue(property);
             }
         }
 
