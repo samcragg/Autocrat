@@ -37,33 +37,49 @@ namespace Autocrat.Compiler
         private readonly SimpleNameSyntax classType;
         private readonly SymbolDisplayFormat displayFormat = SymbolDisplayFormat.CSharpErrorMessageFormat;
         private readonly IdentifierNameSyntax instanceField;
+        private readonly SemanticModel model;
         private readonly List<PropertyInfo> properties = new List<PropertyInfo>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeserializerGenerator"/> class.
         /// </summary>
+        /// <param name="model">Contains the semantic information.</param>
         /// <param name="classType">The name of the class to deserialize.</param>
-        public DeserializerGenerator(SimpleNameSyntax classType)
+        public DeserializerGenerator(SemanticModel model, SimpleNameSyntax classType)
         {
             this.classType = classType;
             this.instanceField = IdentifierName("instance");
+            this.model = model;
         }
 
         /// <summary>
         /// Adds a property to be deserialized by the generated class.
         /// </summary>
-        /// <param name="name">The name of the JSON property.</param>
-        /// <param name="type">The type of the object property.</param>
-        /// <param name="allowNulls">
-        /// Determines whether <c>null</c> values are valid or not.
-        /// </param>
-        public void AddProperty(string name, ITypeSymbol type, bool allowNulls)
+        /// <param name="property">Contains the property information.</param>
+        public void AddProperty(PropertyDeclarationSyntax property)
         {
+            TypeInfo typeInfo = this.model.GetTypeInfo(property.Type);
+            ITypeSymbol typeSymbol = typeInfo.Type ??
+                throw new InvalidOperationException("Unable to get type information for " + property.Type);
+
+            if (property.Type is NullableTypeSyntax)
+            {
+                if (typeSymbol.IsValueType)
+                {
+                    Assert(
+                        typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T,
+                        "Expecting System.Nullable");
+
+                    typeSymbol = ((INamedTypeSymbol)typeSymbol).TypeArguments[0];
+                }
+
+                typeSymbol = typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated);
+            }
+
             this.properties.Add(new PropertyInfo
             {
-                AllowNulls = allowNulls,
-                Name = name,
-                Type = type,
+                Name = property.Identifier.ValueText,
+                Type = typeSymbol,
             });
         }
 
@@ -211,7 +227,7 @@ namespace Autocrat.Compiler
                 IdentifierName(property.Name));
 
             StatementSyntax assignProperty = setProperty(accessProperty);
-            if (property.AllowNulls)
+            if (property.Type.NullableAnnotation == NullableAnnotation.Annotated)
             {
                 //// if (reader.TokenType == JsonTokenType.Null)
                 ////     this.instance.Value = null
@@ -547,7 +563,6 @@ namespace Autocrat.Compiler
 
         private struct PropertyInfo
         {
-            public bool AllowNulls;
             public string Name;
             public ITypeSymbol Type;
         }

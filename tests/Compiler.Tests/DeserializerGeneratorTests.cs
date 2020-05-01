@@ -16,10 +16,6 @@
     public class DeserializerGeneratorTests
     {
         private const string ClassTypeName = "SimpleClass";
-
-        private readonly DeserializerGenerator generator = new DeserializerGenerator(
-            SyntaxFactory.IdentifierName(ClassTypeName));
-
         private delegate T ReadDelegate<T>(ref Utf8JsonReader reader);
 
         private static T ReadJson<T>(Type serializerType, string json)
@@ -33,12 +29,21 @@
             return readMethod(ref reader);
         }
 
-        private object DeserializeJson(string propertyDeclarations, string json, bool allowNulls = false)
+        private object DeserializeJson(string propertyDeclarations, string json)
         {
-            string classDeclaration = "public class " + ClassTypeName + " {" + propertyDeclarations + "}";
+            string classDeclaration = @$"
+#nullable enable
+#pragma warning disable 8618 // Non-nullable property '...' is uninitialized.
+public class {ClassTypeName}
+{{
+    {propertyDeclarations}
+}}";
             Compilation compilation = CompilationHelper.CompileCode(classDeclaration);
-
             SyntaxTree tree = compilation.SyntaxTrees.Single();
+            var generator = new DeserializerGenerator(
+                compilation.GetSemanticModel(tree),
+                SyntaxFactory.IdentifierName(ClassTypeName));
+
             IEnumerable<PropertyDeclarationSyntax> properties =
                 tree.GetRoot()
                     .DescendantNodes()
@@ -46,14 +51,10 @@
 
             foreach (PropertyDeclarationSyntax property in properties)
             {
-                TypeInfo typeInfo = compilation
-                    .GetSemanticModel(tree)
-                    .GetTypeInfo(property.Type);
-
-                this.generator.AddProperty(property.Identifier.ValueText, typeInfo.Type, allowNulls);
+                generator.AddProperty(property);
             }
 
-            string generatedCode = this.generator.Generate()
+            string generatedCode = generator.Generate()
                 .NormalizeWhitespace()
                 .ToFullString();
 
@@ -175,11 +176,10 @@
             public void ShouldReadNullValues()
             {
                 dynamic instance = this.DeserializeJson(
-                    @"public string Value { get; set; } = ""DefaultValue"";",
-                    @"{""value"":null}",
-                    allowNulls: true);
+                    @"public int? Value { get; set; } = 123;",
+                    @"{""value"":null}");
 
-                string value = instance.Value;
+                int? value = instance.Value;
                 value.Should().BeNull();
             }
         }
