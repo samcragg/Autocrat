@@ -259,7 +259,7 @@ namespace Autocrat.Compiler
             string? readerMethod = GetJsonReaderMethod(property.Type);
             if (readerMethod == null)
             {
-                throw new NotImplementedException("Need support for arrays and nested serializers");
+                throw new NotImplementedException("Need support for nested serializers");
             }
 
             IdentifierNameSyntax reader = IdentifierName("reader");
@@ -301,7 +301,7 @@ namespace Autocrat.Compiler
         private static string? GetJsonReadMethodForUnknownSpecialType(ITypeSymbol typeSymbol)
         {
             // Must check for the array _before_ the check for System types
-            if ((typeSymbol as IArrayTypeSymbol)?.ElementType?.SpecialType == SpecialType.System_Byte)
+            if (IsByteArray(typeSymbol))
             {
                 return nameof(Utf8JsonReader.GetBytesFromBase64);
             }
@@ -344,6 +344,18 @@ namespace Autocrat.Compiler
             }
 
             return invoke;
+        }
+
+        private static bool IsByteArray(ITypeSymbol type)
+        {
+            if (type is IArrayTypeSymbol arrayType)
+            {
+                return arrayType.ElementType.SpecialType == SpecialType.System_Byte;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private MemberDeclarationSyntax CreateClass()
@@ -470,6 +482,71 @@ namespace Autocrat.Compiler
                 new[] { switchStatment });
         }
 
+        private MethodDeclarationSyntax EmitReadArray(PropertyInfo property)
+        {
+            var arrayType = (IArrayTypeSymbol)property.Type;
+            IdentifierNameSyntax buffer = IdentifierName("buffer");
+            IdentifierNameSyntax reader = IdentifierName("reader");
+
+            string? readerMethod = GetJsonReaderMethod(arrayType.ElementType);
+            if (readerMethod == null)
+            {
+                throw new NotImplementedException("Need support for nested serializers");
+            }
+
+            //// if (reader.TokenType != JsonTokenType.StartArray)
+            ////     throw new FormatException("Missing start array token")
+            StatementSyntax assertStartArray = IfStatement(
+                CheckTokenType(reader, SyntaxKind.NotEqualsExpression, JsonTokenType.StartArray),
+                CreateThrowFormatException("Missing start array token"));
+
+            //// var buffer = new List<type>();
+            NameSyntax listType = GenericName(
+                Identifier("System.Collections.Generic.List"),
+                TypeArgumentList(SingletonSeparatedList(ParseTypeName(
+                    arrayType.ElementType.ToDisplayString(this.displayFormat)))));
+
+            StatementSyntax createBuffer = LocalDeclarationStatement(
+                VariableDeclaration(
+                    IdentifierName("var"),
+                    SingletonSeparatedList(
+                        VariableDeclarator(buffer.Identifier)
+                        .WithInitializer(EqualsValueClause(
+                            ObjectCreationExpression(listType, ArgumentList(), null))))));
+
+            //// while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+            ExpressionSyntax whileCondition = BinaryExpression(
+                SyntaxKind.LogicalAndExpression,
+                InvokeMethod(reader, nameof(Utf8JsonReader.Read)),
+                CheckTokenType(
+                    reader,
+                    SyntaxKind.NotEqualsExpression,
+                    JsonTokenType.EndArray));
+
+            ////     buffer.Add(reader.ReadXxx())
+            StatementSyntax whileBody = ExpressionStatement(
+                InvokeMethod(
+                    buffer,
+                    "Add",
+                    InvokeMethod(reader, readerMethod)));
+
+            return DeclareReadMethod(
+                reader,
+                property,
+                accessProperty =>
+                {
+                    return Block(
+                        assertStartArray,
+                        createBuffer,
+                        WhileStatement(whileCondition, whileBody),
+                        ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                accessProperty,
+                                InvokeMethod(buffer, "ToArray"))));
+                });
+        }
+
         private MethodDeclarationSyntax EmitReadEnum(PropertyInfo property)
         {
             IdentifierNameSyntax reader = IdentifierName("reader");
@@ -544,7 +621,12 @@ namespace Autocrat.Compiler
         {
             return property.Type.TypeKind switch
             {
-                TypeKind.Enum => this.EmitReadEnum(property),
+                TypeKind.Array when !IsByteArray(property.Type) =>
+                    this.EmitReadArray(property),
+
+                TypeKind.Enum =>
+                    this.EmitReadEnum(property),
+
                 _ => EmitReadSpecialValue(property),
             };
         }

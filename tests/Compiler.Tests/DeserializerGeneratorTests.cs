@@ -16,6 +16,7 @@
     public class DeserializerGeneratorTests
     {
         private const string ClassTypeName = "SimpleClass";
+
         private delegate T ReadDelegate<T>(ref Utf8JsonReader reader);
 
         private static T ReadJson<T>(Type serializerType, string json)
@@ -82,6 +83,17 @@ public class {ClassTypeName}
                     @"{ ""unknown"":{}, ""value"":123 }");
 
                 ((int)instance.Value).Should().Be(123);
+            }
+
+            [Fact]
+            public void ShouldReadArraysOfPrimitives()
+            {
+                dynamic instance = this.DeserializeJson(
+                    "public int[] Array { get; set; }",
+                    @"{ ""array"":[1,2,3] }");
+
+                int[] array = instance.Array;
+                array.Should().Equal(1, 2, 3);
             }
 
             [Fact]
