@@ -14,6 +14,15 @@ namespace Autocrat.NativeAdapters
     /// </summary>
     internal sealed class TaskServiceSynchronizationContext : SynchronizationContext
     {
+        /// <summary>
+        /// Starts a new action on the task scheduler.
+        /// </summary>
+        /// <param name="action">The action to perform.</param>
+        public static unsafe void StartNew(Action action)
+        {
+            NativeMethods.TaskStartNew(NativeHelpers.GetObject(__makeref(action)));
+        }
+
         /// <inheritdoc />
         public override SynchronizationContext CreateCopy()
         {
@@ -27,15 +36,6 @@ namespace Autocrat.NativeAdapters
             NativeMethods.TaskEnqueue(
                 NativeHelpers.GetObject(__makeref(d)),
                 NativeHelpers.GetObject(__makeref(state)));
-        }
-
-        /// <summary>
-        /// Starts a new action on the task scheduler.
-        /// </summary>
-        /// <param name="action">The action to perform.</param>
-        public unsafe void StartNew(Action action)
-        {
-            NativeMethods.TaskStartNew(NativeHelpers.GetObject(__makeref(action)));
         }
 
         private static unsafe class NativeMethods
