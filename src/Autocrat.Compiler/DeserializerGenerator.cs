@@ -64,15 +64,6 @@ namespace Autocrat.Compiler
 
             if (property.Type is NullableTypeSyntax)
             {
-                if (typeSymbol.IsValueType)
-                {
-                    Assert(
-                        typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T,
-                        "Expecting System.Nullable");
-
-                    typeSymbol = ((INamedTypeSymbol)typeSymbol).TypeArguments[0];
-                }
-
                 typeSymbol = typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated);
             }
 
@@ -125,6 +116,23 @@ namespace Autocrat.Compiler
         private static ExpressionSyntax CreateLiteral(string value)
         {
             return LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(value));
+        }
+
+        private static StatementSyntax CreateLocal(
+            IdentifierNameSyntax identifier,
+            ExpressionSyntax? initialValue = null,
+            TypeSyntax? type = null)
+        {
+            VariableDeclaratorSyntax variable = VariableDeclarator(identifier.Identifier);
+            if (initialValue != null)
+            {
+                variable = variable.WithInitializer(EqualsValueClause(initialValue));
+            }
+
+            return LocalDeclarationStatement(
+                VariableDeclaration(
+                    type ?? IdentifierName("var"),
+                    SingletonSeparatedList(variable)));
         }
 
         private static MethodDeclarationSyntax CreateMethod(
@@ -187,12 +195,7 @@ namespace Autocrat.Compiler
             //// var switchValue = ...
             //// switch (CaseInsensitiveStringHelper.GetHashCode(switchValue))
             return Block(
-                LocalDeclarationStatement(
-                    VariableDeclaration(
-                        IdentifierName("var"),
-                        SingletonSeparatedList(
-                            VariableDeclarator(switchValue.Identifier)
-                            .WithInitializer(EqualsValueClause(value))))),
+                CreateLocal(switchValue, value),
                 SwitchStatement(
                     InvokeMethod(
                         IdentifierName(nameof(CaseInsensitiveStringHelper)),
@@ -212,9 +215,9 @@ namespace Autocrat.Compiler
         private static StatementSyntax GenerateReadValue(
             ExpressionSyntax target,
             IdentifierNameSyntax reader,
-            PropertyInfo property)
+            ITypeSymbol type)
         {
-            string? readerMethod = GetJsonReaderMethod(property.Type);
+            string? readerMethod = GetJsonReaderMethod(type);
             if (readerMethod == null)
             {
                 throw new NotImplementedException("Need support for nested serializers");
@@ -306,6 +309,21 @@ namespace Autocrat.Compiler
             else
             {
                 return false;
+            }
+        }
+
+        private static ITypeSymbol UnwrapNullableTypes(ITypeSymbol symbol)
+        {
+            if ((symbol.NullableAnnotation == NullableAnnotation.Annotated) &&
+                symbol.IsValueType &&
+                (symbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T))
+            {
+                return ((INamedTypeSymbol)symbol).TypeArguments[0]
+                    .WithNullableAnnotation(NullableAnnotation.Annotated);
+            }
+            else
+            {
+                return symbol;
             }
         }
 
@@ -436,16 +454,23 @@ namespace Autocrat.Compiler
         private StatementSyntax GenerateReadArray(
             ExpressionSyntax target,
             IdentifierNameSyntax reader,
-            PropertyInfo property)
+            IArrayTypeSymbol arrayType)
         {
-            var arrayType = (IArrayTypeSymbol)property.Type;
             IdentifierNameSyntax buffer = IdentifierName("buffer");
+            IdentifierNameSyntax value = IdentifierName("value");
 
-            string? readerMethod = GetJsonReaderMethod(arrayType.ElementType);
-            if (readerMethod == null)
+            // We're not compiling in a nullable context, therefore, we need
+            // to remove the nullable annotation from reference types (we need
+            // to leave them on for value types as they're actually
+            // System.Nullable<T>)
+            ITypeSymbol elementTypeSymbol = arrayType.ElementType;
+            if (!elementTypeSymbol.IsValueType)
             {
-                throw new NotImplementedException("Need support for nested serializers");
+                elementTypeSymbol = elementTypeSymbol.WithNullableAnnotation(NullableAnnotation.None);
             }
+
+            TypeSyntax elementType = ParseTypeName(
+                elementTypeSymbol.ToDisplayString(this.displayFormat));
 
             //// if (reader.TokenType != JsonTokenType.StartArray)
             ////     throw new FormatException("Missing start array token")
@@ -456,16 +481,11 @@ namespace Autocrat.Compiler
             //// var buffer = new List<type>();
             NameSyntax listType = GenericName(
                 Identifier("System.Collections.Generic.List"),
-                TypeArgumentList(SingletonSeparatedList(ParseTypeName(
-                    arrayType.ElementType.ToDisplayString(this.displayFormat)))));
+                TypeArgumentList(SingletonSeparatedList(elementType)));
 
-            StatementSyntax createBuffer = LocalDeclarationStatement(
-                VariableDeclaration(
-                    IdentifierName("var"),
-                    SingletonSeparatedList(
-                        VariableDeclarator(buffer.Identifier)
-                        .WithInitializer(EqualsValueClause(
-                            ObjectCreationExpression(listType, ArgumentList(), null))))));
+            StatementSyntax createBuffer = CreateLocal(
+                buffer,
+                ObjectCreationExpression(listType, ArgumentList(), null));
 
             //// while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
             ExpressionSyntax whileCondition = BinaryExpression(
@@ -476,12 +496,12 @@ namespace Autocrat.Compiler
                     SyntaxKind.NotEqualsExpression,
                     JsonTokenType.EndArray));
 
-            ////     buffer.Add(reader.ReadXxx())
-            StatementSyntax whileBody = ExpressionStatement(
-                InvokeMethod(
-                    buffer,
-                    "Add",
-                    InvokeMethod(reader, readerMethod)));
+            ////     var value = reader.ReadXxx()
+            ////     buffer.Add(value)
+            StatementSyntax whileBody = Block(
+                CreateLocal(value, type: elementType),
+                this.GenerateReadValueWithNullCheck(value, reader, arrayType.ElementType),
+                ExpressionStatement(InvokeMethod(buffer, "Add", value)));
 
             return Block(
                 assertStartArray,
@@ -497,9 +517,8 @@ namespace Autocrat.Compiler
         private StatementSyntax GenerateReadEnum(
             ExpressionSyntax target,
             IdentifierNameSyntax reader,
-            PropertyInfo property)
+            INamedTypeSymbol propertyType)
         {
-            var propertyType = (INamedTypeSymbol)property.Type;
             TypeSyntax enumType = ParseTypeName(
                 propertyType.ToDisplayString(this.displayFormat));
 
@@ -562,7 +581,7 @@ namespace Autocrat.Compiler
             body.Add(this.GenerateReadValueWithNullCheck(
                 accessProperty,
                 reader,
-                property));
+                property.Type));
 
             return CreateMethod(
                 SyntaxKind.PrivateKeyword,
@@ -574,20 +593,21 @@ namespace Autocrat.Compiler
         private StatementSyntax GenerateReadValueWithNullCheck(
             ExpressionSyntax target,
             IdentifierNameSyntax reader,
-            PropertyInfo property)
+            ITypeSymbol type)
         {
-            StatementSyntax readValue = property.Type.TypeKind switch
+            type = UnwrapNullableTypes(type);
+            StatementSyntax readValue = type.TypeKind switch
             {
-                TypeKind.Array when !IsByteArray(property.Type) =>
-                    this.GenerateReadArray(target, reader, property),
+                TypeKind.Array when !IsByteArray(type) =>
+                    this.GenerateReadArray(target, reader, (IArrayTypeSymbol)type),
 
                 TypeKind.Enum =>
-                    this.GenerateReadEnum(target, reader, property),
+                    this.GenerateReadEnum(target, reader, (INamedTypeSymbol)type),
 
-                _ => GenerateReadValue(target, reader, property),
+                _ => GenerateReadValue(target, reader, type),
             };
 
-            if (property.Type.NullableAnnotation == NullableAnnotation.Annotated)
+            if (type.NullableAnnotation == NullableAnnotation.Annotated)
             {
                 //// if (reader.TokenType == JsonTokenType.Null)
                 ////     this.instance.Value = null

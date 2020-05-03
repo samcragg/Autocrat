@@ -86,6 +86,28 @@ public class {ClassTypeName}
             }
 
             [Fact]
+            public void ShouldReadArraysOfNullableReferences()
+            {
+                dynamic instance = this.DeserializeJson(
+                    "public string?[] Array { get; set; }",
+                    @"{ ""array"":[""one"",null,""two""] }");
+
+                string[] array = instance.Array;
+                array.Should().Equal("one", null, "two");
+            }
+
+            [Fact]
+            public void ShouldReadArraysOfNullableValues()
+            {
+                dynamic instance = this.DeserializeJson(
+                    "public int?[] Array { get; set; }",
+                    @"{ ""array"":[1,null,2] }");
+
+                int?[] array = instance.Array;
+                array.Should().Equal(1, null, 2);
+            }
+
+            [Fact]
             public void ShouldReadArraysOfPrimitives()
             {
                 dynamic instance = this.DeserializeJson(
@@ -185,7 +207,18 @@ public class {ClassTypeName}
             }
 
             [Fact]
-            public void ShouldReadNullValues()
+            public void ShouldReadNullableReferences()
+            {
+                dynamic instance = this.DeserializeJson(
+                    @"public string? Value { get; set; } = ""text"";",
+                    @"{""value"":null}");
+
+                string value = instance.Value;
+                value.Should().BeNull();
+            }
+
+            [Fact]
+            public void ShouldReadNullableValues()
             {
                 dynamic instance = this.DeserializeJson(
                     @"public int? Value { get; set; } = 123;",
