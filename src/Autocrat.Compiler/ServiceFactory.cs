@@ -7,6 +7,7 @@ namespace Autocrat.Compiler
 {
     using System;
     using System.Collections.Generic;
+    using Autocrat.Compiler.CodeGeneration;
     using Microsoft.CodeAnalysis;
 
     /// <summary>

@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for
 // full license information.
 
-namespace Autocrat.Compiler
+namespace Autocrat.Compiler.CodeGeneration
 {
     using System.Collections.Generic;
     using System.Globalization;

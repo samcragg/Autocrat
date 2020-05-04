@@ -8,6 +8,7 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Immutable;
     using Autocrat.Abstractions;
+    using Autocrat.Compiler.CodeGeneration;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;

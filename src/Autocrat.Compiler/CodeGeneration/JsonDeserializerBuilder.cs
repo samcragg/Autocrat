@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for
 // full license information.
 
-namespace Autocrat.Compiler
+namespace Autocrat.Compiler.CodeGeneration
 {
     using System;
     using System.Collections.Generic;
@@ -20,7 +20,7 @@ namespace Autocrat.Compiler
     /// <summary>
     /// Generates classes to deserialize JSON into objects.
     /// </summary>
-    internal class DeserializerGenerator
+    internal class JsonDeserializerBuilder
     {
         /// <summary>
         /// The suffix added to the class name used to create the name of the
@@ -41,11 +41,11 @@ namespace Autocrat.Compiler
         private readonly List<PropertyInfo> properties = new List<PropertyInfo>();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DeserializerGenerator"/> class.
+        /// Initializes a new instance of the <see cref="JsonDeserializerBuilder"/> class.
         /// </summary>
         /// <param name="model">Contains the semantic information.</param>
         /// <param name="classType">The name of the class to deserialize.</param>
-        public DeserializerGenerator(SemanticModel model, SimpleNameSyntax classType)
+        public JsonDeserializerBuilder(SemanticModel model, SimpleNameSyntax classType)
         {
             this.classType = classType;
             this.instanceField = IdentifierName("instance");

@@ -1,6 +1,7 @@
 ﻿namespace Compiler.Tests
 {
     using Autocrat.Compiler;
+    using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
     using Xunit;
 

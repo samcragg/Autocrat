@@ -1,9 +1,9 @@
-﻿namespace Compiler.Tests
+﻿namespace Compiler.Tests.CodeGeneration
 {
     using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
-    using Autocrat.Compiler;
+    using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
     using Xunit;
 
@@ -13,11 +13,9 @@
 
         private string WriteToOutput()
         {
-            using (var stream = new MemoryStream())
-            {
-                this.generator.WriteTo(stream);
-                return Encoding.UTF8.GetString(stream.ToArray());
-            }
+            using var stream = new MemoryStream();
+            this.generator.WriteTo(stream);
+            return Encoding.UTF8.GetString(stream.ToArray());
         }
 
         public sealed class RegisterMethodTests : NativeImportGeneratorTests

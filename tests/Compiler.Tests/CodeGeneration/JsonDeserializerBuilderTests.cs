@@ -1,11 +1,11 @@
-﻿namespace Compiler.Tests
+﻿namespace Compiler.Tests.CodeGeneration
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
     using System.Text.Json;
-    using Autocrat.Compiler;
+    using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -13,7 +13,7 @@
     using Xunit;
     using static System.Reflection.BindingFlags;
 
-    public class DeserializerGeneratorTests
+    public class JsonDeserializerBuilderTests
     {
         private const string ClassTypeName = "SimpleClass";
 
@@ -24,7 +24,7 @@
             var readMethod = (ReadDelegate<T>)Delegate.CreateDelegate(
                 typeof(ReadDelegate<T>),
                 Activator.CreateInstance(serializerType),
-                DeserializerGenerator.ReadMethodName);
+                JsonDeserializerBuilder.ReadMethodName);
 
             var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
             return readMethod(ref reader);
@@ -41,7 +41,7 @@ public class {ClassTypeName}
 }}";
             Compilation compilation = CompilationHelper.CompileCode(classDeclaration);
             SyntaxTree tree = compilation.SyntaxTrees.Single();
-            var generator = new DeserializerGenerator(
+            var generator = new JsonDeserializerBuilder(
                 compilation.GetSemanticModel(tree),
                 SyntaxFactory.IdentifierName(ClassTypeName));
 
@@ -65,15 +65,15 @@ public class {ClassTypeName}
 
             System.Reflection.Assembly assembly = CompilationHelper.GenerateAssembly(generatedCompilation);
             Type classType = assembly.GetType(ClassTypeName);
-            Type serializerType = assembly.GetType(ClassTypeName + DeserializerGenerator.GeneratedClassSuffix);
+            Type serializerType = assembly.GetType(ClassTypeName + JsonDeserializerBuilder.GeneratedClassSuffix);
 
-            return typeof(DeserializerGeneratorTests)
+            return typeof(JsonDeserializerBuilderTests)
                 .GetMethod(nameof(ReadJson), NonPublic | Static)
                 .MakeGenericMethod(classType)
                 .Invoke(null, new object[] { serializerType, json });
         }
 
-        public sealed class GenerateTests : DeserializerGeneratorTests
+        public sealed class GenerateTests : JsonDeserializerBuilderTests
         {
             [Fact]
             public void ShouldIgnoreUnknownJsonProperties()

@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Reflection;
     using Autocrat.Compiler;
+    using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -97,13 +98,11 @@ public class Test
 
             private Assembly EmitCode(string originalCode = "namespace X {}")
             {
-                using (var stream = new MemoryStream())
-                {
-                    this.generator.Add(CompilationHelper.CompileCode(originalCode, referenceAbstractions: true));
+                using var stream = new MemoryStream();
+                this.generator.Add(CompilationHelper.CompileCode(originalCode, referenceAbstractions: true));
 
-                    this.generator.EmitAssembly(stream, Stream.Null);
-                    return Assembly.Load(stream.ToArray());
-                }
+                this.generator.EmitAssembly(stream, Stream.Null);
+                return Assembly.Load(stream.ToArray());
             }
         }
 

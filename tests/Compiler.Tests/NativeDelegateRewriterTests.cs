@@ -2,6 +2,7 @@
 {
     using System.Linq;
     using Autocrat.Compiler;
+    using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
