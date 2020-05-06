@@ -41,8 +41,8 @@ public class {ClassTypeName}
 }}";
             Compilation compilation = CompilationHelper.CompileCode(classDeclaration);
             SyntaxTree tree = compilation.SyntaxTrees.Single();
+            SemanticModel model = compilation.GetSemanticModel(tree);
             var generator = new JsonDeserializerBuilder(
-                compilation.GetSemanticModel(tree),
                 SyntaxFactory.IdentifierName(ClassTypeName));
 
             IEnumerable<PropertyDeclarationSyntax> properties =
@@ -52,10 +52,13 @@ public class {ClassTypeName}
 
             foreach (PropertyDeclarationSyntax property in properties)
             {
-                generator.AddProperty(property);
+                generator.AddProperty(model.GetDeclaredSymbol(property));
             }
 
-            string generatedCode = generator.Generate()
+            string generatedCode = SyntaxFactory
+                .CompilationUnit()
+                .WithUsings(SyntaxFactory.List(JsonDeserializerBuilder.GetUsingStatements()))
+                .WithMembers(SyntaxFactory.SingletonList<MemberDeclarationSyntax>(generator.GenerateClass()))
                 .NormalizeWhitespace()
                 .ToFullString();
 

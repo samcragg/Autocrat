@@ -37,58 +37,59 @@ namespace Autocrat.Compiler.CodeGeneration
         private readonly SimpleNameSyntax classType;
         private readonly SymbolDisplayFormat displayFormat = SymbolDisplayFormat.CSharpErrorMessageFormat;
         private readonly IdentifierNameSyntax instanceField;
-        private readonly SemanticModel model;
-        private readonly List<PropertyInfo> properties = new List<PropertyInfo>();
+        private readonly List<IPropertySymbol> properties = new List<IPropertySymbol>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonDeserializerBuilder"/> class.
         /// </summary>
-        /// <param name="model">Contains the semantic information.</param>
         /// <param name="classType">The name of the class to deserialize.</param>
-        public JsonDeserializerBuilder(SemanticModel model, SimpleNameSyntax classType)
+        public JsonDeserializerBuilder(SimpleNameSyntax classType)
         {
             this.classType = classType;
             this.instanceField = IdentifierName("instance");
-            this.model = model;
+        }
+
+        /// <summary>
+        /// Gets the using statements required for the generated classes.
+        /// </summary>
+        /// <returns>The using statements required for the compilation.</returns>
+        public static UsingDirectiveSyntax[] GetUsingStatements()
+        {
+            return new[]
+            {
+                UsingDirective(IdentifierName("System")),
+                UsingDirective(ParseName("System.Text.Json")),
+                UsingDirective(ParseName("Autocrat.Abstractions")),
+            };
         }
 
         /// <summary>
         /// Adds a property to be deserialized by the generated class.
         /// </summary>
         /// <param name="property">Contains the property information.</param>
-        public void AddProperty(PropertyDeclarationSyntax property)
+        public void AddProperty(IPropertySymbol property)
         {
-            TypeInfo typeInfo = this.model.GetTypeInfo(property.Type);
-            ITypeSymbol typeSymbol = typeInfo.Type ??
-                throw new InvalidOperationException("Unable to get type information for " + property.Type);
-
-            if (property.Type is NullableTypeSyntax)
-            {
-                typeSymbol = typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated);
-            }
-
-            this.properties.Add(new PropertyInfo
-            {
-                Name = property.Identifier.ValueText,
-                Type = typeSymbol,
-            });
+            this.properties.Add(property);
         }
 
         /// <summary>
         /// Generates the class to deserialize JSON data.
         /// </summary>
-        /// <returns>A new compilation unit.</returns>
-        public CompilationUnitSyntax Generate()
+        /// <returns>A new class declaration.</returns>
+        public ClassDeclarationSyntax GenerateClass()
         {
-            UsingDirectiveSyntax[] usings = new[]
-            {
-                UsingDirective(IdentifierName("System")),
-                UsingDirective(ParseName("System.Text.Json")),
-                UsingDirective(ParseName("Autocrat.Abstractions")),
-            };
-            return CompilationUnit()
-                .WithUsings(List(usings))
-                .WithMembers(SingletonList(this.CreateClass()));
+            FieldDeclarationSyntax field =
+                FieldDeclaration(VariableDeclaration(
+                    this.classType,
+                    SingletonSeparatedList(VariableDeclarator(this.instanceField.Identifier))))
+                .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
+
+            return ClassDeclaration(this.classType.Identifier.ValueText + GeneratedClassSuffix)
+                .AddModifiers(Token(SyntaxKind.PublicKeyword))
+                .AddMembers(
+                    new[] { field }
+                    .Concat(this.GetMethods())
+                    .ToArray());
         }
 
         private static ExpressionSyntax CheckTokenType(
@@ -327,22 +328,6 @@ namespace Autocrat.Compiler.CodeGeneration
             }
         }
 
-        private MemberDeclarationSyntax CreateClass()
-        {
-            FieldDeclarationSyntax field =
-                FieldDeclaration(VariableDeclaration(
-                    this.classType,
-                    SingletonSeparatedList(VariableDeclarator(this.instanceField.Identifier))))
-                .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
-
-            return ClassDeclaration(this.classType.Identifier.ValueText + GeneratedClassSuffix)
-                .AddModifiers(Token(SyntaxKind.PublicKeyword))
-                .AddMembers(
-                    new[] { field }
-                    .Concat(this.GetMethods())
-                    .ToArray());
-        }
-
         private MethodDeclarationSyntax CreateReadMethod(SyntaxToken readPropertyMethod)
         {
             var body = new List<StatementSyntax>();
@@ -564,7 +549,7 @@ namespace Autocrat.Compiler.CodeGeneration
                 ElseClause(readEnumAsString));
         }
 
-        private MethodDeclarationSyntax GenerateReadValueMethod(PropertyInfo property)
+        private MethodDeclarationSyntax GenerateReadValueMethod(IPropertySymbol property)
         {
             var body = new List<StatementSyntax>();
             IdentifierNameSyntax reader = IdentifierName("reader");
@@ -634,16 +619,10 @@ namespace Autocrat.Compiler.CodeGeneration
             yield return this.CreateReadMethod(readProperty.Identifier);
             yield return readProperty;
 
-            foreach (PropertyInfo property in this.properties)
+            foreach (IPropertySymbol property in this.properties)
             {
                 yield return this.GenerateReadValueMethod(property);
             }
-        }
-
-        private struct PropertyInfo
-        {
-            public string Name;
-            public ITypeSymbol Type;
         }
     }
 }
