@@ -43,10 +43,24 @@ namespace Autocrat.Compiler.CodeGeneration
         /// Initializes a new instance of the <see cref="JsonDeserializerBuilder"/> class.
         /// </summary>
         /// <param name="classType">The name of the class to deserialize.</param>
-        public JsonDeserializerBuilder(SimpleNameSyntax classType)
+        public JsonDeserializerBuilder(ITypeSymbol classType)
         {
-            this.classType = classType;
+            this.classType = (SimpleNameSyntax)ParseName(
+                classType.ToDisplayString(this.displayFormat));
+
             this.instanceField = IdentifierName("instance");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonDeserializerBuilder"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected JsonDeserializerBuilder()
+        {
+            this.classType = null!;
+            this.instanceField = null!;
         }
 
         /// <summary>
@@ -67,7 +81,7 @@ namespace Autocrat.Compiler.CodeGeneration
         /// Adds a property to be deserialized by the generated class.
         /// </summary>
         /// <param name="property">Contains the property information.</param>
-        public void AddProperty(IPropertySymbol property)
+        public virtual void AddProperty(IPropertySymbol property)
         {
             this.properties.Add(property);
         }
@@ -76,7 +90,7 @@ namespace Autocrat.Compiler.CodeGeneration
         /// Generates the class to deserialize JSON data.
         /// </summary>
         /// <returns>A new class declaration.</returns>
-        public ClassDeclarationSyntax GenerateClass()
+        public virtual ClassDeclarationSyntax GenerateClass()
         {
             FieldDeclarationSyntax field =
                 FieldDeclaration(VariableDeclaration(

@@ -43,7 +43,7 @@ public class {ClassTypeName}
             SyntaxTree tree = compilation.SyntaxTrees.Single();
             SemanticModel model = compilation.GetSemanticModel(tree);
             var generator = new JsonDeserializerBuilder(
-                SyntaxFactory.IdentifierName(ClassTypeName));
+                compilation.GetTypeByMetadataName(ClassTypeName));
 
             IEnumerable<PropertyDeclarationSyntax> properties =
                 tree.GetRoot()
