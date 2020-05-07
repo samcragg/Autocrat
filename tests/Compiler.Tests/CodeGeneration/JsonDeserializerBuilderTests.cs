@@ -10,12 +10,14 @@
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using NSubstitute;
     using Xunit;
     using static System.Reflection.BindingFlags;
 
     public class JsonDeserializerBuilderTests
     {
         private const string ClassTypeName = "SimpleClass";
+        private readonly ConfigGenerator generator = Substitute.For<ConfigGenerator>();
 
         private delegate T ReadDelegate<T>(ref Utf8JsonReader reader);
 
@@ -42,7 +44,8 @@ public class {ClassTypeName}
             Compilation compilation = CompilationHelper.CompileCode(classDeclaration);
             SyntaxTree tree = compilation.SyntaxTrees.Single();
             SemanticModel model = compilation.GetSemanticModel(tree);
-            var generator = new JsonDeserializerBuilder(
+            var builder = new JsonDeserializerBuilder(
+                this.generator,
                 compilation.GetTypeByMetadataName(ClassTypeName));
 
             IEnumerable<PropertyDeclarationSyntax> properties =
@@ -52,13 +55,13 @@ public class {ClassTypeName}
 
             foreach (PropertyDeclarationSyntax property in properties)
             {
-                generator.AddProperty(model.GetDeclaredSymbol(property));
+                builder.AddProperty(model.GetDeclaredSymbol(property));
             }
 
             string generatedCode = SyntaxFactory
                 .CompilationUnit()
                 .WithUsings(SyntaxFactory.List(JsonDeserializerBuilder.GetUsingStatements()))
-                .WithMembers(SyntaxFactory.SingletonList<MemberDeclarationSyntax>(generator.GenerateClass()))
+                .WithMembers(SyntaxFactory.SingletonList<MemberDeclarationSyntax>(builder.GenerateClass()))
                 .NormalizeWhitespace()
                 .ToFullString();
 
@@ -207,6 +210,34 @@ public class {ClassTypeName}
                     @"{ ""enumProperty"":""enumValue"" }");
 
                 ((string)instance.EnumProperty.ToString()).Should().Be("EnumValue");
+            }
+
+            [Fact]
+            public void ShouldReadFromOtherSerializers()
+            {
+                // Note we can't use a property in the other type, as that will
+                // get picked up in our test method and added to the deserializer
+                string classMembers = @"
+    public OtherType Other { get; set; }
+}
+public class OtherType
+{
+    public string field;
+}
+public class OtherTypeDeserializer
+{
+    public OtherType Read(ref System.Text.Json.Utf8JsonReader reader)
+    {
+        return new OtherType { field = reader.GetString() };
+    }";
+                this.generator.GetClassFor(null)
+                    .ReturnsForAnyArgs(SyntaxFactory.IdentifierName("OtherTypeDeserializer"));
+
+                dynamic instance = this.DeserializeJson(
+                    classMembers,
+                    @"{ ""other"":""Test Value"" }");
+
+                ((string)instance.Other.field).Should().Be("Test Value");
             }
 
             [Fact]

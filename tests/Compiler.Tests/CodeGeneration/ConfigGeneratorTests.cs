@@ -11,6 +11,9 @@
     using NSubstitute.ReturnsExtensions;
     using Xunit;
 
+    // We're playing with statics, so prevent the nested test classes from
+    // running in parallel
+    [Collection(nameof(ConfigGeneratorTests))]
     public class ConfigGeneratorTests : IDisposable
     {
         private readonly JsonDeserializerBuilder builder;
@@ -19,7 +22,7 @@
         private ConfigGeneratorTests()
         {
             this.builder = Substitute.For<JsonDeserializerBuilder>();
-            ConfigGenerator.CreateBuilder = _ => this.builder;
+            ConfigGenerator.CreateBuilder = (_, __) => this.builder;
 
             this.builder.GenerateClass().Returns(SyntaxFactory.ClassDeclaration("TestClass"));
 

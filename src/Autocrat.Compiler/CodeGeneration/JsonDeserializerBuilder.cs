@@ -36,15 +36,18 @@ namespace Autocrat.Compiler.CodeGeneration
 
         private readonly SimpleNameSyntax classType;
         private readonly SymbolDisplayFormat displayFormat = SymbolDisplayFormat.CSharpErrorMessageFormat;
+        private readonly ConfigGenerator generator;
         private readonly IdentifierNameSyntax instanceField;
         private readonly List<IPropertySymbol> properties = new List<IPropertySymbol>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonDeserializerBuilder"/> class.
         /// </summary>
+        /// <param name="generator">Used to generate custom deserializers.</param>
         /// <param name="classType">The name of the class to deserialize.</param>
-        public JsonDeserializerBuilder(ITypeSymbol classType)
+        public JsonDeserializerBuilder(ConfigGenerator generator, ITypeSymbol classType)
         {
+            this.generator = generator;
             this.classType = (SimpleNameSyntax)ParseName(
                 classType.ToDisplayString(this.displayFormat));
 
@@ -60,6 +63,7 @@ namespace Autocrat.Compiler.CodeGeneration
         protected JsonDeserializerBuilder()
         {
             this.classType = null!;
+            this.generator = null!;
             this.instanceField = null!;
         }
 
@@ -225,24 +229,6 @@ namespace Autocrat.Compiler.CodeGeneration
                 ObjectCreationExpression(IdentifierName(nameof(FormatException)))
                 .WithArgumentList(ArgumentList(SingletonSeparatedList(
                     Argument(CreateLiteral(message))))));
-        }
-
-        private static StatementSyntax GenerateReadValue(
-            ExpressionSyntax target,
-            IdentifierNameSyntax reader,
-            ITypeSymbol type)
-        {
-            string? readerMethod = GetJsonReaderMethod(type);
-            if (readerMethod == null)
-            {
-                throw new NotImplementedException("Need support for nested serializers");
-            }
-
-            //// target = reader.GetXxx()
-            return ExpressionStatement(AssignmentExpression(
-                SyntaxKind.SimpleAssignmentExpression,
-                target,
-                InvokeMethod(reader, readerMethod)));
         }
 
         private static string? GetJsonReaderMethod(ITypeSymbol typeSymbol)
@@ -563,6 +549,43 @@ namespace Autocrat.Compiler.CodeGeneration
                 ElseClause(readEnumAsString));
         }
 
+        private StatementSyntax GenerateReadValue(
+            ExpressionSyntax target,
+            IdentifierNameSyntax reader,
+            ITypeSymbol type)
+        {
+            ExpressionSyntax readValue;
+            string? readerMethod = GetJsonReaderMethod(type);
+            if (readerMethod != null)
+            {
+                //// target = reader.GetXxx()
+                readValue = InvokeMethod(reader, readerMethod);
+            }
+            else
+            {
+                //// var deserializer = new TypeDeserializer()
+                ExpressionSyntax deserializer = ObjectCreationExpression(
+                    this.generator.GetClassFor(type),
+                    ArgumentList(),
+                    null);
+
+                //// target = deserializer.Read(ref reader)
+                readValue = InvocationExpression(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        deserializer,
+                        IdentifierName(ReadMethodName)),
+                    ArgumentList(SingletonSeparatedList(
+                        Argument(reader)
+                        .WithRefKindKeyword(Token(SyntaxKind.RefKeyword)))));
+            }
+
+            return ExpressionStatement(AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    target,
+                    readValue));
+        }
+
         private MethodDeclarationSyntax GenerateReadValueMethod(IPropertySymbol property)
         {
             var body = new List<StatementSyntax>();
@@ -603,7 +626,7 @@ namespace Autocrat.Compiler.CodeGeneration
                 TypeKind.Enum =>
                     this.GenerateReadEnum(target, reader, (INamedTypeSymbol)type),
 
-                _ => GenerateReadValue(target, reader, type),
+                _ => this.GenerateReadValue(target, reader, type),
             };
 
             if (type.NullableAnnotation == NullableAnnotation.Annotated)

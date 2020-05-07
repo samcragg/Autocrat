@@ -28,8 +28,8 @@ namespace Autocrat.Compiler.CodeGeneration
         /// <summary>
         /// Gets or sets the method used to create the deserializer builder.
         /// </summary>
-        internal static Func<ITypeSymbol, JsonDeserializerBuilder> CreateBuilder { get; set; }
-            = classType => new JsonDeserializerBuilder(classType);
+        internal static Func<ConfigGenerator, ITypeSymbol, JsonDeserializerBuilder> CreateBuilder { get; set; }
+            = (cg, ct) => new JsonDeserializerBuilder(cg, ct);
 
         /// <summary>
         /// Generates the deserialization classes.
@@ -64,7 +64,7 @@ namespace Autocrat.Compiler.CodeGeneration
 
         private IdentifierNameSyntax GenerateClass(ITypeSymbol type)
         {
-            JsonDeserializerBuilder builder = CreateBuilder(type);
+            JsonDeserializerBuilder builder = CreateBuilder(this, type);
             foreach (IPropertySymbol property in type.GetMembers().OfType<IPropertySymbol>())
             {
                 if (property.SetMethod != null)
