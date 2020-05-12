@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <NoWarn>CS2008</NoWarn>
+    <Optimize Condition="'$(Configuration)'!='Debug'">true</Optimize>
+
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
@@ -8,20 +12,18 @@
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     
-    <!-- Check via https://dotnetfeed.blob.core.windows.net/dotnet-core/flatcontainer/microsoft.dotnet.ilcompiler/index.json -->
-    <ILCompilerVersion>1.0.0-alpha-28622-01</ILCompilerVersion>
-
-    <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+    <CoreRTVersion>0.0.1</CoreRTVersion>
     <IlcDisableReflection>true</IlcDisableReflection>
+    <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+    <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+    <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
     <NativeLib>Static</NativeLib>
-    <NoWarn>CS2008</NoWarn>
-    <Optimize Condition="'$(Configuration)'!='Debug'">true</Optimize>
     <RootAllApplicationAssemblies>true</RootAllApplicationAssemblies>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetName>ManagedToNative</TargetName>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="$(ILCompilerVersion)" />
     <Reference Include="$([System.IO.Path]::GetFileNameWithoutExtension('$(AutocratOutputAssembly)'))">
       <HintPath>$(AutocratOutputAssembly)</HintPath>
     </Reference>
@@ -38,4 +40,7 @@
 
   <Import Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'"
           Project="$(AutocratContentDir)/NativeCompile.Windows.targets" />
+
+  <Import Project="$(IlcPath)/build/Microsoft.NETCore.Native.targets" />
+
 </Project>
