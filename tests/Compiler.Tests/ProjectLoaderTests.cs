@@ -16,52 +16,40 @@
         public sealed class GetCompilationsAsyncTests : ProjectLoaderTests
         {
             [Fact]
-            public async Task ShouldLoadAllTheProjects()
+            public async Task ShouldLoadAllTheSources()
             {
-                using (var project1 = new TemporaryFile())
-                using (var project2 = new TemporaryFile())
-                {
-                    WriteProjectFile(project1.Filename);
-                    WriteProjectFile(project2.Filename);
+                using var class1 = new TemporaryFile();
+                WriteClassToFile(class1.Filename, "Class1");
 
-                    Compilation[] compilations = await this.loader.GetCompilationsAsync(new[]
+                using var class2 = new TemporaryFile();
+                WriteClassToFile(class2.Filename, "Class2");
+
+                Compilation compilation = await this.loader.GetCompilationAsync(
+                    new[]
                     {
-                        project1.Filename,
-                        project2.Filename
+                        typeof(object).Assembly.Location,
+                    },
+                    new[]
+                    {
+                        class1.Filename,
+                        class2.Filename,
                     });
 
-                    compilations.Should().HaveCount(2);
-                }
+                compilation.GetDiagnostics().Should().BeEmpty();
+                compilation.SyntaxTrees.Should().HaveCount(2);
             }
 
-            private static void WriteProjectFile(string path)
+            private static void WriteClassToFile(string path, string name)
             {
-                const string Template = @"<Project Sdk='Microsoft.NET.Sdk'>
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
-</Project>";
-
-                File.WriteAllText(path, Template);
+                File.WriteAllText(path, "class " + name + " { }");
             }
         }
 
         private sealed class TemporaryFile : IDisposable
         {
-            private readonly string tempDirectory;
-
             public TemporaryFile()
             {
-                // The file MUST end with "csproj" so the loader knows what language
-                // the project is in
-                this.tempDirectory = Directory.CreateDirectory(Path.Combine(
-                    Path.GetTempPath(),
-                    nameof(ProjectLoaderTests))
-                    ).FullName;
-
-                this.Filename = Path.Combine(
-                    this.tempDirectory,
-                    Guid.NewGuid() + ".csproj");
+                this.Filename = Path.GetTempFileName();
             }
 
             public string Filename { get; }
@@ -70,7 +58,7 @@
             {
                 try
                 {
-                    Directory.Delete(this.tempDirectory, recursive: true);
+                    File.Delete(this.Filename);
                 }
                 catch
                 {

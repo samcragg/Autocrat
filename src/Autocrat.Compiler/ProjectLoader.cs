@@ -5,12 +5,12 @@
 
 namespace Autocrat.Compiler
 {
-    using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
-    using Buildalyzer;
-    using Buildalyzer.Workspaces;
     using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.Text;
     using NLog;
 
     /// <summary>
@@ -18,33 +18,70 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class ProjectLoader
     {
-        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
-        private readonly AnalyzerManager analyzerManager = new AnalyzerManager();
+        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
-        /// Gets the compilations for the specified project paths.
+        /// Gets the compilation for the specified project.
         /// </summary>
-        /// <param name="paths">The paths of the project files.</param>
+        /// <param name="references">The assembly references for the project.</param>
+        /// <param name="sources">The source paths.</param>
         /// <returns>
         /// A task that represents the compilations of the projects.
         /// </returns>
-        public virtual Task<Compilation?[]> GetCompilationsAsync(string[] paths)
+        public virtual async Task<Compilation?> GetCompilationAsync(string[] references, string[] sources)
         {
-            var tasks = new List<Task<Compilation?>>();
-            foreach (string path in paths)
+            static MetadataReference CreateReference(string path)
             {
-                Logger.Info<string>("Loading project {path}", path);
-
-                IEnumerable<Project> projects = this.analyzerManager
-                    .GetProject(path)
-                    .GetWorkspace()
-                    .CurrentSolution
-                    .Projects;
-
-                tasks.AddRange(projects.Select(p => p.GetCompilationAsync()));
+                return MetadataReference.CreateFromFile(path);
             }
 
-            return Task.WhenAll(tasks.ToArray());
+            var projectId = ProjectId.CreateNewId();
+            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            DocumentInfo[] documents =
+                await this.CreateDocuments(projectId, sources).ConfigureAwait(false);
+
+            using var workspace = new AdhocWorkspace();
+            Project project = workspace.AddProject(
+                ProjectInfo.Create(
+                    projectId,
+                    VersionStamp.Create(),
+                    "project",
+                    "assembly",
+                    LanguageNames.CSharp,
+                    compilationOptions: options,
+                    documents: documents,
+                    metadataReferences: references.Select(CreateReference)));
+
+            return await project.GetCompilationAsync().ConfigureAwait(false);
+        }
+
+        private async Task<DocumentInfo[]> CreateDocuments(ProjectId projectId, string[] sources)
+        {
+            var contents = new Task<byte[]>[sources.Length];
+            for (int i = 0; i < sources.Length; i++)
+            {
+                contents[i] = File.ReadAllBytesAsync(sources[i]);
+            }
+
+            this.logger.Debug("Loading source files");
+            await Task.WhenAll(contents).ConfigureAwait(false);
+
+            this.logger.Debug("Creating documents");
+            var documents = new DocumentInfo[sources.Length];
+            for (int i = 0; i < sources.Length; i++)
+            {
+                byte[] buffer = contents[i].Result;
+                var text = TextAndVersion.Create(
+                        SourceText.From(buffer, buffer.Length),
+                        VersionStamp.Create());
+
+                documents[i] = DocumentInfo.Create(
+                    DocumentId.CreateNewId(projectId),
+                    sources[i],
+                    loader: TextLoader.From(text));
+            }
+
+            return documents;
         }
     }
 }
