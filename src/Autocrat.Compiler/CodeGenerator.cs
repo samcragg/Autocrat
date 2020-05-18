@@ -11,11 +11,11 @@ namespace Autocrat.Compiler
     using System.Text;
     using Autocrat.Abstractions;
     using Autocrat.Compiler.CodeGeneration;
+    using Autocrat.Compiler.Logging;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Emit;
-    using NLog;
     using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
@@ -25,7 +25,7 @@ namespace Autocrat.Compiler
     internal class CodeGenerator
     {
         private const string CallbackAdapterClassName = "NativeCallableMethods";
-        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
+        private readonly ILogger logger = LogManager.GetLogger();
         private readonly List<MethodDeclarationSyntax> callbackMethods = new List<MethodDeclarationSyntax>();
         private readonly List<SyntaxTree> generatedCode = new List<SyntaxTree>();
         private readonly HashSet<MetadataReference> references = new HashSet<MetadataReference>();
@@ -79,7 +79,7 @@ namespace Autocrat.Compiler
             {
                 foreach (Diagnostic diagnostic in result.Diagnostics)
                 {
-                    Logger.Error(diagnostic.ToString());
+                    this.logger.Error(diagnostic.Location, diagnostic.GetMessage());
                 }
 
                 throw new InvalidOperationException("Unable to compile generated code");
@@ -140,7 +140,7 @@ int main()
 
         private CSharpCompilation AddRegisterWorkerTypes(CSharpCompilation compilation)
         {
-            Logger.Info("Creating worker type registration");
+            this.logger.Info("Generating worker types registration");
             ServiceFactory factory = ServiceFactory(compilation);
             WorkerRegisterGenerator generator = factory.CreateWorkerRegisterGenerator(this.workerTypes);
             if (generator.HasCode)
@@ -154,7 +154,7 @@ int main()
 
         private void RewriteInitializers(ServiceFactory factory, Compilation compilation)
         {
-            Logger.Info("Rewriting " + nameof(IInitializer) + "s");
+            this.logger.Info("Rewriting " + nameof(IInitializer) + "s");
             INamedTypeSymbol? initializer = compilation.GetTypeByMetadataName(
                 "Autocrat.Abstractions." + nameof(IInitializer));
             if (initializer == null)
@@ -178,7 +178,7 @@ int main()
 
         private void RewriteNativeAdapters(ServiceFactory factory)
         {
-            Logger.Info("Rewriting native adapters");
+            this.logger.Info("Rewriting native adapters");
             SyntaxTreeRewriter rewriter = factory.CreateSyntaxTreeRewriter();
             for (int i = 0; i < this.generatedCode.Count; i++)
             {

@@ -8,17 +8,17 @@ namespace Autocrat.Compiler
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
+    using Autocrat.Compiler.Logging;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.Text;
-    using NLog;
 
     /// <summary>
     /// Loads the C# projects from disk.
     /// </summary>
     internal class ProjectLoader
     {
-        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly ILogger logger = LogManager.GetLogger();
 
         /// <summary>
         /// Gets the compilation for the specified project.

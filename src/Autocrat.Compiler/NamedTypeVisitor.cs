@@ -8,15 +8,15 @@ namespace Autocrat.Compiler
     using System.Collections;
     using System.Collections.Generic;
     using Autocrat.Abstractions;
+    using Autocrat.Compiler.Logging;
     using Microsoft.CodeAnalysis;
-    using NLog;
 
     /// <summary>
     /// Extracts the nested type symbols from a symbol.
     /// </summary>
     internal class NamedTypeVisitor : SymbolVisitor
     {
-        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
+        private readonly ILogger logger = LogManager.GetLogger();
         private readonly Dictionary<ITypeSymbol, ITypeSymbol> interfacesToRewrite = new Dictionary<ITypeSymbol, ITypeSymbol>();
         private readonly ISet<INamedTypeSymbol> types = new HashSet<INamedTypeSymbol>();
 
@@ -61,7 +61,7 @@ namespace Autocrat.Compiler
             object? argument = rewriteInterface?.ConstructorArguments[0].Value;
             if (!(argument is null))
             {
-                Logger.Debug("Recording {class} as implementing {interface}", symbol.Name, ((ITypeSymbol)argument).Name);
+                this.logger.Debug("Recording {0} as implementing {1}", symbol.Name, ((ITypeSymbol)argument).Name);
                 this.interfacesToRewrite.Add((ITypeSymbol)argument, symbol);
             }
         }

@@ -8,10 +8,10 @@ namespace Autocrat.Compiler.CodeGeneration
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using Autocrat.Compiler.Logging;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using NLog;
     using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
@@ -19,11 +19,11 @@ namespace Autocrat.Compiler.CodeGeneration
     /// </summary>
     internal class InstanceBuilder
     {
-        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
         private static readonly TypeSyntax VarKeyword = ParseTypeName("var");
         private readonly ConstructorResolver constructorResolver;
         private readonly List<StatementSyntax> declarations = new List<StatementSyntax>();
         private readonly InterfaceResolver interfaceResolver;
+        private readonly ILogger logger = LogManager.GetLogger();
 
         private readonly HashSet<string> localNames =
             new HashSet<string>(StringComparer.Ordinal);
@@ -64,7 +64,7 @@ namespace Autocrat.Compiler.CodeGeneration
             if (!this.variables.TryGetValue(type, out IdentifierNameSyntax? name))
             {
                 // Create a marker to avoid cyclic dependencies
-                Logger.Debug<string>("Attempting to resolve {typeName}", type.ToDisplayString());
+                this.logger.Debug("Attempting to resolve {0}", type.ToDisplayString());
                 this.variables.Add(type, null);
                 name = this.DeclareLocal(type);
                 this.variables[type] = name;

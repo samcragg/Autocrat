@@ -7,9 +7,9 @@ namespace Autocrat.Compiler.CodeGeneration
 {
     using System;
     using System.Collections.Generic;
+    using Autocrat.Compiler.Logging;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using NLog;
     using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
     /// <summary>
@@ -17,13 +17,13 @@ namespace Autocrat.Compiler.CodeGeneration
     /// </summary>
     internal class ConfigGenerator
     {
-        private static readonly ILogger Logger = LogManager.GetCurrentClassLogger();
-
         private readonly List<MemberDeclarationSyntax> deserializerClasses =
             new List<MemberDeclarationSyntax>();
 
         private readonly Dictionary<ITypeSymbol, IdentifierNameSyntax?> deserializers =
             new Dictionary<ITypeSymbol, IdentifierNameSyntax?>();
+
+        private readonly ILogger logger = LogManager.GetLogger();
 
         /// <summary>
         /// Gets or sets the method used to create the deserializer builder.
@@ -52,7 +52,7 @@ namespace Autocrat.Compiler.CodeGeneration
             if (!this.deserializers.TryGetValue(type, out IdentifierNameSyntax? name))
             {
                 // Create a marker to avoid cyclic dependencies
-                Logger.Debug<string>("Generating deserializer for {typeName}", type.ToDisplayString());
+                this.logger.Debug("Generating deserializer for {0}", type.ToDisplayString());
                 this.deserializers.Add(type, null);
                 name = this.GenerateClass(type);
                 this.deserializers[type] = name;
