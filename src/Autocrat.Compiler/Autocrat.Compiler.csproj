@@ -5,8 +5,7 @@
     <LangVersion>latest</LangVersion>
     <NoWarn>$(NoWarn);NU5100</NoWarn>
     <Nullable>enable</Nullable>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Version>0.0.1</Version>
     
@@ -18,7 +17,7 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.5.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.5.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.5.0" />
-    <PackageReference Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.19317.1" />
+    <PackageReference Include="System.Text.Json" Version="4.7.2" />
     <ProjectReference Include="..\Autocrat.Abstractions\Autocrat.Abstractions.csproj" />
   </ItemGroup>
 

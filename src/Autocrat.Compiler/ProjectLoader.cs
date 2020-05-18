@@ -5,6 +5,7 @@
 
 namespace Autocrat.Compiler
 {
+    using System;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace Autocrat.Compiler
         /// <returns>
         /// A task that represents the compilations of the projects.
         /// </returns>
-        public virtual async Task<Compilation?> GetCompilationAsync(string[] references, string[] sources)
+        public virtual async Task<Compilation> GetCompilationAsync(string[] references, string[] sources)
         {
             static MetadataReference CreateReference(string path)
             {
@@ -52,7 +53,8 @@ namespace Autocrat.Compiler
                     documents: documents,
                     metadataReferences: references.Select(CreateReference)));
 
-            return await project.GetCompilationAsync().ConfigureAwait(false);
+            return await project.GetCompilationAsync().ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Unable to compile sources");
         }
 
         private async Task<DocumentInfo[]> CreateDocuments(ProjectId projectId, string[] sources)
