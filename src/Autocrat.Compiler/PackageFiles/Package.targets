@@ -1,6 +1,10 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask TaskName="Autocrat.Compiler.AutocratTask"
+             AssemblyFile="$(AutocratCompiler)" />
+
   <Target Name="AutocratTarget"
-          AfterTargets="Publish">
+          AfterTargets="Publish"
+          DependsOnTargets="ResolveAssemblyReferences;_GetAssemblyInfoFromTemplateFile">
     <ItemGroup>
       <AdditionalProjectOptions Include="/p:AutocratContentDir=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
@@ -11,7 +15,10 @@
       <PublishedFiles Include="$(PublishDir)*.*" />
     </ItemGroup>
 
-    <Exec Command="dotnet $(AutocratCompiler) --assembly $(AutocratOutputAssembly) --source $(AutocratOutputSource) $(ProjectPath)" />
+    <AutocratTask OutputAssembly="$(AutocratOutputAssembly)"
+                  OutputSource="$(AutocratOutputSource)"
+                  References="@(ReferencePath)"
+                  Sources="@(Compile)" />
 
     <Move SourceFiles="@(PublishedFiles)"
           DestinationFolder="$(AutocratOutputDirectory)" />
@@ -19,9 +26,6 @@
     <Copy SourceFiles="@(AutocratProjectFiles)"
           DestinationFolder="$(AutocratOutputDirectory)" />
     
-    <Copy SourceFiles="$(AutocratCompiler)"
-          DestinationFolder="$(AutocratOutputDirectory)" />
-
     <!-- There are so many issues around trying to get a MSBuild task to restore -->
     <!-- and work correctly, we'll just cheat and start a new process to do it all -->
     <Exec Command="dotnet publish -c $(ConfigurationName) $(AutocratManagedProject) -o publish @(AdditionalProjectOptions, ' ')"

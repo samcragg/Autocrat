@@ -1,6 +1,6 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <AutocratCompiler>$(MSBuildThisFileDirectory)../tasks/netcoreapp3.1/Autocrat.Compiler.dll</AutocratCompiler>
+    <AutocratCompiler>$(MSBuildThisFileDirectory)../tools/Autocrat.Compiler.dll</AutocratCompiler>
     <AutocratManagedProject>ManagedToNative.csproj</AutocratManagedProject>
     <AutocratOutputDirectory>$(MSBuildProjectDirectory)/obj/autocrat/</AutocratOutputDirectory>
     <AutocratOutputAssembly>$(AutocratOutputDirectory)AutocratGeneratedAssembly.dll</AutocratOutputAssembly>
@@ -9,6 +9,5 @@
 
   <ItemGroup>
     <AutocratProjectFiles Include="$(MSBuildThisFileDirectory)../content/$(AutocratManagedProject)"/>
-    <AutocratProjectFiles Include="$(MSBuildThisFileDirectory)../content/nuget.config"/>
   </ItemGroup>
 </Project>
