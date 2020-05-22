@@ -29,7 +29,7 @@ namespace Autocrat.Compiler.CodeGeneration
         ////     };
         ////     return known_methods.at(handle);
         //// }
-        private readonly List<(string name, string declaration)> exports =
+        private readonly List<(string Name, string Declaration)> exports =
             new List<(string, string)>();
 
         /// <summary>

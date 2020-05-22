@@ -26,7 +26,7 @@ namespace Autocrat.NativeAdapters
         {
             IntPtr handle = NativeHelpers.GetHandle<T>();
             object? worker = LoadObjectGuid(handle, id);
-            while (worker == null)
+            while (worker is null)
             {
                 await Task.Yield();
                 worker = LoadObjectGuid(handle, id);
@@ -41,7 +41,7 @@ namespace Autocrat.NativeAdapters
         {
             IntPtr handle = NativeHelpers.GetHandle<T>();
             object? worker = LoadObjectInt64(handle, id);
-            while (worker == null)
+            while (worker is null)
             {
                 await Task.Yield();
                 worker = LoadObjectInt64(handle, id);
@@ -56,7 +56,7 @@ namespace Autocrat.NativeAdapters
         {
             IntPtr handle = NativeHelpers.GetHandle<T>();
             object? worker = LoadObjectString(handle, id);
-            while (worker == null)
+            while (worker is null)
             {
                 await Task.Yield();
                 worker = LoadObjectString(handle, id);

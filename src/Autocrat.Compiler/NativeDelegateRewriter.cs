@@ -68,10 +68,14 @@ namespace Autocrat.Compiler
         public virtual ArgumentSyntax TransformArgument(ArgumentSyntax argument)
         {
             TypeInfo typeInfo = this.model.GetTypeInfo(argument.Expression);
-            string? signature;
             if ((typeInfo.ConvertedType is null) ||
-                (typeInfo.ConvertedType.TypeKind != TypeKind.Delegate) ||
-                ((signature = GetNativeSignature(typeInfo.ConvertedType)) == null))
+                (typeInfo.ConvertedType.TypeKind != TypeKind.Delegate))
+            {
+                return argument;
+            }
+
+            string? signature = GetNativeSignature(typeInfo.ConvertedType);
+            if (signature is null)
             {
                 return argument;
             }

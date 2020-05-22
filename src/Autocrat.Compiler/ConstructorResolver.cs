@@ -55,7 +55,7 @@ namespace Autocrat.Compiler
                          .OrderByDescending(p => p.Length)
                          .FirstOrDefault();
 
-            if ((constructorParameters == null) || (constructorParameters.Length == 0))
+            if (constructorParameters.Length == 0)
             {
                 return Array.Empty<ITypeSymbol?>();
             }

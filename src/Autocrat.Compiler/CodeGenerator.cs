@@ -155,12 +155,9 @@ int main()
         private void RewriteInitializers(ServiceFactory factory, Compilation compilation)
         {
             this.logger.Info("Rewriting " + nameof(IInitializer) + "s");
-            INamedTypeSymbol? initializer = compilation.GetTypeByMetadataName(
-                "Autocrat.Abstractions." + nameof(IInitializer));
-            if (initializer == null)
-            {
-                throw new InvalidOperationException("Autocrat.Abstractions assembly is not loaded.");
-            }
+            INamedTypeSymbol initializer =
+                compilation.GetTypeByMetadataName("Autocrat.Abstractions." + nameof(IInitializer))
+                ?? throw new InvalidOperationException("Autocrat.Abstractions assembly is not loaded.");
 
             InterfaceResolver interfaceResolver = factory.GetInterfaceResolver();
             InitializerGenerator generator = factory.CreateInitializerGenerator();

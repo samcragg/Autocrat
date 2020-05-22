@@ -51,7 +51,7 @@ namespace Autocrat.Compiler.CodeGeneration
         // not specified.
         private readonly InstanceBuilder instanceBuilder;
 
-        private readonly List<(INamedTypeSymbol type, IMethodSymbol method)> methods =
+        private readonly List<(INamedTypeSymbol, IMethodSymbol)> methods =
             new List<(INamedTypeSymbol, IMethodSymbol)>();
 
         /// <summary>

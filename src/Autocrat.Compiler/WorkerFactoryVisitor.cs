@@ -29,12 +29,9 @@ namespace Autocrat.Compiler
         /// <param name="compilation">The compilation to visit.</param>
         public WorkerFactoryVisitor(Compilation compilation)
         {
-            INamedTypeSymbol? workerFactory = compilation.GetTypeByMetadataName(
-                "Autocrat.Abstractions." + nameof(IWorkerFactory));
-            if (workerFactory == null)
-            {
-                throw new InvalidOperationException("Autocrat.Abstractions assembly is not loaded.");
-            }
+            INamedTypeSymbol workerFactory =
+                compilation.GetTypeByMetadataName("Autocrat.Abstractions." + nameof(IWorkerFactory))
+                ?? throw new InvalidOperationException("Autocrat.Abstractions assembly is not loaded.");
 
             this.workerFactoryInterface = workerFactory;
             foreach (SyntaxTree tree in compilation.SyntaxTrees)

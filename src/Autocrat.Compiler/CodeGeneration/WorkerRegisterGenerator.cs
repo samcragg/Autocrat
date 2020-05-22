@@ -117,15 +117,15 @@ namespace Autocrat.Compiler.CodeGeneration
 
         private MemberDeclarationSyntax CreateRegisterMethod()
         {
-            static StatementSyntax CallRegister((TypeSyntax type, int handle) value)
+            static StatementSyntax CallRegister((TypeSyntax Type, int Handle) value)
             {
                 GenericNameSyntax method = GenericName("RegisterConstructor").WithTypeArgumentList(
-                    TypeArgumentList(SingletonSeparatedList(value.type)));
+                    TypeArgumentList(SingletonSeparatedList(value.Type)));
 
                 ArgumentSyntax methodHandle = Argument(
                     LiteralExpression(
                         SyntaxKind.NumericLiteralExpression,
-                        Literal(value.handle)));
+                        Literal(value.Handle)));
 
                 return ExpressionStatement(
                     InvocationExpression(

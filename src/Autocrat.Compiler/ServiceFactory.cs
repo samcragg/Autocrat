@@ -92,7 +92,7 @@ namespace Autocrat.Compiler
         /// <returns>An instance of the <see cref="ConstructorResolver"/> class.</returns>
         public virtual ConstructorResolver GetConstructorResolver()
         {
-            if (this.constructorResolver == null)
+            if (this.constructorResolver is null)
             {
                 this.constructorResolver = new ConstructorResolver(
                     this.compilation,
@@ -109,7 +109,7 @@ namespace Autocrat.Compiler
         /// <returns>An instance of the <see cref="InterfaceResolver"/> class.</returns>
         public virtual InterfaceResolver GetInterfaceResolver()
         {
-            if (this.interfaceResolver == null)
+            if (this.interfaceResolver is null)
             {
                 this.interfaceResolver = new InterfaceResolver(
                     this.GetKnownTypes());
@@ -124,7 +124,7 @@ namespace Autocrat.Compiler
         /// <returns>An instance of the <see cref="ManagedCallbackGenerator"/> class.</returns>
         public virtual ManagedCallbackGenerator GetManagedCallbackGenerator()
         {
-            if (this.managedCallbackGenerator == null)
+            if (this.managedCallbackGenerator is null)
             {
                 this.managedCallbackGenerator = new ManagedCallbackGenerator(
                     this.CreateInstanceBuilder,
@@ -155,7 +155,7 @@ namespace Autocrat.Compiler
 
         private IKnownTypes GetKnownTypes()
         {
-            if (this.knownTypes == null)
+            if (this.knownTypes is null)
             {
                 var typeVisitor = new NamedTypeVisitor();
                 typeVisitor.Visit(this.compilation.GlobalNamespace);
