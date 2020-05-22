@@ -4,6 +4,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0AD2F87E-7081-4D98-907D-37DE3AF727D6}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.build.props = src\Directory.build.props
+		src\GlobalSuppressions.cs = src\GlobalSuppressions.cs
+		src\stylecop.json = src\stylecop.json
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Abstractions", "src\Autocrat.Abstractions\Autocrat.Abstractions.csproj", "{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}"
 EndProject
@@ -14,6 +19,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.NativeAdapters", "src\Autocrat.NativeAdapters\Autocrat.NativeAdapters.csproj", "{E76A0C65-8E56-4EC5-B77F-9CD63EB530E0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F7F91C1F-220D-494A-A575-A5B52D654F26}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.build.props = tests\Directory.build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abstractions.Tests", "tests\Abstractions.Tests\Abstractions.Tests.csproj", "{6511D618-BE95-4AD5-82A4-81D67AE86F3C}"
 EndProject
