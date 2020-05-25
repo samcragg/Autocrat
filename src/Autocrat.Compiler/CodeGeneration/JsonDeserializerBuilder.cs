@@ -35,7 +35,6 @@ namespace Autocrat.Compiler.CodeGeneration
         internal const string ReadMethodName = "Read";
 
         private readonly SimpleNameSyntax classType;
-        private readonly SymbolDisplayFormat displayFormat = SymbolDisplayFormat.CSharpErrorMessageFormat;
         private readonly ConfigGenerator generator;
         private readonly IdentifierNameSyntax instanceField;
         private readonly List<IPropertySymbol> properties = new List<IPropertySymbol>();
@@ -49,7 +48,7 @@ namespace Autocrat.Compiler.CodeGeneration
         {
             this.generator = generator;
             this.classType = (SimpleNameSyntax)ParseName(
-                classType.ToDisplayString(this.displayFormat));
+                RoslynHelper.GetString(classType));
 
             this.instanceField = IdentifierName("instance");
         }
@@ -455,7 +454,7 @@ namespace Autocrat.Compiler.CodeGeneration
             }
 
             TypeSyntax elementType = ParseTypeName(
-                elementTypeSymbol.ToDisplayString(this.displayFormat));
+                RoslynHelper.GetString(elementTypeSymbol));
 
             //// if (reader.TokenType != JsonTokenType.StartArray)
             ////     throw new FormatException("Missing start array token")
@@ -505,7 +504,7 @@ namespace Autocrat.Compiler.CodeGeneration
             INamedTypeSymbol propertyType)
         {
             TypeSyntax enumType = ParseTypeName(
-                propertyType.ToDisplayString(this.displayFormat));
+                RoslynHelper.GetString(propertyType));
 
             StatementSyntax ConvertEnumValue(string member)
             {
@@ -516,7 +515,7 @@ namespace Autocrat.Compiler.CodeGeneration
                         target,
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            ParseName(propertyType.ToDisplayString(this.displayFormat)),
+                            ParseName(RoslynHelper.GetString(propertyType)),
                             IdentifierName(member))));
             }
 

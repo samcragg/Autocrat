@@ -68,6 +68,16 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Converts the symbol to a string representation.
+        /// </summary>
+        /// <param name="symbol">The type symbol.</param>
+        /// <returns>A formatted string representation of the symbol.</returns>
+        public static string GetString(ITypeSymbol symbol)
+        {
+            return symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
+        }
+
+        /// <summary>
         /// Determines whether the specified symbol equals the specified type.
         /// </summary>
         /// <typeparam name="T">The type to compare to.</typeparam>
