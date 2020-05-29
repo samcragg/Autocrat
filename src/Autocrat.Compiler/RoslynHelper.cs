@@ -86,9 +86,10 @@ namespace Autocrat.Compiler
         /// <c>true</c> if the type and symbol have the same name and namespace;
         /// otherwise, <c>false</c>.
         /// </returns>
-        public static bool IsOfType<T>(INamedTypeSymbol symbol)
+        public static bool IsOfType<T>(INamedTypeSymbol? symbol)
         {
-            return string.Equals(symbol.Name, typeof(T).Name, StringComparison.Ordinal) &&
+            return (symbol != null) &&
+                   string.Equals(symbol.Name, typeof(T).Name, StringComparison.Ordinal) &&
                    string.Equals(symbol.ContainingNamespace.ToDisplayString(), typeof(T).Namespace, StringComparison.Ordinal);
         }
     }
