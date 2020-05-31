@@ -92,7 +92,7 @@ namespace Autocrat.Compiler
             {
                 return this.getConfigRoot;
             }
-            else if (this.properties.TryGetValue(type, out string property))
+            else if (this.properties.TryGetValue(type, out string? property))
             {
                 return AccessProperty(this.getConfigRoot, property);
             }

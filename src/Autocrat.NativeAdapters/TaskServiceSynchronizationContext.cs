@@ -31,7 +31,7 @@ namespace Autocrat.NativeAdapters
         }
 
         /// <inheritdoc />
-        public unsafe override void Post(SendOrPostCallback d, object state)
+        public unsafe override void Post(SendOrPostCallback d, object? state)
         {
             NativeMethods.TaskEnqueue(
                 NativeHelpers.GetObject(__makeref(d)),
