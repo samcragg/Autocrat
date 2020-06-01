@@ -1,5 +1,6 @@
 ﻿namespace NativeAdapters.Tests
 {
+    using System.Text.Json;
     using System.Threading;
     using Autocrat.NativeAdapters;
     using FluentAssertions;
@@ -26,6 +27,28 @@
 
                 SynchronizationContext.Current
                     .Should().BeOfType<TaskServiceSynchronizationContext>();
+            }
+        }
+
+        [Collection(nameof(ConfigService))]
+        public sealed class LoadConfigurationTests : ManagedExportsTests
+        {
+            [Fact]
+            public void ShouldCallTheConfigService()
+            {
+                try
+                {
+                    bool loadCalled = false;
+                    ConfigService.Initialize((ref Utf8JsonReader reader) => loadCalled = true);
+
+                    ManagedExports.LoadConfiguration(new byte[0]);
+
+                    loadCalled.Should().BeTrue();
+                }
+                finally
+                {
+                    ConfigService.Initialize(null);
+                }
             }
         }
     }
