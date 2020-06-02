@@ -25,9 +25,9 @@ namespace Autocrat.Compiler
     internal class CodeGenerator
     {
         private const string CallbackAdapterClassName = "NativeCallableMethods";
-        private readonly ILogger logger = LogManager.GetLogger();
         private readonly List<MethodDeclarationSyntax> callbackMethods = new List<MethodDeclarationSyntax>();
         private readonly List<SyntaxTree> generatedCode = new List<SyntaxTree>();
+        private readonly ILogger logger = LogManager.GetLogger();
         private readonly HashSet<MetadataReference> references = new HashSet<MetadataReference>();
         private readonly HashSet<INamedTypeSymbol> workerTypes = new HashSet<INamedTypeSymbol>();
 
@@ -50,6 +50,7 @@ namespace Autocrat.Compiler
             ServiceFactory factory = ServiceFactory(compilation);
 
             this.generatedCode.AddRange(compilation.SyntaxTrees);
+            this.AddConfiguration(factory);
             this.RewriteInitializers(factory, compilation);
             this.RewriteNativeAdapters(factory);
             this.SaveCompilationMetadata(compilation);
@@ -122,6 +123,23 @@ int main()
                 .WithMembers(SingletonList<MemberDeclarationSyntax>(nativeClass)));
 
             return compilation.AddSyntaxTrees(tree);
+        }
+
+        private void AddConfiguration(ServiceFactory factory)
+        {
+            ClassDeclarationSyntax? configClass = factory
+                .GetConfigResolver()
+                .CreateConfigurationClass();
+
+            if (!(configClass is null))
+            {
+                ConfigGenerator generator = factory.GetConfigGenerator();
+                CompilationUnitSyntax compilation =
+                    generator.Generate()
+                             .AddMembers(configClass);
+
+                this.generatedCode.Add(SyntaxTree(compilation));
+            }
         }
 
         private CSharpCompilation AddRegisterWorkerTypes(CSharpCompilation compilation)

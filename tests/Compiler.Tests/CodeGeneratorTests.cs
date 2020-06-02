@@ -13,6 +13,7 @@
     using NSubstitute;
     using Xunit;
 
+    [Collection(nameof(CodeGenerator))]
     public class CodeGeneratorTests : IDisposable
     {
         private readonly ServiceFactory factory;
@@ -35,6 +36,27 @@
 
         public sealed class EmitAssemblyTests : CodeGeneratorTests
         {
+            [Fact]
+            public void ShouldIncludeTheConfigurationClasses()
+            {
+                CompilationUnitSyntax serializers = SyntaxFactory.ParseCompilationUnit(
+                    @"public class TestSerializer { }");
+
+                var configClass = (ClassDeclarationSyntax)SyntaxFactory.ParseMemberDeclaration(
+                    @"public class TestConfig { }");
+
+                ConfigResolver resolver = this.factory.GetConfigResolver();
+                resolver.CreateConfigurationClass().Returns(configClass);
+
+                ConfigGenerator generator = this.factory.GetConfigGenerator();
+                generator.Generate().Returns(serializers);
+
+                Assembly assembly = this.EmitCode();
+
+                assembly.GetType("TestConfig").Should().NotBeNull();
+                assembly.GetType("TestSerializer").Should().NotBeNull();
+            }
+
             [Fact]
             public void ShouldIncludeTheOriginalCode()
             {

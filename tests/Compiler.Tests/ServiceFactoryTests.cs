@@ -50,6 +50,30 @@
             }
         }
 
+        public sealed class GetConfigGeneratorTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnTheSameInstance()
+            {
+                ConfigGenerator result1 = this.factory.GetConfigGenerator();
+                ConfigGenerator result2 = this.factory.GetConfigGenerator();
+
+                result1.Should().BeSameAs(result2);
+            }
+        }
+
+        public sealed class GetConfigResolverTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnTheSameInstance()
+            {
+                ConfigResolver result1 = this.factory.GetConfigResolver();
+                ConfigResolver result2 = this.factory.GetConfigResolver();
+
+                result1.Should().BeSameAs(result2);
+            }
+        }
+
         public sealed class GetConstructorResolverTests : ServiceFactoryTests
         {
             [Fact]

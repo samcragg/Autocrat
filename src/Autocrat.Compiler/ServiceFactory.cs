@@ -17,6 +17,8 @@ namespace Autocrat.Compiler
     {
         private static readonly Lazy<NativeImportGenerator> NativeImportGenerator = new Lazy<NativeImportGenerator>();
         private readonly Compilation compilation;
+        private ConfigGenerator? configGenerator;
+        private ConfigResolver? configResolver;
         private ConstructorResolver? constructorResolver;
         private InterfaceResolver? interfaceResolver;
         private IKnownTypes? knownTypes;
@@ -84,6 +86,36 @@ namespace Autocrat.Compiler
                 this.CreateInstanceBuilder,
                 factoryTypes,
                 this.GetNativeImportGenerator());
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ConfigGenerator"/> instance.
+        /// </summary>
+        /// <returns>An instance of the <see cref="ConfigGenerator"/> class.</returns>
+        public virtual ConfigGenerator GetConfigGenerator()
+        {
+            if (this.configGenerator is null)
+            {
+                this.configGenerator = new ConfigGenerator();
+            }
+
+            return this.configGenerator;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ConfigResolver"/> instance.
+        /// </summary>
+        /// <returns>An instance of the <see cref="ConfigResolver"/> class.</returns>
+        public virtual ConfigResolver GetConfigResolver()
+        {
+            if (this.configResolver is null)
+            {
+                this.configResolver = new ConfigResolver(
+                    this.GetKnownTypes(),
+                    this.GetConfigGenerator());
+            }
+
+            return this.configResolver;
         }
 
         /// <summary>
