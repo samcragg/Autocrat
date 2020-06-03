@@ -48,6 +48,20 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="ConstructorResolver"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected ConstructorResolver()
+        {
+            this.compilation = null!;
+            this.configResolver = null!;
+            this.interfaceResolver = null!;
+            this.knownTypes = null!;
+        }
+
+        /// <summary>
         /// Finds the classes for injecting into the constructor.
         /// </summary>
         /// <param name="classType">The type to find the constructor for.</param>

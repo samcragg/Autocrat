@@ -8,6 +8,7 @@ namespace Autocrat.Compiler.CodeGeneration
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using Autocrat.Compiler.Logging;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -23,10 +24,11 @@ namespace Autocrat.Compiler.CodeGeneration
         private readonly ConstructorResolver constructorResolver;
         private readonly List<StatementSyntax> declarations = new List<StatementSyntax>();
         private readonly InterfaceResolver interfaceResolver;
-        private readonly ILogger logger = LogManager.GetLogger();
 
         private readonly HashSet<string> localNames =
             new HashSet<string>(StringComparer.Ordinal);
+
+        private readonly ILogger logger = LogManager.GetLogger();
 
         private readonly Dictionary<ITypeSymbol, IdentifierNameSyntax?> variables =
             new Dictionary<ITypeSymbol, IdentifierNameSyntax?>();
@@ -143,21 +145,24 @@ namespace Autocrat.Compiler.CodeGeneration
 
         private IEnumerable<SyntaxNode> GetConstructorArguments(INamedTypeSymbol type)
         {
-            foreach (ITypeSymbol? parameter in this.constructorResolver.GetParameters(type))
+            SyntaxNode ConvertParameter(object parameter)
             {
-                if (parameter is null)
+                return parameter switch
                 {
-                    yield return Argument(LiteralExpression(SyntaxKind.NullLiteralExpression));
-                }
-                else if (parameter is IArrayTypeSymbol arrayType)
-                {
-                    yield return Argument(this.DeclareArray((INamedTypeSymbol)arrayType.ElementType));
-                }
-                else if (parameter is INamedTypeSymbol namedType)
-                {
-                    yield return Argument(this.GenerateForType(namedType));
-                }
+                    ExpressionSyntax expression =>
+                        Argument(expression),
+
+                    IArrayTypeSymbol arrayType =>
+                        Argument(this.DeclareArray((INamedTypeSymbol)arrayType.ElementType)),
+
+                    INamedTypeSymbol namedType =>
+                        Argument(this.GenerateForType(namedType)),
+
+                    _ => throw new InvalidOperationException("Unknown parameter type: " + parameter),
+                };
             }
+
+            return this.constructorResolver.GetParameters(type).Select(ConvertParameter);
         }
     }
 }

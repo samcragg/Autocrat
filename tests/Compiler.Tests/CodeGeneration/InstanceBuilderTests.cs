@@ -47,7 +47,7 @@ public class SimpleClass
             this.derivedClass = this.compilation.GetTypeByMetadataName("DerivedClass");
             this.simpleClass = this.compilation.GetTypeByMetadataName("SimpleClass");
 
-            this.constructorResolver = Substitute.For<ConstructorResolver>(new object[] { null, null, null });
+            this.constructorResolver = Substitute.For<ConstructorResolver>();
             this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<IKnownTypes>());
             this.builder = new InstanceBuilder(this.constructorResolver, this.interfaceResolver);
         }
@@ -125,15 +125,15 @@ public static class WrapperClass
             }
 
             [Fact]
-            public void ShouldInjectNulls()
+            public void ShouldInjectExpressions()
             {
                 this.constructorResolver.GetParameters(this.dependency)
-                    .Returns(new ITypeSymbol[] { null });
+                    .Returns(new[] { SyntaxFactory.ParseExpression("123") });
 
                 IdentifierNameSyntax identifier = this.builder.GenerateForType(this.dependency);
 
                 dynamic instance = this.GetLocal(identifier);
-                ((object)instance.Injected).Should().BeNull();
+                ((object)instance.Injected).Should().Be(123);
             }
 
             [Fact]
@@ -143,6 +143,16 @@ public static class WrapperClass
                 IdentifierNameSyntax second = this.builder.GenerateForType(this.simpleClass);
 
                 second.Should().BeSameAs(first);
+            }
+
+            [Fact]
+            public void ShouldThrowForUnknownParameterTypes()
+            {
+                this.constructorResolver.GetParameters(this.dependency)
+                    .Returns(new[] { "123" });
+
+                this.builder.Invoking(x => x.GenerateForType(this.dependency))
+                    .Should().Throw<InvalidOperationException>();
             }
         }
     }
