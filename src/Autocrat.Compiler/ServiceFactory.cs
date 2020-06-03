@@ -129,6 +129,7 @@ namespace Autocrat.Compiler
                 this.constructorResolver = new ConstructorResolver(
                     this.compilation,
                     this.GetKnownTypes(),
+                    this.GetConfigResolver(),
                     this.GetInterfaceResolver());
             }
 

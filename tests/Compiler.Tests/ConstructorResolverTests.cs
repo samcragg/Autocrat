@@ -5,6 +5,8 @@
     using Autocrat.Compiler;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using NSubstitute;
     using Xunit;
 
@@ -12,6 +14,7 @@
     {
         private readonly INamedTypeSymbol abstractClass;
         private readonly INamedTypeSymbol arrayOfDependencies;
+        private readonly ConfigResolver configResolver;
         private readonly INamedTypeSymbol defaultConstructor;
         private readonly InterfaceResolver interfaceResolver;
         private readonly IKnownTypes knownTypes;
@@ -69,6 +72,8 @@ class SingleDependency
             this.multipleDependencies = compilation.GetTypeByMetadataName("MultipleDependencies");
             this.singleDependency = compilation.GetTypeByMetadataName("SingleDependency");
 
+            this.configResolver = Substitute.For<ConfigResolver>();
+
             this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<IKnownTypes>());
             this.interfaceResolver.FindClasses(null)
                 .ReturnsForAnyArgs(ci => new[] { (INamedTypeSymbol)ci.Args()[0] });
@@ -77,7 +82,11 @@ class SingleDependency
             this.knownTypes.FindClassForInterface(null)
                 .ReturnsForAnyArgs((ITypeSymbol)null);
 
-            this.resolver = new ConstructorResolver(compilation, this.knownTypes, this.interfaceResolver);
+            this.resolver = new ConstructorResolver(
+                compilation,
+                this.knownTypes,
+                this.configResolver,
+                this.interfaceResolver);
         }
 
         public sealed class GetParametersTests : ConstructorResolverTests
@@ -85,7 +94,7 @@ class SingleDependency
             [Fact]
             public void ShouldReturnAnEmptyArrayForDefaultConstructors()
             {
-                IReadOnlyList<ITypeSymbol> result = this.resolver.GetParameters(
+                IReadOnlyList<object> result = this.resolver.GetParameters(
                     this.defaultConstructor);
 
                 result.Should().BeEmpty();
@@ -94,7 +103,7 @@ class SingleDependency
             [Fact]
             public void ShouldReturnArrayCompatibleDependencies()
             {
-                IReadOnlyList<ITypeSymbol> result = this.resolver.GetParameters(
+                IReadOnlyList<object> result = this.resolver.GetParameters(
                     this.multipleDependencies);
 
                 this.interfaceResolver.DidNotReceiveWithAnyArgs().FindClasses(null);
@@ -106,7 +115,7 @@ class SingleDependency
             [Fact]
             public void ShouldReturnArrayDependencies()
             {
-                IReadOnlyList<ITypeSymbol> result = this.resolver.GetParameters(
+                IReadOnlyList<object> result = this.resolver.GetParameters(
                     this.arrayOfDependencies);
 
                 this.interfaceResolver.DidNotReceiveWithAnyArgs().FindClasses(null);
@@ -116,30 +125,45 @@ class SingleDependency
             }
 
             [Fact]
+            public void ShouldReturnConfigurationTypes()
+            {
+                ExpressionSyntax expression = SyntaxFactory.ParseExpression("default");
+                this.configResolver.AccessConfig(this.abstractClass)
+                    .Returns(expression);
+
+                IReadOnlyList<object> result = this.resolver.GetParameters(
+                    this.singleDependency);
+
+                result.Should().ContainSingle().Which.Should().BeSameAs(expression);
+            }
+
+            [Fact]
             public void ShouldReturnDependencyTypes()
             {
-                IReadOnlyList<ITypeSymbol> result = this.resolver.GetParameters(
+                IReadOnlyList<object> result = this.resolver.GetParameters(
                     this.singleDependency);
 
                 result.Should().ContainSingle().Which.Should().Be(this.abstractClass);
             }
 
             [Fact]
-            public void ShouldReturnNullForRewrittenInterfaces()
+            public void ShouldReturnNullExpressionForRewrittenInterfaces()
             {
                 this.knownTypes.FindClassForInterface(this.abstractClass)
                     .Returns(this.abstractClass);
 
-                IReadOnlyList<ITypeSymbol> result = this.resolver.GetParameters(
+                IReadOnlyList<object> result = this.resolver.GetParameters(
                     this.singleDependency);
 
-                result.Should().ContainSingle().Which.Should().BeNull();
+                result.Should().ContainSingle()
+                    .Which.Should().BeAssignableTo<ExpressionSyntax>()
+                    .Which.ToFullString().Should().Be("null");
             }
 
             [Fact]
             public void ShouldReturnTheConstructorWithTheMostParameters()
             {
-                IReadOnlyList<ITypeSymbol> result = this.resolver.GetParameters(
+                IReadOnlyList<object> result = this.resolver.GetParameters(
                     this.multipleConstructors);
 
                 result.Should().HaveCount(2);

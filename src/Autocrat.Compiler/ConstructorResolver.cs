@@ -10,6 +10,8 @@ namespace Autocrat.Compiler
     using System.Collections.Immutable;
     using System.Linq;
     using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Operations;
 
     /// <summary>
@@ -18,6 +20,7 @@ namespace Autocrat.Compiler
     internal class ConstructorResolver
     {
         private readonly Compilation compilation;
+        private readonly ConfigResolver configResolver;
         private readonly InterfaceResolver interfaceResolver;
         private readonly IKnownTypes knownTypes;
 
@@ -26,28 +29,33 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="compilation">Represents the compiler.</param>
         /// <param name="knownTypes">Contains the discovered types.</param>
+        /// <param name="configResolver">
+        /// Used to resolve classes representing configuration.
+        /// </param>
         /// <param name="interfaceResolver">
         /// Used to resolve classes implementing interfaces.
         /// </param>
         public ConstructorResolver(
             Compilation compilation,
             IKnownTypes knownTypes,
+            ConfigResolver configResolver,
             InterfaceResolver interfaceResolver)
         {
+            this.compilation = compilation;
+            this.configResolver = configResolver;
             this.interfaceResolver = interfaceResolver;
             this.knownTypes = knownTypes;
-            this.compilation = compilation;
         }
 
         /// <summary>
         /// Finds the classes for injecting into the constructor.
         /// </summary>
         /// <param name="classType">The type to find the constructor for.</param>
-        /// <returns>The types needed by the constructor.</returns>
+        /// <returns>The types or expressions needed by the constructor.</returns>
         /// <remarks>
         /// The types returned will be in the order expected by the constructor.
         /// </remarks>
-        public virtual IReadOnlyList<ITypeSymbol?> GetParameters(INamedTypeSymbol classType)
+        public virtual IReadOnlyList<object> GetParameters(INamedTypeSymbol classType)
         {
             ImmutableArray<IParameterSymbol> constructorParameters =
                 classType.Constructors
@@ -57,11 +65,11 @@ namespace Autocrat.Compiler
 
             if (constructorParameters.Length == 0)
             {
-                return Array.Empty<ITypeSymbol?>();
+                return Array.Empty<object>();
             }
             else
             {
-                var types = new List<ITypeSymbol?>(constructorParameters.Length);
+                var types = new List<object>(constructorParameters.Length);
                 types.AddRange(constructorParameters.Select(this.ResolveParameterType));
                 return types;
             }
@@ -96,32 +104,39 @@ namespace Autocrat.Compiler
             return null;
         }
 
-        private ITypeSymbol? ResolveParameterType(IParameterSymbol parameter)
+        private object ResolveClass(ITypeSymbol type)
+        {
+            IReadOnlyCollection<ITypeSymbol> classes =
+                this.interfaceResolver.FindClasses(type);
+
+            return classes.Count switch
+            {
+                0 => throw new InvalidOperationException(
+                       "Unable to find a class for the dependency " + type.ToDisplayString()),
+
+                1 => classes.First(),
+
+                _ => throw new InvalidOperationException(
+                        "Multiple dependencies found for " + type.ToDisplayString()),
+            };
+        }
+
+        private object ResolveParameterType(IParameterSymbol parameter)
         {
             ITypeSymbol? arrayType = this.GetArrayDependencyType(parameter.Type);
             if (arrayType != null)
             {
                 return arrayType;
             }
-
-            if (this.knownTypes.FindClassForInterface(parameter.Type) != null)
+            else if (this.knownTypes.FindClassForInterface(parameter.Type) != null)
             {
-                return null;
+                return SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
             }
-
-            IReadOnlyCollection<ITypeSymbol> classes = this.interfaceResolver.FindClasses(
-                parameter.Type);
-
-            return classes.Count switch
+            else
             {
-                0 => throw new InvalidOperationException(
-                       "Unable to find a class for the dependency " + parameter.Type.ToDisplayString()),
-
-                1 => classes.First(),
-
-                _ => throw new InvalidOperationException(
-                        "Multiple dependencies found for " + parameter.Type.ToDisplayString()),
-            };
+                ExpressionSyntax? configType = this.configResolver.AccessConfig(parameter.Type);
+                return configType ?? this.ResolveClass(parameter.Type);
+            }
         }
     }
 }
