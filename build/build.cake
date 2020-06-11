@@ -106,25 +106,13 @@ Task("RestoreGoogleTest")
     Run("repos/googletest/googletest/scripts", "python", "fuse_gtest_files.py", GetLibsFolder());
 });
 
-Task("RestoreGSL")
-    .Does(() =>
-{
-    CheckoutGitRepo(
-        "gsl",
-        "https://github.com/microsoft/GSL",
-        "",
-        "include/gsl");
-
-    CopyDirectory("repos/gsl/include", GetLibsFolder());
-});
-
 Task("RestoreSpdlog")
     .Does(() =>
 {
     CheckoutGitRepo(
         "spdlog",
         "https://github.com/gabime/spdlog",
-        "v1.4.2",
+        "v1.6.1",
         "include/spdlog");
 
     CopyDirectory("repos/spdlog/include", GetLibsFolder());
