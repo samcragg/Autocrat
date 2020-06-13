@@ -26,22 +26,22 @@ Task("BuildManaged")
 });
 
 Task("BuildNativeLinux")
+    .WithCriteria(IsRunningOnUnix())
     .Does(() =>
 {
     VerifyCommandSucceeded(Run(
         "../src/Autocrat.Bootstrap",
-        "wsl",
         "make"
     ));
 
     VerifyCommandSucceeded(Run(
         "../tests/Bootstrap.Tests",
-        "wsl",
         "make"
     ));
 });
 
 Task("BuildNativeWindows")
+    .WithCriteria(IsRunningOnWindows())
     .Does(() =>
 {
     var buildSettings = new MSBuildSettings
@@ -55,28 +55,6 @@ Task("BuildNativeWindows")
     };
     MSBuild("../src/Autocrat.Bootstrap/Autocrat.Bootstrap.vcxproj", buildSettings);
     MSBuild("../tests/Bootstrap.Tests/Bootstrap.Tests.vcxproj", buildSettings);
-});
-
-Task("RestoreNuGet")
-    .Does(() =>
-{
-    var restoreSettings = new DotNetCoreRestoreSettings
-    {
-        MSBuildSettings = new DotNetCoreMSBuildSettings
-        {
-            NoLogo = true,
-        },
-        NoDependencies = true,
-    };
-
-    IEnumerable<FilePath> projects =
-        GetFiles("../src/*/*.csproj").Concat(
-            GetFiles("../tests/*/*.csproj"));
-
-    Parallel.ForEach(projects, (FilePath project) =>
-    {
-        DotNetCoreRestore(project.FullPath, restoreSettings);
-    });
 });
 
 Task("RestoreCppMock")
@@ -106,6 +84,28 @@ Task("RestoreGoogleTest")
     Run("repos/googletest/googletest/scripts", "python", "fuse_gtest_files.py", GetLibsFolder());
 });
 
+Task("RestoreNuGet")
+    .Does(() =>
+{
+    var restoreSettings = new DotNetCoreRestoreSettings
+    {
+        MSBuildSettings = new DotNetCoreMSBuildSettings
+        {
+            NoLogo = true,
+        },
+        NoDependencies = true,
+    };
+
+    IEnumerable<FilePath> projects =
+        GetFiles("../src/*/*.csproj").Concat(
+            GetFiles("../tests/*/*.csproj"));
+
+    Parallel.ForEach(projects, (FilePath project) =>
+    {
+        DotNetCoreRestore(project.FullPath, restoreSettings);
+    });
+});
+
 Task("RestoreSpdlog")
     .Does(() =>
 {
@@ -118,34 +118,54 @@ Task("RestoreSpdlog")
     CopyDirectory("repos/spdlog/include", GetLibsFolder());
 });
 
+Task("RestoreTermColor")
+    .Does(() =>
+{
+    CheckoutGitRepo(
+        "termcolor",
+        "https://github.com/ikalnytskyi/termcolor",
+        "",
+        "include/termcolor");
+
+    CopyDirectory("repos/termcolor/include", GetLibsFolder());
+});
+
 Task("RunManagedTests")
     .Does(() =>
 {
     var testSettings = new DotNetCoreTestSettings
     {
+        ArgumentCustomization = args => args.Append("--nologo"),
         Configuration = configuration,
         NoBuild = true,
         NoRestore = true,
         Verbosity = DotNetCoreVerbosity.Minimal,
     };
-    
-    foreach (FilePath project in GetFiles("../tests/*/*.csproj"))
+
+    string[] projects =
     {
-        DotNetCoreTest(project.FullPath, testSettings);
+        "../tests/Abstractions.Tests/Abstractions.Tests.csproj",
+        "../tests/Compiler.Tests/Compiler.Tests.csproj",
+        "../tests/NativeAdapters.Tests/NativeAdapters.Tests.csproj",
+    };
+    foreach (string project in projects)
+    {
+        DotNetCoreTest(project, testSettings);
     };
 });
 
 Task("RunNativeLinuxTests")
+    .WithCriteria(IsRunningOnUnix())
     .Does(() =>
 {
     VerifyCommandSucceeded(Run(
         "../tests/Bootstrap.Tests",
-        "wsl",
         "make",
         "test"));
 });
 
 Task("RunNativeWindowsTests")
+    .WithCriteria(IsRunningOnWindows())
     .Does(() =>
 {
     VerifyCommandSucceeded(Run(
