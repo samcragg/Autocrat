@@ -5,7 +5,6 @@
 *.vcxproj.user
 bootstrap_results*.xml
 
-# Cake
-build/tools
-!build/tools/packages.config
+# Build output
+/build/packages
 /build/repos
