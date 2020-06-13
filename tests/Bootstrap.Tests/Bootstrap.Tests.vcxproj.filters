@@ -29,6 +29,7 @@
     <ClInclude Include="ManagedObjects.h">
       <Filter>gtest</Filter>
     </ClInclude>
+    <ClInclude Include="ConsoleTestPrinter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc">
@@ -150,5 +151,6 @@
     <ClCompile Include="tests\TaskServiceTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="ConsoleTestPrinter.cpp" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "ConsoleTestPrinter.h"
 #include "mock_services.h"
 
 mock_services mock_global_services;
@@ -26,5 +27,8 @@ int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
     testing::AddGlobalTestEnvironment(new Environment());
+    testing::TestEventListeners& listeners = testing::UnitTest::GetInstance()->listeners();
+    delete listeners.Release(listeners.default_result_printer());
+    listeners.Append(new ConsoleTestPrinter());
     return RUN_ALL_TESTS();
 }

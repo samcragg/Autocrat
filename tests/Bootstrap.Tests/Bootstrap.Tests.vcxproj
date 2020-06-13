@@ -78,6 +78,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <ClInclude Include="..\..\libs\gtest\gtest.h" />
+    <ClInclude Include="ConsoleTestPrinter.h" />
     <ClInclude Include="ManagedObjects.h" />
     <ClInclude Include="MemoryMonitor.h" />
     <ClInclude Include="mock_method_handles.h" />
@@ -100,6 +101,7 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\thread_pool.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\timer_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\worker_service.cpp" />
+    <ClCompile Include="ConsoleTestPrinter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ManagedObjects.cpp" />
     <ClCompile Include="MemoryMonitor.cpp" />

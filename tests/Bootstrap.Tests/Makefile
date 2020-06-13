@@ -42,6 +42,7 @@ TESTS = \
  tests/ThreadPoolTests.cpp \
  tests/TimerServiceTests.cpp \
  tests/WorkerServiceTests.cpp \
+ ConsoleTestPrinter.cpp \
  ManagedObjects.cpp \
  MemoryMonitor.cpp \
  main.cpp \
