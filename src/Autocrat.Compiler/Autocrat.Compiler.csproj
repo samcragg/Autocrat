@@ -3,6 +3,7 @@
     <NoWarn>$(NoWarn);NU5100</NoWarn>    
     <NuspecFile>Autocrat.Compiler.nuspec</NuspecFile>
     <NuspecProperties>id=$(AssemblyName);version=$(Version)</NuspecProperties>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
