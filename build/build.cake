@@ -57,6 +57,49 @@ Task("BuildNativeWindows")
     MSBuild("../tests/Bootstrap.Tests/Bootstrap.Tests.vcxproj", buildSettings);
 });
 
+Task("Clean")
+    .Does(() =>
+{
+    CleanDirectories("../src/**/bin");
+    CleanDirectories("../src/**/obj");
+    CleanDirectories("../tests/**/bin");
+    CleanDirectories("../tests/**/obj");
+});
+
+Task("Package")
+    .IsDependentOn("Publish")
+    .Does(() =>
+{
+    var settings = new DotNetCorePackSettings
+    {
+        ArgumentCustomization = args => args.Append("--nologo"),
+        Configuration = configuration,
+        NoBuild = true,
+        NoDependencies = true,
+        NoRestore = true,
+        OutputDirectory = "packages",
+    };
+
+    DotNetCorePack("../src/Autocrat.Abstractions/Autocrat.Abstractions.csproj", settings);
+    DotNetCorePack("../src/Autocrat.Compiler/Autocrat.Compiler.csproj", settings);
+});
+
+Task("Publish")
+    .Does(() =>
+{
+    var settings = new DotNetCorePublishSettings
+    {
+        ArgumentCustomization = args => args.Append("--nologo"),
+        Configuration = configuration,
+        NoBuild = true,
+        NoDependencies = true,
+        NoRestore = true,
+        OutputDirectory = "../src/Autocrat.Compiler/bin/Publish",
+    };
+
+    DotNetCorePublish("../src/Autocrat.Compiler/Autocrat.Compiler.csproj", settings);
+});
+
 Task("RestoreCppMock")
     .Does(() =>
 {
@@ -187,6 +230,7 @@ Task("RunTests")
 Task("Default")
     .IsDependentOn("RestoreNuGet")
     .IsDependentOn("Build")
-    .IsDependentOn("RunTests");
+    .IsDependentOn("RunTests")
+    .IsDependentOn("Package");
 
 RunTarget(Argument("target", "Default"));
