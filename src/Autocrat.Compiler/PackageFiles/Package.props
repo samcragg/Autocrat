@@ -1,7 +1,9 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <AutocratCompiler>$(MSBuildThisFileDirectory)../tools/Autocrat.Compiler.dll</AutocratCompiler>
+    <AutocratContentDir>$(MSBuildThisFileDirectory)../content/</AutocratContentDir>
     <AutocratManagedProject>ManagedToNative.csproj</AutocratManagedProject>
+    <AutocratNativeAdapters>$(MSBuildThisFileDirectory)../tools/Autocrat.NativeAdapters.dll</AutocratNativeAdapters>
     <AutocratOutputDirectory>$(MSBuildProjectDirectory)/obj/autocrat/</AutocratOutputDirectory>
     <AutocratOutputAssembly>$(AutocratOutputDirectory)AutocratGeneratedAssembly.dll</AutocratOutputAssembly>
     <AutocratOutputSource>$(AutocratOutputDirectory)source.cpp</AutocratOutputSource>

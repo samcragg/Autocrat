@@ -8,6 +8,7 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Runtime.InteropServices;
     using System.Text;
     using Autocrat.Abstractions;
     using Autocrat.Compiler.CodeGeneration;
@@ -44,9 +45,6 @@ namespace Autocrat.Compiler
         /// <param name="compilation">Contains the compiled information.</param>
         public virtual void Add(Compilation compilation)
         {
-            compilation = compilation.AddReferences(
-                MetadataReference.CreateFromFile(typeof(CodeGenerator).Assembly.Location));
-
             ServiceFactory factory = ServiceFactory(compilation);
 
             this.generatedCode.AddRange(compilation.SyntaxTrees);
@@ -105,6 +103,12 @@ int main()
 }";
             byte[] bytes = Encoding.UTF8.GetBytes(MainStub);
             destination.Write(bytes);
+        }
+
+        private static IEnumerable<MetadataReference> GetAutocratReferences()
+        {
+            yield return MetadataReference.CreateFromFile(typeof(ConfigurationAttribute).Assembly.Location);
+            yield return MetadataReference.CreateFromFile(typeof(NativeCallableAttribute).Assembly.Location);
         }
 
         private CSharpCompilation AddCallbackAdapters(CSharpCompilation compilation)
@@ -195,6 +199,7 @@ int main()
 
         private void SaveCompilationMetadata(Compilation compilation)
         {
+            this.references.UnionWith(GetAutocratReferences());
             foreach (MetadataReference reference in compilation.References)
             {
                 this.references.Add(reference);

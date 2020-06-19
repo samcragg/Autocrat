@@ -32,7 +32,7 @@
   <!-- Ensure the types in our generated assembly are sent to the IL compiler too -->
   <ItemGroup>
     <IlcArg Include="$(AutocratOutputAssembly)" />
-    <IlcArg Include="Autocrat.NativeAdapters.dll" />
+    <IlcArg Include="$(AutocratNativeAdapters)" />
   </ItemGroup>
 
   <Import Condition="'$([MSBuild]::IsOSPlatform(Linux))' == 'true'"

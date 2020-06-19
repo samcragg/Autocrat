@@ -6,10 +6,13 @@
           AfterTargets="Publish"
           DependsOnTargets="ResolveAssemblyReferences;_GetAssemblyInfoFromTemplateFile">
     <ItemGroup>
-      <AdditionalProjectOptions Include="/p:AutocratContentDir=&quot;$(MSBuildThisFileDirectory)../content/&quot;" />
+      <AdditionalProjectOptions Include="/p:AutocratContentDir=&quot;$(AutocratContentDir)&quot;" />
+      <AdditionalProjectOptions Include="/p:AutocratNativeAdapters=&quot;$(AutocratNativeAdapters)&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
       <AdditionalProjectOptions Include="/p:AutocratOutputSource=&quot;$(AutocratOutputSource)&quot;" />
-      <AdditionalProjectOptions Include="/p:OutputName=&quot;$(ProjectDir)$(PublishDir)$(TargetName)&quot;" />
+
+      <!-- Use the absolute path for the output so that it's relative to the current project not the temp one -->
+      <AdditionalProjectOptions Include="/p:OutputName=&quot;$([System.IO.Path]::GetFullPath('$(PublishDir)'))$(TargetName)&quot;" />
 
       <!-- Make sure all the dependencies are available -->
       <PublishedFiles Include="$(PublishDir)*.*" />
