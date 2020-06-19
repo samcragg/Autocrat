@@ -5,6 +5,10 @@
 *.vcxproj.user
 bootstrap_results*.xml
 
+# SpecFlow
+SpecFlow/
+*.feature.cs
+
 # Build output
 /build/packages
 /build/repos

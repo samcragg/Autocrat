@@ -49,6 +49,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{81
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimerExample", "Examples\TimerExample\TimerExample.csproj", "{EED9D604-FE9D-4C23-A9C3-86A0C5736D99}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integration.Tests", "tests\Integration.Tests\Integration.Tests.csproj", "{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,10 @@ Global
 		{EED9D604-FE9D-4C23-A9C3-86A0C5736D99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EED9D604-FE9D-4C23-A9C3-86A0C5736D99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EED9D604-FE9D-4C23-A9C3-86A0C5736D99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -105,6 +111,7 @@ Global
 		{A4783C54-DFE0-4FBC-86E9-2751EF0C06A7} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
 		{8FA0A766-10A4-48DA-A4B7-6825899AB144} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
 		{EED9D604-FE9D-4C23-A9C3-86A0C5736D99} = {81F2A8FA-5DEC-4780-B3CC-0C67CFA685F0}
+		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4EF8B246-D856-451C-AB5D-4C4821DBE8A4}
