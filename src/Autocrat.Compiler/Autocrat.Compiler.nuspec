@@ -10,7 +10,6 @@
   </metadata>
 
   <files>
-    <file src="..\Autocrat.Bootstrap\bin\*" target="content/bootstrap" />
     <file src="bin\Publish\*.dll" target="tools" />
     <file src="bin\Publish\*.json" target="tools" />
     <file src="PackageFiles\ManagedToNative.csproj" target="content" />

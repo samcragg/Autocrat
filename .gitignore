@@ -10,5 +10,6 @@ SpecFlow/
 *.feature.cs
 
 # Build output
+/build/CoreRT
 /build/packages
 /build/repos

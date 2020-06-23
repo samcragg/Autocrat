@@ -1,6 +1,8 @@
 #load "utilities.cake"
 
 string configuration = Argument("configuration", "Release");
+string coreRTVersion = "0.1";
+string environmentName = IsRunningOnWindows() ? "Windows" : "Linux";
 
 Task("BuildManaged")
     .Does(() =>
@@ -66,6 +68,15 @@ Task("Clean")
     CleanDirectories("../tests/**/obj");
 });
 
+Task("FetchCoreRT")
+    .Does(() =>
+{
+    CleanDirectories("CoreRT");
+    FilePath archive = DownloadFile(
+        $"https://github.com/samcragg/corert/releases/download/v{coreRTVersion}/PackageFiles.{environmentName}.zip");
+    System.IO.Compression.ZipFile.ExtractToDirectory(archive.FullPath, "CoreRT");
+});
+
 Task("Package")
     .IsDependentOn("Publish")
     .Does(() =>
@@ -82,6 +93,22 @@ Task("Package")
 
     DotNetCorePack("../src/Autocrat.Abstractions/Autocrat.Abstractions.csproj", settings);
     DotNetCorePack("../src/Autocrat.Compiler/Autocrat.Compiler.csproj", settings);
+});
+
+Task("PackageCoreRT")
+    .IsDependentOn("FetchCoreRT")
+    .Does(() =>
+{
+    DotNetCorePack(
+        "Autocrat.CoreRT.csproj",
+        new DotNetCorePackSettings
+        {
+            ArgumentCustomization = args =>
+                args.Append("--nologo")
+                    .Append($"-p:EnvironmentName={environmentName}"),
+            Configuration = configuration,
+            OutputDirectory = "packages",
+        });
 });
 
 Task("Publish")
@@ -231,6 +258,7 @@ Task("Default")
     .IsDependentOn("RestoreNuGet")
     .IsDependentOn("Build")
     .IsDependentOn("RunTests")
-    .IsDependentOn("Package");
+    .IsDependentOn("Package")
+    .IsDependentOn("PackageCoreRT");
 
 RunTarget(Argument("target", "Default"));
