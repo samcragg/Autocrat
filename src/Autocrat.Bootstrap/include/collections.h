@@ -450,7 +450,8 @@ namespace autocrat
          */
         small_vector(small_vector<T>&& other) noexcept(std::is_nothrow_move_constructible<T>::value) :
             _capacity(other._capacity),
-            _count(other._count)
+            _count(other._count),
+            _storage({})
         {
             other._count = 0;
             if (has_dynamic_storage())

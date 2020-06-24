@@ -64,7 +64,7 @@ public:
         {
             object_collection objects(1u);
             objects[0] = locked_worker;
-            return std::move(objects);
+            return objects;
         }
     }
 

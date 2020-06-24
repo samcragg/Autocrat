@@ -56,7 +56,7 @@ namespace autocrat
             pal::wake_all(&_wait_handle);
         }
 
-        _work.emplace(std::make_tuple(function, std::move(arg)));
+        _work.emplace<work_item>({ function, std::move(arg) });
     }
 
     std::size_t thread_pool::size() const noexcept
@@ -92,7 +92,7 @@ namespace autocrat
             observers[i]->begin_work(index);
         }
 
-        std::get<callback_function>(item)(std::get<std::any>(item));
+        item.callback(item.arg);
         
         while (i-- > 0)
         {

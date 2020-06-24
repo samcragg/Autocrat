@@ -6,7 +6,6 @@
 #include <cassert>
 #include <limits>
 #include <thread>
-#include <tuple>
 #include "collections.h"
 #include "defines.h"
 
@@ -95,7 +94,12 @@ namespace autocrat
          */
         MOCKABLE_METHOD void start(initialize_function initialize);
     private:
-        using work_item = std::tuple<callback_function, std::any>;
+        struct work_item
+        {
+            callback_function callback;
+            std::any arg;
+        };
+
         void invoke_work_item(std::size_t index, work_item& item) const;
         void perform_work(std::size_t index, initialize_function initialize);
         void wait_for_work();
