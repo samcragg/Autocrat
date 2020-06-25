@@ -5,6 +5,7 @@ string coreRTVersion = "0.1";
 string environmentName = IsRunningOnWindows() ? "Windows" : "Linux";
 
 Task("BuildManaged")
+    .IsDependentOn("UpdateVersions")
     .Does(() =>
 {
     var buildSettings = new DotNetCoreBuildSettings
@@ -242,6 +243,20 @@ Task("RunNativeWindowsTests")
         "../tests/Bootstrap.Tests/bin",
         "../tests/Bootstrap.Tests/bin/Bootstrap.Tests.exe",
         "--gtest_output=xml:bootstrap_results_windows.xml"));
+});
+
+Task("UpdateVersions")
+    .Does(() =>
+{
+    string version = XmlPeek("../Directory.Build.props", "/Project/PropertyGroup/Version");
+    XmlPoke(
+        "../src/Autocrat.Compiler/PackageFiles/ManagedToNative.csproj",
+        "/Project/PropertyGroup/CoreRTVersion",
+        version,
+        new XmlPokeSettings
+        {
+            Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+        });
 });
 
 Task("Build")
