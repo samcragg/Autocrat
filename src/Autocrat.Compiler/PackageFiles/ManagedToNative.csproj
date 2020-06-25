@@ -12,7 +12,7 @@
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     
-    <CoreRTVersion>0.0.1</CoreRTVersion>
+    <CoreRTVersion>0.0.2</CoreRTVersion>
     <IlcDisableReflection>true</IlcDisableReflection>
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
     <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
@@ -35,11 +35,9 @@
     <IlcArg Include="$(AutocratNativeAdapters)" />
   </ItemGroup>
 
-  <Import Condition="'$([MSBuild]::IsOSPlatform(Linux))' == 'true'"
-          Project="$(AutocratContentDir)/NativeCompile.Linux.targets" />
+  <Import Condition="'$([MSBuild]::IsOSPlatform(Linux))' == 'true'" Project="$(AutocratContentDir)/NativeCompile.Linux.targets" />
 
-  <Import Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'"
-          Project="$(AutocratContentDir)/NativeCompile.Windows.targets" />
+  <Import Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'" Project="$(AutocratContentDir)/NativeCompile.Windows.targets" />
 
   <Import Project="$(IlcPath)/build/Microsoft.NETCore.Native.targets" />
 
