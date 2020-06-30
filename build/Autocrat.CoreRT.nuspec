@@ -15,6 +15,6 @@
     <file src="build\*" target="build" />
     <file src="framework\*" target="framework" />
     <file src="sdk\*" target="sdk" />
-    <file src="tools\*" target="tools" />
+    <file src="tools\**" target="tools" />
   </files>
 </package>
