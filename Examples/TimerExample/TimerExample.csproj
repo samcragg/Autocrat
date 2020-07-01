@@ -6,12 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autocrat.Compiler" Version="0.0.1" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Autocrat.Abstractions\Autocrat.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\Autocrat.NativeAdapters\Autocrat.NativeAdapters.csproj" />
+    <PackageReference Include="Autocrat.Abstractions" Version="*" />
+    <PackageReference Include="Autocrat.Compiler" Version="*" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
