@@ -5,6 +5,7 @@
   
   <PropertyGroup>
     <IlcPath>$(NuGetPackageFolders.Split(';')[0])/autocrat.corert.unix/$(CoreRTVersion)/</IlcPath>
+    <BootstrapPath>$(IlcPath)sdk/</BootstrapPath>
     <CppCompilerAndLinker>g++</CppCompilerAndLinker>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
   </PropertyGroup>
@@ -14,8 +15,8 @@
     <ItemGroup>
       <AutocratFiles Include="$(AutocratOutputSource)" />
       <AutocratFiles Include="$(PublishDir)ManagedToNative.a" />
-      <AutocratFiles Include="$(AutocratContentDir)bootstrap/Autocrat.Bootstrap.a" />
-      <CompilerOptions Include="-I &quot;$(AutocratContentDir)bootstrap&quot;" />
+      <AutocratFiles Include="$(BootstrapPath)/Autocrat.Bootstrap.a" />
+      <CompilerOptions Include="-I &quot;$(BootstrapPath)&quot;" />
       <CompilerOptions Include="-march=x86-64" />
       <CompilerOptions Include="-ldl" />
       <CompilerOptions Include="-lgssapi_krb5" />
