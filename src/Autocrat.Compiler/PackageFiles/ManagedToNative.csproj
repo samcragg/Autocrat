@@ -39,6 +39,7 @@
 
   <Import Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'" Project="$(AutocratContentDir)/NativeCompile.Windows.targets" />
 
-  <Import Project="$(IlcPath)/build/Microsoft.NETCore.Native.targets" />
+  <!-- We run the restore task separately, as the imported variables aren't available until we rerun the build -->
+  <Import Condition="$(Restoring) != 'true'" Project="$(IlcPath)/build/Microsoft.NETCore.Native.targets" />
 
 </Project>

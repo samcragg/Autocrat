@@ -5,17 +5,23 @@
   <Target Name="AutocratTarget"
           AfterTargets="Publish"
           DependsOnTargets="ResolveAssemblyReferences;_GetAssemblyInfoFromTemplateFile">
+
     <ItemGroup>
-      <AdditionalProjectOptions Include="/p:AutocratContentDir=&quot;$(AutocratContentDir)&quot;" />
-      <AdditionalProjectOptions Include="/p:AutocratNativeAdapters=&quot;$(AutocratNativeAdapters)&quot;" />
-      <AdditionalProjectOptions Include="/p:AutocratOutputAssembly=&quot;$(AutocratOutputAssembly)&quot;" />
-      <AdditionalProjectOptions Include="/p:AutocratOutputSource=&quot;$(AutocratOutputSource)&quot;" />
+      <AdditionalProjectOptions Include="AutocratContentDir=$(AutocratContentDir)" />
+      <AdditionalProjectOptions Include="AutocratNativeAdapters=$(AutocratNativeAdapters)" />
+      <AdditionalProjectOptions Include="AutocratOutputAssembly=$(AutocratOutputAssembly)" />
+      <AdditionalProjectOptions Include="AutocratOutputSource=$(AutocratOutputSource)" />
+      <AdditionalProjectOptions Include="ConfigurationName=$(ConfigurationName)" />
+      <AdditionalProjectOptions Include="PublishDir=publish" />
+      <AdditionalProjectOptions Include="RestoreSources=$(RestoreSources)" />
+      <AdditionalProjectOptions Include="RestorePackagesPath=$(RestorePackagesPath)" />
 
       <!-- Use the absolute path for the output so that it's relative to the current project not the temp one -->
-      <AdditionalProjectOptions Include="/p:OutputName=&quot;$([System.IO.Path]::GetFullPath('$(PublishDir)'))$(TargetName)&quot;" />
+      <AdditionalProjectOptions Include="OutputName=&quot;$([System.IO.Path]::GetFullPath('$(PublishDir)'))$(TargetName)&quot;" />
 
       <!-- Make sure all the dependencies are available -->
       <PublishedFiles Include="$(PublishDir)*.*" />
+      <ReferencePath Include="$(AutocratNativeAdapters)" />
     </ItemGroup>
 
     <AutocratTask OutputAssembly="$(AutocratOutputAssembly)"
@@ -25,16 +31,25 @@
 
     <Move SourceFiles="@(PublishedFiles)"
           DestinationFolder="$(AutocratOutputDirectory)" />
-    
-    <Copy SourceFiles="@(AutocratProjectFiles)"
+
+    <Copy SourceFiles="$(AutocratContentDir)$(AutocratManagedProject)"
           DestinationFolder="$(AutocratOutputDirectory)" />
+
+    <!-- We have to do the restore separate to the build and with different -->
+    <!-- properties in order to force the cache to be invalidated (properties -->
+    <!-- will be set during restoring, however, won't be visible to later targets -->
+    <!-- unless we do this: https://github.com/Microsoft/msbuild/issues/1695) -->
+    <MSBuild Projects="$(AutocratOutputDirectory)$(AutocratManagedProject)"
+             Properties="@(AdditionalProjectOptions);Restoring=true"
+             Targets="Restore" />
     
-    <!-- There are so many issues around trying to get a MSBuild task to restore -->
-    <!-- and work correctly, we'll just cheat and start a new process to do it all -->
-    <Exec Command="dotnet publish -c $(ConfigurationName) $(AutocratManagedProject) -o publish @(AdditionalProjectOptions, ' ')"
-          WorkingDirectory="$(AutocratOutputDirectory)" />
-    
+    <MSBuild Projects="$(AutocratOutputDirectory)$(AutocratManagedProject)"
+             Properties="@(AdditionalProjectOptions)"
+             Targets="Build;Publish" />
+
     <!-- Do a little cleaning -->
     <RemoveDir Directories="$(AutocratOutputDirectory)bin;$(AutocratOutputDirectory)publish" />
+
   </Target>
+
 </Project>

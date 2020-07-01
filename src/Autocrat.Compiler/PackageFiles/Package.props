@@ -8,8 +8,4 @@
     <AutocratOutputAssembly>$(AutocratOutputDirectory)AutocratGeneratedAssembly.dll</AutocratOutputAssembly>
     <AutocratOutputSource>$(AutocratOutputDirectory)source.cpp</AutocratOutputSource>
   </PropertyGroup>
-
-  <ItemGroup>
-    <AutocratProjectFiles Include="$(MSBuildThisFileDirectory)../content/$(AutocratManagedProject)"/>
-  </ItemGroup>
 </Project>
