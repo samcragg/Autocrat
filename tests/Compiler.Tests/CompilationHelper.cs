@@ -36,10 +36,10 @@
             string sdkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
             MetadataReference[] references =
             {
-                MetadataReference.CreateFromFile(sdkDirectory + "\\netstandard.dll"),
-                MetadataReference.CreateFromFile(sdkDirectory + "\\System.Private.CoreLib.dll"),
-                MetadataReference.CreateFromFile(sdkDirectory + "\\System.Runtime.dll"),
-                MetadataReference.CreateFromFile(sdkDirectory + "\\System.Text.Json.dll"),
+                MetadataReference.CreateFromFile(Path.Join(sdkDirectory, "netstandard.dll")),
+                MetadataReference.CreateFromFile(Path.Join(sdkDirectory, "System.Private.CoreLib.dll")),
+                MetadataReference.CreateFromFile(Path.Join(sdkDirectory, "System.Runtime.dll")),
+                MetadataReference.CreateFromFile(Path.Join(sdkDirectory, "System.Text.Json.dll")),
                 MetadataReference.CreateFromFile(typeof(CompilationHelper).Assembly.Location),
             };
 
