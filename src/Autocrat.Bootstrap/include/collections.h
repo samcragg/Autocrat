@@ -408,7 +408,7 @@ namespace autocrat
      *          switched to use dynamic storage automatically.
      */
     template <class T>
-    class alignas(T) small_vector
+    class small_vector
     {
     public:
         static constexpr std::size_t maximum_local_elements = 4;
@@ -425,7 +425,7 @@ namespace autocrat
         small_vector() :
             _capacity(0),
             _count(0),
-            _storage({})
+            _storage{}
         {
         }
 
@@ -451,7 +451,7 @@ namespace autocrat
         small_vector(small_vector<T>&& other) noexcept(std::is_nothrow_move_constructible<T>::value) :
             _capacity(other._capacity),
             _count(other._count),
-            _storage({})
+            _storage{}
         {
             other._count = 0;
             if (has_dynamic_storage())
@@ -686,7 +686,7 @@ namespace autocrat
         union
         {
             T* _dynamic;
-            std::aligned_storage_t<sizeof(T) * maximum_local_elements, alignof(T)> _storage;
+            std::aligned_storage_t<sizeof(T), alignof(T)> _storage[maximum_local_elements];
         };
     };
 }
