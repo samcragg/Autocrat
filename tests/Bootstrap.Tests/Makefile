@@ -1,6 +1,7 @@
 include ../../src/Autocrat.Bootstrap/variables.mk
 
 CXXFLAGS += -DUNIT_TESTS -I . -I ../../src/Autocrat.Bootstrap/include -isystem ../../libs
+CXXFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined
 
 SRC_DIR = ../../src/Autocrat.Bootstrap/src
 SRCS = \
