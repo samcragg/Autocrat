@@ -12,23 +12,6 @@ namespace
     std::size_t action_call_count;
     void* action_state;
 
-    class gc_object
-    {
-    public:
-        gc_object()
-        {
-            _object.m_pEEType = &SingleReferenceInfo.Type;
-        }
-
-        SingleReference* managed_object()
-        {
-            return &_object;
-        }
-    private:
-        char _gc_header[8u] = {};
-        SingleReference _object = {};
-    };
-
     struct simple_instance
     {
         std::size_t call_count;
@@ -77,21 +60,21 @@ TEST_F(TaskServiceTests, EnqueueShouldRetryIfWorkersAreLocked)
 
 TEST_F(TaskServiceTests, EnqueueShouldScanTheStateForWorkers)
 {
-    gc_object locked_worker;
-    gc_object original_worker;
-    gc_object state;
-    state.managed_object()->Reference = original_worker.managed_object();
-    mock_global_services.worker_service().locked_worker = locked_worker.managed_object();
-    mock_global_services.worker_service().original_worker = original_worker.managed_object();
+    ManagedObject<SingleReference> locked_worker;
+    ManagedObject<SingleReference> original_worker;
+    ManagedObject<SingleReference> state;
+    state->Reference = original_worker.get();
+    mock_global_services.worker_service().locked_worker = locked_worker.get();
+    mock_global_services.worker_service().original_worker = original_worker.get();
 
     managed_delegate delegate = {};
     delegate.method_ptr = reinterpret_cast<void*>(&save_state);
 
     action_state = nullptr;
-    _task_service.enqueue(&delegate, state.managed_object());
+    _task_service.enqueue(&delegate, state.get());
 
-    EXPECT_EQ(state.managed_object(), action_state);
-    EXPECT_EQ(locked_worker.managed_object(), state.managed_object()->Reference);
+    EXPECT_EQ(state.get(), action_state);
+    EXPECT_EQ(locked_worker.get(), state->Reference);
 }
 
 TEST_F(TaskServiceTests, StartNewShouldRunInstanceTasksOnTheThreadPool)

@@ -14,24 +14,20 @@
 
 namespace
 {
-    std::unique_ptr<std::byte[]> worker_class;
-    std::unique_ptr<std::byte[]> worker_object;
+    std::unique_ptr<ManagedObject<BaseClass>> worker_class;
+    std::unique_ptr<ManagedObject<SingleReference>> worker_object;
 
     void* create_worker_class()
     {
-        worker_class = std::make_unique<std::byte[]>(sizeof(BaseClass));
-        auto base_class = reinterpret_cast<BaseClass*>(worker_class.get());
-        base_class->m_pEEType = &BaseClassInfo.Type;
-        base_class->BaseInteger = 123;
-        return base_class;
+        worker_class = std::make_unique<ManagedObject<BaseClass>>();
+        (*worker_class)->BaseInteger = 123;
+        return worker_class->get();
     }
 
     void* create_worker_object()
     {
-        worker_object = std::make_unique<std::byte[]>(sizeof(Object));
-        auto object = reinterpret_cast<Object*>(worker_object.get());
-        object->m_pEEType = &object_type;
-        return object;
+        worker_object = std::make_unique<ManagedObject<SingleReference>>();
+        return worker_object->get();
     }
 }
 
@@ -121,7 +117,7 @@ TEST_F(WorkerServiceTests, ShouldSaveAndRestoreTheWorkerState)
 {
     _service.register_type(&_worker_type, &create_worker_class);
     void* object = _service.get_worker(&_worker_type, _worker_id);
-    EXPECT_EQ(worker_class.get(), object);
+    EXPECT_EQ(worker_class->get(), object);
 
     // Reset the service to force it to save the worker
     _service.end_work(0u);
@@ -131,7 +127,6 @@ TEST_F(WorkerServiceTests, ShouldSaveAndRestoreTheWorkerState)
     EXPECT_EQ(_allocated_bytes.get(), object);
 
     auto base_class = reinterpret_cast<BaseClass*>(object);
-    EXPECT_EQ(&BaseClassInfo.Type, base_class->m_pEEType);
     EXPECT_EQ(123, base_class->BaseInteger);
 }
 

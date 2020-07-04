@@ -90,22 +90,19 @@ TEST_F(ReferenceScannerTests, MoveShouldHandleNullObjects)
 
 TEST_F(ReferenceScannerTests, ShouldMoveTheReferencesAndData)
 {
-    SingleReference element = {};
-    element.m_pEEType = &SingleReferenceInfo.Type;
+    ManagedObject<SingleReference> element;
 
-    ManagedArray<3u> array;
-    array.m_pEEType = &SingleReferenceArrayType;
-    array.references[0] = &element;
-    array.references[2] = &element;
+    ManagedObject<ReferenceArray<3u>> array;
+    array->references[0] = element.get();
+    array->references[2] = element.get();
 
-    DerivedClass original = {};
-    original.m_pEEType = &DerivedClassInfo.Type;
-    original.BaseInteger = 123;
-    original.Integer = 456;
-    original.SecondReference = &array;
+    ManagedObject<DerivedClass> original;
+    original->BaseInteger = 123;
+    original->Integer = 456;
+    original->SecondReference = array.get();
 
     ObjectMover mover;
-    mover.move(&original);
+    mover.move(original.get());
 
     // Clear the originals to prove the copy is independent
     array = {};
@@ -116,7 +113,7 @@ TEST_F(ReferenceScannerTests, ShouldMoveTheReferencesAndData)
     EXPECT_EQ(copy->BaseInteger, 123);
     EXPECT_EQ(copy->Integer, 456);
     
-    auto array_copy = static_cast<ManagedArray<3u>*>(copy->SecondReference);
+    auto array_copy = static_cast<ReferenceArray<3u>*>(copy->SecondReference);
     EXPECT_EQ(array_copy->references[0], array_copy->references[2]);
     EXPECT_GE(array_copy->references[0], mover.buffer.data());
     EXPECT_LT(array_copy->references[0], mover.buffer.data() + mover.allocated_bytes);
@@ -125,11 +122,10 @@ TEST_F(ReferenceScannerTests, ShouldMoveTheReferencesAndData)
 
 TEST_F(ReferenceScannerTests, ShouldScanEmptyObjects)
 {
-    Object value = {};
-    value.m_pEEType = &object_type;
+    ManagedObject<Object> value;
 
     ObjectCounter counter;
-    counter.move(&value);
+    counter.move(value.get());
 
     EXPECT_EQ(24u, counter.allocated_bytes);
     EXPECT_EQ(1u, counter.references);
@@ -137,12 +133,11 @@ TEST_F(ReferenceScannerTests, ShouldScanEmptyObjects)
 
 TEST_F(ReferenceScannerTests, ShouldScanCircularReferences)
 {
-    SingleReference object = {};
-    object.m_pEEType = &SingleReferenceInfo.Type;
-    object.Reference = &object;
+    ManagedObject<SingleReference> object;
+    object->Reference = object.get();
 
     ObjectCounter counter;
-    counter.move(&object);
+    counter.move(object.get());
 
     EXPECT_EQ(24u, counter.allocated_bytes);
     EXPECT_EQ(1u, counter.references);
@@ -150,19 +145,16 @@ TEST_F(ReferenceScannerTests, ShouldScanCircularReferences)
 
 TEST_F(ReferenceScannerTests, ShouldScanReferenceArrays)
 {
-    SingleReference element = {};
-    element.m_pEEType = &SingleReferenceInfo.Type;
+    ManagedObject<SingleReference> element;
 
-    ManagedArray<5u> array;
-    array.m_pEEType = &SingleReferenceArrayType;
-    array.references[2] = &element;
+    ManagedObject<ReferenceArray<5u>> array;
+    array->references[2] = element.get();
 
-    SingleReference object = {};
-    object.m_pEEType = &SingleReferenceInfo.Type;
-    object.Reference = &array;
+    ManagedObject<SingleReference> object;
+    object->Reference = array.get();
 
     ObjectCounter counter;
-    counter.move(&object);
+    counter.move(object.get());
 
     EXPECT_EQ(24u + 24u + 40u + 24u, counter.allocated_bytes);
     EXPECT_EQ(3u, counter.references);
@@ -170,15 +162,13 @@ TEST_F(ReferenceScannerTests, ShouldScanReferenceArrays)
 
 TEST_F(ReferenceScannerTests, ShouldScanInheritedReferences)
 {
-    Object empty = {};
-    empty.m_pEEType = &object_type;
+    ManagedObject<Object> empty;
 
-    DerivedClass derived = {};
-    derived.m_pEEType = &DerivedClassInfo.Type;
-    derived.BaseReference = &empty;
+    ManagedObject<DerivedClass> derived;
+    derived->BaseReference = empty.get();
 
     ObjectCounter counter;
-    counter.move(&derived);
+    counter.move(derived.get());
 
     EXPECT_EQ(48u + 24u, counter.allocated_bytes);
     EXPECT_EQ(2u, counter.references);
@@ -186,16 +176,13 @@ TEST_F(ReferenceScannerTests, ShouldScanInheritedReferences)
 
 TEST_F(ReferenceScannerTests, ShouldScanTypesWithValueArrays)
 {
-    Array array = {};
-    array.m_pEEType = &array_int32_type;
-    array.m_Length = 3u;
+    ManagedObject<Int32Array<3u>> array;
 
-    SingleReference object = {};
-    object.m_pEEType = &SingleReferenceInfo.Type;
-    object.Reference = &array;
+    ManagedObject<SingleReference> object;
+    object->Reference = array.get();
 
     ObjectCounter counter;
-    counter.move(&object);
+    counter.move(object.get());
 
     EXPECT_EQ(24u + 24u + 12u, counter.allocated_bytes);
     EXPECT_EQ(2u, counter.references);

@@ -20,16 +20,10 @@
     <ClInclude Include="mock_services.h" />
     <ClInclude Include="mock_method_handles.h" />
     <ClInclude Include="TestUtils.h" />
-    <ClInclude Include="TestMocks.h">
-      <Filter>gtest</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryMonitor.h">
-      <Filter>gtest</Filter>
-    </ClInclude>
-    <ClInclude Include="ManagedObjects.h">
-      <Filter>gtest</Filter>
-    </ClInclude>
     <ClInclude Include="ConsoleTestPrinter.h" />
+    <ClInclude Include="ManagedObjects.h" />
+    <ClInclude Include="MemoryMonitor.h" />
+    <ClInclude Include="TestMocks.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc">

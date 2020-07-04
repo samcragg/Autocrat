@@ -22,19 +22,16 @@ TEST_F(ObjectSerializerTests, ShouldRoundtripObjectState)
     //         Reference = new BaseClass { BaseInteger = 123 },
     //     },
     // }
-    BaseClass base_class = {};
-    base_class.m_pEEType = &BaseClassInfo.Type;
-    base_class.BaseInteger = 123;
+    ManagedObject<BaseClass> base_class;
+    base_class->BaseInteger = 123;
 
-    SingleReference element = {};
-    element.m_pEEType = &SingleReferenceInfo.Type;
-    element.Reference = &base_class;
+    ManagedObject<SingleReference> element;
+    element->Reference = base_class.get();
 
-    ManagedArray<2u> array;
-    array.m_pEEType = &SingleReferenceArrayType;
-    array.references[1] = &element;
+    ManagedObject<ReferenceArray<2u>> array;
+    array->references[1] = element.get();
 
-    _serializer.save(&array);
+    _serializer.save(array.get());
 
     std::array<std::byte, 1024> buffer;
     When(mock_global_services.gc_service().allocate)
@@ -45,23 +42,23 @@ TEST_F(ObjectSerializerTests, ShouldRoundtripObjectState)
             });
 
     // Clear the original to prove the serialization worked
-    array.references[1] = nullptr;
-    base_class.BaseInteger = 0;
+    array->references[1] = nullptr;
+    base_class->BaseInteger = 0;
 
     void* result = _serializer.restore();
     EXPECT_EQ(buffer.data(), result);
 
-    auto copy_array = static_cast<decltype(array)*>(result);
-    EXPECT_EQ(&SingleReferenceArrayType, copy_array->m_pEEType);
+    auto copy_array = static_cast<ReferenceArray<2u>*>(result);
+    EXPECT_NE(nullptr, copy_array->m_pEEType);
     EXPECT_EQ(2u, copy_array->m_Length);
     EXPECT_EQ(nullptr, copy_array->references[0]);
     ASSERT_NE(nullptr, copy_array->references[1]);
 
-    auto copy_element = static_cast<decltype(element)*>(copy_array->references[1]);
-    EXPECT_EQ(&SingleReferenceInfo.Type, copy_element->m_pEEType);
+    auto copy_element = static_cast<SingleReference*>(copy_array->references[1]);
+    EXPECT_NE(nullptr, copy_element->m_pEEType);
     ASSERT_NE(nullptr, copy_element->Reference);
 
-    auto copy_base = static_cast<decltype(base_class)*>(copy_element->Reference);
-    EXPECT_EQ(&BaseClassInfo.Type, copy_base->m_pEEType);
+    auto copy_base = static_cast<BaseClass*>(copy_element->Reference);
+    EXPECT_NE(nullptr, copy_base->m_pEEType);
     EXPECT_EQ(123, copy_base->BaseInteger);
 }
