@@ -1,0 +1,10 @@
+-Werror
+-Wall
+-Wextra
+-Wpedantic
+-pthread
+-m64
+-std=c++17
+-g
+-I./include
+-isystem../../libs

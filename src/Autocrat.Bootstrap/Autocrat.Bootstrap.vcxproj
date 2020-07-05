@@ -21,6 +21,7 @@
     <IntDir>$(BaseIntermediateOutputPath)$(Configuration)\</IntDir>
     <OutDir>$(ProjectDir)bin\</OutDir>
     <PlatformToolset>v142</PlatformToolset>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
