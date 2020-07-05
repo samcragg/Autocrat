@@ -8,6 +8,7 @@
 #define MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(class_name) class_name() = default; virtual ~class_name() noexcept = default;
 #define MOCKABLE_GLOBAL(type) type&
 #define MOCKABLE_METHOD virtual
+#define FINAL_CLASS
 
 #else
 
@@ -16,6 +17,7 @@
 #define MOCKABLE_CONSTRUCTOR_AND_DESTRUCTOR(class_name)
 #define MOCKABLE_GLOBAL(type) type
 #define MOCKABLE_METHOD
+#define FINAL_CLASS final
 
 #endif
 

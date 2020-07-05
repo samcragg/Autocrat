@@ -55,7 +55,7 @@ namespace autocrat
     /**
      * Exposes functionality for obtaining worker services.
      */
-    class worker_service : public thread_specific_storage<small_vector<worker_info*>>
+    class worker_service FINAL_CLASS : public thread_specific_storage<small_vector<worker_info*>>
     {
     public:
         using storage_type = small_vector<worker_info*>;

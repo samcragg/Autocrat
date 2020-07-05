@@ -61,7 +61,7 @@ namespace autocrat
      * Manages the managed memory and performs automatic garbage collection
      * when the memory is no longer required.
      */
-    class gc_service : public thread_specific_storage<gc_heap>
+    class gc_service FINAL_CLASS : public thread_specific_storage<gc_heap>
     {
     public:
         using base_type = thread_specific_storage<gc_heap>;

@@ -145,7 +145,7 @@ namespace autocrat
          */
         std::size_t size() const noexcept;
     private:
-        friend void detail::intrusive_ptr_release(array_pool_block* pointer) noexcept;
+        friend void detail::intrusive_ptr_release(element_type* pointer) noexcept;
 
         void release(element_type* value);
 

@@ -76,15 +76,20 @@ namespace autocrat
         GIVE_ACCESS_TO_MOCKS
 
         template <class Service, class Fallback = void>
-        struct has_check_and_dispatch : std::false_type
+        struct has_check_and_dispatch_value : std::false_type
         {
         };
 
         template <class Service>
-        struct has_check_and_dispatch<
+        struct has_check_and_dispatch_value<
             Service,
             typename std::enable_if<std::is_member_function_pointer_v<decltype(&Service::check_and_dispatch)>>::type>
             : std::true_type
+        {
+        };
+
+        template <class Service>
+        struct has_check_and_dispatch : has_check_and_dispatch_value<Service>
         {
         };
 
@@ -93,7 +98,7 @@ namespace autocrat
         {
         };
 
-        template <template<class> class Pred, class Action>
+        template <template<typename> class Pred, class Action>
         void invoke_all(Action action)
         {
             ((invoke<Pred<Services>>(

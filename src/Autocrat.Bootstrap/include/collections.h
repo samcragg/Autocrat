@@ -664,7 +664,7 @@ namespace autocrat
 
         void resize_dynamic_storage()
         {
-            std::size_t new_size = _capacity + (_capacity / 2); // 1.5 growth factor
+            std::size_t new_size = static_cast<std::size_t>(_capacity) + (_capacity / 2u); // 1.5 growth factor
             if (new_size > std::numeric_limits<std::uint32_t>::max())
             {
                 throw std::bad_alloc();
