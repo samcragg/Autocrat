@@ -7,10 +7,12 @@
 
 namespace autocrat
 {
-    inline void pause() noexcept
-    {
-        _mm_pause();
-    }
+
+inline void pause() noexcept
+{
+    _mm_pause();
+}
+
 }
 
 #else
@@ -19,10 +21,12 @@ namespace autocrat
 
 namespace autocrat
 {
-    inline void pause() noexcept
-    {
-        std::this_thread::yield();
-    }
+
+inline void pause() noexcept
+{
+    std::this_thread::yield();
+}
+
 }
 
 #endif

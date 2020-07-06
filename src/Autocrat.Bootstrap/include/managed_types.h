@@ -23,13 +23,12 @@ struct managed_string
     void* ee_type;
     std::uint32_t length;
     char16_t data[1];
-
 };
 
-// Check no padding has been added
-static_assert(offsetof(managed_string, length) == 8u);
-static_assert(offsetof(managed_string, data) == 12u);
-
+// Check no padding has been added (in 64 bit builds - allow 32-bit builds for
+// clang-tidy analysis under VS)
+static_assert(sizeof(void*) == 4 || offsetof(managed_string, length) == 8u);
+static_assert(sizeof(void*) == 4 || offsetof(managed_string, data) == 12u);
 
 struct typed_reference
 {
