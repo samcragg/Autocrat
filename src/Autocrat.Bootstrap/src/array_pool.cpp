@@ -24,7 +24,7 @@ void intrusive_ptr_release(array_pool_block* pointer) noexcept
 namespace autocrat
 {
 
-managed_byte_array::managed_byte_array() : _length(0), _data()
+managed_byte_array::managed_byte_array() : _data()
 {
     static const void* byte_array_type = managed_exports::GetByteArrayType();
     _ee_type = byte_array_type;

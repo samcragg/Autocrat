@@ -33,7 +33,7 @@ public:
 
 private:
     std::atomic_uint32_t _owner_id;
-    std::uint32_t _lock_count;
+    std::uint32_t _lock_count = 0;
 };
 
 /**

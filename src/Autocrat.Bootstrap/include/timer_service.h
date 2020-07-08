@@ -14,9 +14,9 @@ class thread_pool;
 
 struct timer_info : intrusive_ref_counter<timer_info>
 {
-    timer_method callback;
-    std::chrono::microseconds interval;
-    std::uint32_t handle;
+    timer_method callback = nullptr;
+    std::chrono::microseconds interval = {};
+    std::uint32_t handle = 0;
 };
 
 using timer_info_ptr = intrusive_ptr<timer_info>;

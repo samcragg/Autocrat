@@ -72,14 +72,13 @@ protected:
     virtual void on_object(void* object, std::size_t size) = 0;
 
 private:
-    std::optional<void*> get_moved_location(void* object) override final;
-    void* get_reference(void* object, std::size_t offset) override final;
-    void* move_object(void* object, std::size_t size) override final;
-    void set_moved_location(void* object, void* new_location) override final;
-    void set_reference(void* object, std::size_t offset, void* reference)
-        override final;
+    std::optional<void*> get_moved_location(void* object) final;
+    void* get_reference(void* object, std::size_t offset) final;
+    void* move_object(void* object, std::size_t size) final;
+    void set_moved_location(void* object, void* new_location) final;
+    void set_reference(void* object, std::size_t offset, void* reference) final;
 
-    std::uint32_t _version;
+    std::uint32_t _version = 0;
 };
 
 /**

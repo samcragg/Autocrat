@@ -42,14 +42,14 @@ public:
      * Returns an iterator to the first element of the container.
      * @returns An iterator to the first element.
      */
-    const_iterator begin() const noexcept;
+    [[nodiscard]] const_iterator begin() const noexcept;
 
     /**
      * Returns the number of elements that the container has allocated
      * space for.
      * @returns Capacity of the currently allocated storage.
      */
-    constexpr std::size_t capacity() const noexcept
+    [[nodiscard]] constexpr std::size_t capacity() const noexcept
     {
         return buffer_size;
     }
@@ -67,7 +67,7 @@ public:
     /**
      * Returns pointer to the underlying array serving as element storage.
      */
-    const value_type* data() const noexcept;
+    [[nodiscard]] const value_type* data() const noexcept;
 
     /**
      * Returns an iterator to the element following the last element of the
@@ -81,7 +81,7 @@ public:
      * container.
      * @returns An iterator to the element following the last element.
      */
-    const_iterator end() const noexcept;
+    [[nodiscard]] const_iterator end() const noexcept;
 
     /**
      * Resizes the container to contain count elements.
@@ -93,11 +93,11 @@ public:
      * Returns the number of elements in the container.
      * @returns The number of elements in the container.
      */
-    std::size_t size() const noexcept;
+    [[nodiscard]] std::size_t size() const noexcept;
 
 private:
     const void* _ee_type;
-    std::uint64_t _length;
+    std::uint64_t _length = 0;
     storage_type _data;
 };
 
@@ -108,7 +108,7 @@ namespace detail
 
 struct array_pool_block
 {
-    array_pool* owner;
+    array_pool* owner = nullptr;
     std::atomic_size_t usage;
     managed_byte_array array;
 };
@@ -141,13 +141,13 @@ public:
      * space for.
      * @returns The number of arrays that have allocated space.
      */
-    std::size_t capacity() const noexcept;
+    [[nodiscard]] std::size_t capacity() const noexcept;
 
     /**
      * Gets the number of arrays that have been allocated.
      * @returns The number of arrays in use.
      */
-    std::size_t size() const noexcept;
+    [[nodiscard]] std::size_t size() const noexcept;
 
 private:
     friend void detail::intrusive_ptr_release(element_type* pointer) noexcept;

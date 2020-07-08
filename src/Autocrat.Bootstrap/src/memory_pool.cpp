@@ -13,13 +13,6 @@ autocrat::memory_pool_buffer::pool_type global_pool;
 namespace autocrat
 {
 
-memory_pool_buffer::memory_pool_buffer() :
-    _head(nullptr),
-    _tail(nullptr),
-    _count(0)
-{
-}
-
 memory_pool_buffer::~memory_pool_buffer() noexcept
 {
     node_type* node = _head;

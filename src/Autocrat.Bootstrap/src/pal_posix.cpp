@@ -1,16 +1,16 @@
 #include <arpa/inet.h>
+#include <cerrno>
 #include <chrono>
+#include <csignal>
 #include <cstdlib>
-#include <errno.h>
+#include <ctime>
 #include <fcntl.h>
 #include <linux/futex.h>
 #include <pthread.h>
 #include <sched.h>
-#include <signal.h>
 #include <spdlog/spdlog.h>
 #include <sys/syscall.h>
 #include <system_error>
-#include <time.h>
 #include <unistd.h>
 
 #undef UNIT_TESTS
@@ -255,7 +255,7 @@ int recv_from(
 {
     sockaddr_storage address;
     socklen_t address_size = sizeof(address);
-    sockaddr* address_ptr = reinterpret_cast<sockaddr*>(&address);
+    auto* address_ptr = reinterpret_cast<sockaddr*>(&address);
     int result = ::recvfrom(
         socket.handle(), buffer, length, 0, address_ptr, &address_size);
     if (result == -1)

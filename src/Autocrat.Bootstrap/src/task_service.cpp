@@ -21,11 +21,11 @@ struct task_context
     using workers_field_map = std::unordered_multimap<std::size_t, void**>;
 
     autocrat::gc_heap heap;
-    autocrat::thread_pool* thread_pool;
+    autocrat::thread_pool* thread_pool = nullptr;
     autocrat::worker_service::worker_collection workers;
     workers_field_map worker_fields;
-    delegate_info delegate;
-    void* state;
+    delegate_info delegate = {};
+    void* state = nullptr;
 };
 
 class worker_field_scanner : private autocrat::object_scanner
@@ -43,7 +43,7 @@ public:
     using autocrat::object_scanner::scan;
 
 protected:
-    void on_field(void** field) override final
+    void on_field(void** field) final
     {
         void* object = *field;
         if (object != nullptr)
@@ -56,7 +56,7 @@ protected:
         }
     }
 
-    void on_object(void*, std::size_t) override final
+    void on_object(void*, std::size_t) final
     {
     }
 

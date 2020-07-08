@@ -87,7 +87,7 @@ public:
      * Gets the size of the thread pool.
      * @returns The number of worker threads.
      */
-    MOCKABLE_METHOD std::size_t size() const noexcept;
+    [[nodiscard]] MOCKABLE_METHOD std::size_t size() const noexcept;
 
     /**
      * Starts the background threads and, therefore, processing of work.
@@ -108,14 +108,14 @@ private:
     void perform_work(std::size_t index, initialize_function initialize);
     void wait_for_work();
 
-    std::atomic_bool _is_running;
-    std::atomic_uint32_t _initialized;
-    std::atomic_uint32_t _sleeping;
     bounded_queue<work_item, 1024> _work;
     small_vector<lifetime_service*> _observers;
-    std::size_t _starting_cpu;
     dynamic_array<std::thread> _threads;
+    std::size_t _starting_cpu;
+    std::atomic_uint32_t _initialized;
+    std::atomic_uint32_t _sleeping;
     std::uint32_t _wait_handle;
+    std::atomic_bool _is_running;
 };
 
 /**
@@ -127,7 +127,7 @@ template <class T>
 class thread_specific_storage : public lifetime_service
 {
 public:
-    void begin_work(std::size_t thread_id) override final
+    void begin_work(std::size_t thread_id) final
     {
         assert(thread_storage == nullptr);
 
@@ -138,7 +138,7 @@ public:
         on_begin_work(storage);
     }
 
-    void end_work(std::size_t thread_id) override final
+    void end_work(std::size_t thread_id) final
     {
         T* storage = &_storage[thread_id + 1u];
         assert(thread_storage == storage);
@@ -172,7 +172,7 @@ protected:
     virtual void on_begin_work(T* storage) = 0;
     virtual void on_end_work(T* storage) = 0;
 
-    T* get_thread_storage() const
+    [[nodiscard]] T* get_thread_storage() const
     {
         assert(thread_storage != nullptr); // Missing call to on_begin_work
         return thread_storage;

@@ -15,12 +15,12 @@ namespace autocrat
 {
 
 thread_pool::thread_pool(std::size_t cpu_id, ::size_t threads) :
-    _is_running(true),
+    _threads(threads),
+    _starting_cpu(cpu_id),
     _initialized(0),
     _sleeping(0),
-    _starting_cpu(cpu_id),
-    _threads(threads),
-    _wait_handle(0)
+    _wait_handle(0),
+    _is_running(true)
 {
 }
 

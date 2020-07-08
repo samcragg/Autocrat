@@ -131,7 +131,7 @@ private:
     struct cell_t
     {
         std::atomic_size_t sequence;
-        typename std::aligned_storage<sizeof(T), alignof(T)>::type storage;
+        typename std::aligned_storage<sizeof(T), alignof(T)>::type storage = {};
     };
 
     static constexpr std::size_t hardware_destructive_interference_size = 64;
@@ -159,11 +159,9 @@ public:
     using value_type = T;
 
     /**
-     * Constructs a new instance of the `dyanmic_array<T>` class.
+     * Constructs a new instance of the `dynamic_array<T>` class.
      */
-    dynamic_array() : _count(0)
-    {
-    }
+    dynamic_array() = default;
 
     /**
      * Constructs a new instance of the `dynamic_array<T>` class.
@@ -202,7 +200,7 @@ public:
      * Returns an iterator to the first element of the container.
      * @returns An iterator to the first element.
      */
-    const_iterator begin() const noexcept
+    [[nodiscard]] const_iterator begin() const noexcept
     {
         return data();
     }
@@ -220,7 +218,7 @@ public:
      * Returns pointer to the underlying array serving as element storage.
      * @returns A pointer to the underlying element storage.
      */
-    const_pointer data() const noexcept
+    [[nodiscard]] const_pointer data() const noexcept
     {
         return _elements.get();
     }
@@ -240,7 +238,7 @@ public:
      * container.
      * @returns An iterator to the element following the last element.
      */
-    const_iterator end() const noexcept
+    [[nodiscard]] const_iterator end() const noexcept
     {
         return data() + _count;
     }
@@ -249,13 +247,13 @@ public:
      * Returns the number of elements in the container.
      * @returns The number of elements in the container.
      */
-    std::size_t size() const noexcept
+    [[nodiscard]] std::size_t size() const noexcept
     {
         return _count;
     }
 
 private:
-    std::size_t _count;
+    std::size_t _count = 0;
     std::unique_ptr<T[]> _elements;
 };
 
@@ -280,13 +278,6 @@ public:
 
     using value_type = std::pair<Key, Value>;
     using const_iterator = const value_type*;
-
-    /**
-     * Constructs a new instance of the `fixed_hashmap<Key, Value>` class.
-     */
-    fixed_hashmap() : _buckets({}), _entries({}), _next_free_index(0)
-    {
-    }
 
     /**
      * Inserts a new element into the container, constructed in-place with the
@@ -333,7 +324,7 @@ public:
      * container.
      * @returns An iterator to the element following the last element.
      */
-    const_iterator end() const noexcept
+    [[nodiscard]] const_iterator end() const noexcept
     {
         return nullptr;
     }
@@ -344,7 +335,7 @@ public:
      * @returns An iterator to an element with the specified key, or the value
      *          of `end()` is no such key is found.
      */
-    const_iterator find(const Key& key) const
+    [[nodiscard]] const_iterator find(const Key& key) const
     {
         const entry* it = get_entry(get_bucket(key));
         while (it != nullptr)
@@ -379,7 +370,7 @@ private:
         return e;
     }
 
-    entry* get_entry(std::size_t bucket) const
+    [[nodiscard]] entry* get_entry(std::size_t bucket) const
     {
         // We use 1-based indexes so we know the difference between empty
         // buckets and used ones
@@ -400,14 +391,14 @@ private:
             std::launder(reinterpret_cast<const entry*>(raw)));
     }
 
-    std::size_t get_bucket(const Key& key) const
+    [[nodiscard]] std::size_t get_bucket(const Key& key) const
     {
         return std::hash<Key>{}(key) % _buckets.size();
     }
 
-    std::array<std::uint8_t, maximum_capacity> _buckets;
-    std::array<entry_type, maximum_capacity> _entries;
-    std::uint8_t _next_free_index;
+    std::array<std::uint8_t, maximum_capacity> _buckets{};
+    std::array<entry_type, maximum_capacity> _entries{};
+    std::uint8_t _next_free_index = 0;
 };
 
 /**
@@ -432,7 +423,7 @@ public:
     /**
      * Constructs a new instance of the `small_vector<T>` class.
      */
-    small_vector() : _capacity(0), _count(0), _storage{}
+    small_vector() : _storage{}
     {
     }
 
@@ -516,7 +507,7 @@ public:
      * Returns an iterator to the first element of the container.
      * @returns An iterator to the first element.
      */
-    const_iterator begin() const noexcept
+    [[nodiscard]] const_iterator begin() const noexcept
     {
         return data();
     }
@@ -550,7 +541,7 @@ public:
      * Returns pointer to the underlying array serving as element storage.
      * @returns A pointer to the underlying element storage.
      */
-    const_pointer data() const noexcept
+    [[nodiscard]] const_pointer data() const noexcept
     {
         if (has_dynamic_storage())
         {
@@ -582,7 +573,7 @@ public:
      * Checks if the container has no elements.
      * @returns `true` if the container is empty; otherwise, `false`.
      */
-    bool empty() const noexcept
+    [[nodiscard]] bool empty() const noexcept
     {
         return _count == 0;
     }
@@ -602,7 +593,7 @@ public:
      * container.
      * @returns An iterator to the element following the last element.
      */
-    const_iterator end() const noexcept
+    [[nodiscard]] const_iterator end() const noexcept
     {
         return data() + _count;
     }
@@ -611,7 +602,7 @@ public:
      * Returns the number of elements in the container.
      * @returns The number of elements in the container.
      */
-    std::size_t size() const noexcept
+    [[nodiscard]] std::size_t size() const noexcept
     {
         return _count;
     }
@@ -661,17 +652,17 @@ private:
         _capacity = default_capacity;
     }
 
-    bool has_dynamic_storage() const noexcept
+    [[nodiscard]] bool has_dynamic_storage() const noexcept
     {
         return _capacity != 0;
     }
 
-    pointer get_dynamic_element() const noexcept
+    [[nodiscard]] pointer get_dynamic_element() const noexcept
     {
         return _dynamic;
     }
 
-    pointer get_local_element() const noexcept
+    [[nodiscard]] pointer get_local_element() const noexcept
     {
         return std::launder(
             const_cast<T*>(reinterpret_cast<const T*>(&_storage)));
@@ -679,8 +670,9 @@ private:
 
     void resize_dynamic_storage()
     {
-        std::size_t new_size = static_cast<std::size_t>(_capacity) +
-                               (_capacity / 2u); // 1.5 growth factor
+        // 1.5 growth factor
+        std::size_t new_size =
+            static_cast<std::size_t>(_capacity) + (_capacity / 2u);
         if (new_size > std::numeric_limits<std::uint32_t>::max())
         {
             throw std::bad_alloc();
@@ -699,8 +691,8 @@ private:
         _capacity = static_cast<std::uint32_t>(new_size);
     }
 
-    std::uint32_t _capacity;
-    std::uint32_t _count;
+    std::uint32_t _capacity = 0;
+    std::uint32_t _count = 0;
     union {
         T* _dynamic;
         std::aligned_storage_t<sizeof(T), alignof(T)>

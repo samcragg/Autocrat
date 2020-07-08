@@ -50,13 +50,13 @@ public:
      * Gets the native handle for this instance.
      * @returns A pointer to the native data.
      */
-    const sockaddr* native_handle() const noexcept;
+    [[nodiscard]] const sockaddr* native_handle() const noexcept;
 
     /**
      * Gets the port number.
      * @returns The port number.
      */
-    std::uint16_t port() const noexcept;
+    [[nodiscard]] std::uint16_t port() const noexcept;
 
     /**
      * Sets the port number.
@@ -68,7 +68,7 @@ public:
      * Converts this instance to a string in standard format.
      * @returns The text representation of this instance.
      */
-    std::string to_string() const;
+    [[nodiscard]] std::string to_string() const;
 
 private:
     struct header
@@ -99,7 +99,7 @@ public:
     socket_handle(socket_handle&& other) noexcept;
     socket_handle& operator=(socket_handle&& other) noexcept;
 
-    int handle() const;
+    [[nodiscard]] int handle() const;
 
 private:
     int _handle;

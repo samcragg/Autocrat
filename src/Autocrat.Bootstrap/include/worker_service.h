@@ -51,7 +51,7 @@ private:
     friend class worker_service;
 
     object_serializer serializer;
-    void* object;
+    void* object = nullptr;
     exclusive_lock lock;
 };
 

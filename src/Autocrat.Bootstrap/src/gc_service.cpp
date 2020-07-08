@@ -24,7 +24,7 @@ std::size_t align_up(std::size_t value)
 namespace autocrat
 {
 
-gc_heap::gc_heap() : _large_objects(nullptr)
+gc_heap::gc_heap()
 {
     // Pre-allocate some memory
     _head = global_pool.acquire();
@@ -43,10 +43,7 @@ gc_heap::~gc_heap()
     }
 }
 
-gc_heap::gc_heap(gc_heap&& other) noexcept :
-    _head(nullptr),
-    _tail(nullptr),
-    _large_objects(nullptr)
+gc_heap::gc_heap(gc_heap&& other) noexcept : _head(nullptr), _tail(nullptr)
 {
     swap(other);
 }

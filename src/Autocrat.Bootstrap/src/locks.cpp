@@ -20,7 +20,7 @@ std::uint32_t get_current_thread_id()
 namespace autocrat
 {
 
-exclusive_lock::exclusive_lock() : _owner_id(unlocked), _lock_count(0)
+exclusive_lock::exclusive_lock() : _owner_id(unlocked)
 {
 }
 

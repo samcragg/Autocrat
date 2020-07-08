@@ -87,7 +87,7 @@ public:
      * Returns the stored pointer.
      * @returns The stored pointer.
      */
-    element_type* get() const noexcept
+    [[nodiscard]] element_type* get() const noexcept
     {
         return _pointer;
     }

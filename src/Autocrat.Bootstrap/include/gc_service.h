@@ -56,7 +56,7 @@ private:
 
     pool_type::node_type* _head;
     pool_type::node_type* _tail;
-    large_allocation* _large_objects;
+    large_allocation* _large_objects = nullptr;
 };
 
 /**

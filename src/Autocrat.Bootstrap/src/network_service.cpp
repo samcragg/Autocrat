@@ -2,11 +2,8 @@
 #include "services.h"
 #include "thread_pool.h"
 #include <cstdlib>
-#include <functional>
 #include <spdlog/spdlog.h>
 #include <tuple>
-
-using namespace std::placeholders;
 
 namespace
 {
@@ -58,8 +55,9 @@ void network_service::add_udp_callback(
 
 void network_service::check_and_dispatch()
 {
-    pal::poll(
-        _sockets, std::bind(&network_service::handle_poll, this, _1, _2, _3));
+    pal::poll(_sockets, [this](auto&& handle, auto&& data, auto&& event) {
+        handle_poll(handle, data, event);
+    });
 }
 
 void network_service::handle_poll(

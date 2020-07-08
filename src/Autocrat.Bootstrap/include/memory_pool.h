@@ -24,7 +24,7 @@ struct pool_node
     /**
      * Initializes a new instance of the `pool_node` class.
      */
-    pool_node() : buffer{}
+    pool_node()
     {
         data = buffer.data();
     }
@@ -41,7 +41,7 @@ struct pool_node
     this_type* allocated_list;
     this_type* next;
     std::byte* data;
-    std::array<std::byte, Size> buffer;
+    std::array<std::byte, Size> buffer{};
 #ifndef NDEBUG
     bool is_free;
 #endif
@@ -126,7 +126,7 @@ public:
 private:
     node_type* allocate_new()
     {
-        node_type* node = new node_type();
+        auto* node = new node_type();
         node_type* root = _root.load();
         do
         {
@@ -168,11 +168,6 @@ public:
     using value_type = std::byte;
 
     /**
-     * Initializes a new instance of the `memory_pool_buffer` class.
-     */
-    memory_pool_buffer();
-
-    /**
      * Destroys the `memory_pool_buffer` instance.
      */
     ~memory_pool_buffer() noexcept;
@@ -204,7 +199,7 @@ public:
      * Gets the number of bytes written to this instance.
      * @returns The number of bytes that have been written.
      */
-    std::size_t size() const noexcept;
+    [[nodiscard]] std::size_t size() const noexcept;
 
 private:
     using node_type = pool_type::node_type;
@@ -212,9 +207,9 @@ private:
     void ensure_space_to_write();
     node_type* release_node(node_type* node);
 
-    node_type* _head;
-    node_type* _tail;
-    std::size_t _count;
+    node_type* _head = nullptr;
+    node_type* _tail = nullptr;
+    std::size_t _count = 0;
 };
 
 }

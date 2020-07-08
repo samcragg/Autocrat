@@ -226,7 +226,7 @@ public:
     {
     }
 
-    std::size_t moved_objects() const noexcept
+    [[nodiscard]] std::size_t moved_objects() const noexcept
     {
         return _objects;
     }
@@ -369,7 +369,7 @@ void object_scanner::set_reference(void*, std::size_t, void*)
 void* object_serializer::restore()
 {
     std::size_t size = _buffer.size();
-    gc_service* gc = global_services.get_service<gc_service>();
+    auto* gc = global_services.get_service<gc_service>();
 
     void* object = gc->allocate(size);
     auto buffer = static_cast<std::byte*>(object);

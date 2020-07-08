@@ -278,7 +278,7 @@ int recv_from(
 {
     sockaddr_storage address;
     int address_size = sizeof(address);
-    sockaddr* address_ptr = reinterpret_cast<sockaddr*>(&address);
+    auto address_ptr = reinterpret_cast<sockaddr*>(&address);
     int result = ::recvfrom(
         socket.handle(),
         buffer,
