@@ -4,6 +4,38 @@ string configuration = Argument("configuration", "Release");
 string coreRTVersion = "0.1";
 string environmentName = IsRunningOnWindows() ? "Windows" : "Linux";
 
+Task("AnalyzeNative")
+    .WithCriteria(IsRunningOnUnix())
+    .Does(() =>
+{
+    var toExclude = new[]
+    {
+        "pal_win32.cpp",
+    };
+
+    var sources = GetFiles("../src/Autocrat.Bootstrap/src/*.cpp");
+    Parallel.ForEach(sources, (FilePath source) =>
+    {
+        if (!toExclude.Contains(source.GetFilename().FullPath))
+        {
+            VerifyCommandSucceeded(Run(
+                "../src/Autocrat.Bootstrap",
+                "clang-format",
+                "-n",
+                "-Werror",
+                source.FullPath
+            ));
+
+            VerifyCommandSucceeded(Run(
+                "../src/Autocrat.Bootstrap",
+                "clang-tidy",
+                "--quiet",
+                source.FullPath
+            ));
+        }
+    });
+});
+
 Task("BuildManaged")
     .IsDependentOn("UpdateVersions")
     .Does(() =>
