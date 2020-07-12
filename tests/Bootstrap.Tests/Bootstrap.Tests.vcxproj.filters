@@ -24,6 +24,9 @@
     <ClInclude Include="ManagedObjects.h" />
     <ClInclude Include="MemoryMonitor.h" />
     <ClInclude Include="TestMocks.h" />
+    <ClInclude Include="tests\PalTests.h">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc">

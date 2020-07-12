@@ -85,6 +85,7 @@
     <ClInclude Include="mock_services.h" />
     <ClInclude Include="pal_mock.h" />
     <ClInclude Include="TestMocks.h" />
+    <ClInclude Include="tests\PalTests.h" />
     <ClInclude Include="TestUtils.h" />
   </ItemGroup>
   <ItemGroup>
