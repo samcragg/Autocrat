@@ -66,12 +66,16 @@ Task("BuildNativeLinux")
 {
     VerifyCommandSucceeded(Run(
         "../src/Autocrat.Bootstrap",
-        "make"
+        "make",
+        "mode=" + configuration,
+        "-j"
     ));
 
     VerifyCommandSucceeded(Run(
         "../tests/Bootstrap.Tests",
-        "make"
+        "make",
+        "mode=" + configuration,
+        "-j"
     ));
 });
 
@@ -108,6 +112,19 @@ Task("FetchCoreRT")
     FilePath archive = DownloadFile(
         $"https://github.com/samcragg/corert/releases/download/v{coreRTVersion}/PackageFiles.{environmentName}.zip");
     System.IO.Compression.ZipFile.ExtractToDirectory(archive.FullPath, "CoreRT");
+});
+
+Task("GenerateCoverageNative")
+    .WithCriteria(IsRunningOnUnix())
+    .Does(() =>
+{
+    Information("Restoring gcovr");
+    RunWithPythonEnvironment("pip install gcovr --disable-pip-version-check -q");
+
+    Information("Generating report");
+    EnsureDirectoryExists("report");
+    CleanDirectory("report");
+    RunWithPythonEnvironment("gcovr --config gcovr.cfg ../tests/Bootstrap.Tests/obj/Debug/src");
 });
 
 Task("Package")
@@ -264,7 +281,8 @@ Task("RunNativeLinuxTests")
     VerifyCommandSucceeded(Run(
         "../tests/Bootstrap.Tests",
         "make",
-        "test"));
+        "test",
+        "mode=" + configuration));
 });
 
 Task("RunNativeWindowsTests")

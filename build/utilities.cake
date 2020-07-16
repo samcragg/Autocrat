@@ -56,3 +56,18 @@ int Run(string workingDirectory, string command, params string[] arguments)
         WorkingDirectory = workingDirectory,
     });
 }
+
+void RunWithPythonEnvironment(string command)
+{
+    if (!DirectoryExists("tools/py"))
+    {
+        Information("Setting up Python virtual environment");
+        Run(".", "python3", "-m", "venv", "tools/py");
+    }
+
+    Run(
+        ".",
+        "bash",
+        "-c",
+        "\"source tools/py/bin/activate && " + command + "\"");
+}

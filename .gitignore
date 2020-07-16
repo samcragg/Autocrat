@@ -12,4 +12,6 @@ SpecFlow/
 # Build output
 /build/CoreRT
 /build/packages
+/build/report
 /build/repos
+/build/tools

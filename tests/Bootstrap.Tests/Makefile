@@ -1,7 +1,7 @@
 include ../../src/Autocrat.Bootstrap/variables.mk
 
 CXXFLAGS += -DUNIT_TESTS -I . -I ../../src/Autocrat.Bootstrap/include -isystem ../../libs
-CXXFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined
+CXXFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined --coverage
 
 SRC_DIR = ../../src/Autocrat.Bootstrap/src
 SRCS = \
@@ -77,6 +77,6 @@ $(TEST_PROGRAM): $(OBJECTS)
 
 .PHONY: clean
 clean:
-	@find $(OBJ_DIR) -type f -name '*.o' -delete
+	@find $(OBJ_DIR) -type f -regex ".*\.\(o\|gcda\|gcno\)" -delete
 	@rm -f $(TEST_PROGRAM)
 	@rm -f $(TEST_OUTPUT)
