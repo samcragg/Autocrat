@@ -1,8 +1,16 @@
+#tool nuget:?package=ReportGenerator&version=4.6.1
 #load "utilities.cake"
 
 string configuration = Argument("configuration", "Release");
 string coreRTVersion = "0.1";
 string environmentName = IsRunningOnWindows() ? "Windows" : "Linux";
+
+string[] managedTestProjects =
+{
+    "../tests/Abstractions.Tests/Abstractions.Tests.csproj",
+    "../tests/Compiler.Tests/Compiler.Tests.csproj",
+    "../tests/NativeAdapters.Tests/NativeAdapters.Tests.csproj",
+};
 
 Task("AnalyzeNative")
     .WithCriteria(IsRunningOnUnix())
@@ -114,6 +122,42 @@ Task("FetchCoreRT")
     System.IO.Compression.ZipFile.ExtractToDirectory(archive.FullPath, "CoreRT");
 });
 
+Task("GenerateCoverageManaged")
+    .Does(() =>
+{
+    CleanDirectory("results");
+    CleanDirectory("report/managed");
+
+    var testSettings = new DotNetCoreTestSettings
+    {
+        ArgumentCustomization = args =>
+        {
+            return args.Append("--nologo")
+                       .Append("--collect:\"XPlat Code Coverage\"");
+        },
+        Configuration = configuration,
+        NoBuild = true,
+        NoRestore = true,
+        ResultsDirectory = "results",
+        Settings = "runsettings.xml",
+        Verbosity = DotNetCoreVerbosity.Minimal,
+    };
+
+    foreach (string project in managedTestProjects)
+    {
+        DotNetCoreTest(project, testSettings);
+    };
+
+    Information("Generating report");
+    ReportGenerator(
+        GetFiles("results/**/*.xml"),
+        "report/managed",
+        new ReportGeneratorSettings
+        {
+            Verbosity = ReportGeneratorVerbosity.Error
+        });
+});
+
 Task("GenerateCoverageNative")
     .WithCriteria(IsRunningOnUnix())
     .Does(() =>
@@ -122,8 +166,8 @@ Task("GenerateCoverageNative")
     RunWithPythonEnvironment("pip install gcovr --disable-pip-version-check -q");
 
     Information("Generating report");
-    EnsureDirectoryExists("report");
-    CleanDirectory("report");
+    EnsureDirectoryExists("report/native");
+    CleanDirectory("report/native");
     RunWithPythonEnvironment("gcovr --config gcovr.cfg ../tests/Bootstrap.Tests/obj/Debug/src");
 });
 
@@ -262,13 +306,7 @@ Task("RunManagedTests")
         Verbosity = DotNetCoreVerbosity.Minimal,
     };
 
-    string[] projects =
-    {
-        "../tests/Abstractions.Tests/Abstractions.Tests.csproj",
-        "../tests/Compiler.Tests/Compiler.Tests.csproj",
-        "../tests/NativeAdapters.Tests/NativeAdapters.Tests.csproj",
-    };
-    foreach (string project in projects)
+    foreach (string project in managedTestProjects)
     {
         DotNetCoreTest(project, testSettings);
     };
@@ -319,10 +357,15 @@ Task("RunTests")
     .IsDependentOn("RunNativeWindowsTests")
     .IsDependentOn("RunNativeLinuxTests");
 
+Task("GenerateCoverage")
+    .IsDependentOn("GenerateCoverageNative")
+    .IsDependentOn("GenerateCoverageManaged");
+
 Task("Default")
     .IsDependentOn("RestoreNuGet")
     .IsDependentOn("Build")
     .IsDependentOn("RunTests")
+    .IsDependentOn("GenerateCoverage")
     .IsDependentOn("Package")
     .IsDependentOn("PackageCoreRT");
 
