@@ -1,0 +1,17 @@
+trigger:
+- main
+
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - script: ./build.sh
+    workingDirectory: build
+
+- job: Windows
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - script: ./build.cmd
+    workingDirectory: build
