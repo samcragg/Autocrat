@@ -73,7 +73,7 @@ $(OBJ_DIR)/%.o: %.cpp
 OBJECTS = $(GTEST_OBJ) $(SRC_OBJS) $(TESTS_OBJS)
 $(TEST_PROGRAM): $(OBJECTS)
 	@mkdir -p $(@D)
-	g++ $(OBJECTS) $(CXXFLAGS) -o $(TEST_PROGRAM)
+	$(CXX) $(OBJECTS) $(CXXFLAGS) -o $(TEST_PROGRAM)
 
 .PHONY: clean
 clean:

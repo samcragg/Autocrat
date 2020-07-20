@@ -11,5 +11,5 @@ endif
 
 define build_object
 	@mkdir -p $(dir $(2))
-	g++ $(1) -c -o $(2) $(CXXFLAGS)
+	$(CXX) $(1) -c -o $(2) $(CXXFLAGS)
 endef
