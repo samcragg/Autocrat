@@ -45,6 +45,7 @@ Task("AnalyzeNative")
 });
 
 Task("BuildManaged")
+    .IsDependentOn("RestoreNuGet")
     .IsDependentOn("UpdateVersions")
     .Does(() =>
 {
@@ -113,6 +114,14 @@ Task("Clean")
     CleanDirectories("../tests/**/obj");
 });
 
+Task("CleanResults")
+    .Does(() =>
+{
+    CleanDirectory("results");
+    CleanDirectory("report/managed"); 
+    CleanDirectory("report/native");
+});
+
 Task("FetchCoreRT")
     .Does(() =>
 {
@@ -123,11 +132,9 @@ Task("FetchCoreRT")
 });
 
 Task("GenerateCoverageManaged")
+    .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    CleanDirectory("results");
-    CleanDirectory("report/managed");
-
     var testSettings = new DotNetCoreTestSettings
     {
         ArgumentCustomization = args =>
@@ -160,6 +167,7 @@ Task("GenerateCoverageManaged")
 
 Task("GenerateCoverageNative")
     .WithCriteria(IsRunningOnUnix())
+    .IsDependentOn("CleanResults")
     .Does(() =>
 {
     Information("Restoring gcovr");
@@ -167,7 +175,6 @@ Task("GenerateCoverageNative")
 
     Information("Generating report");
     EnsureDirectoryExists("report/native");
-    CleanDirectory("report/native");
     RunWithPythonEnvironment("gcovr --config gcovr.cfg ../tests/Bootstrap.Tests/obj/Debug/src");
 });
 
@@ -295,14 +302,17 @@ Task("RestoreTermColor")
 });
 
 Task("RunManagedTests")
+    .IsDependentOn("CleanResults")
     .Does(() =>
 {
     var testSettings = new DotNetCoreTestSettings
     {
         ArgumentCustomization = args => args.Append("--nologo"),
         Configuration = configuration,
+        Logger = "trx",
         NoBuild = true,
         NoRestore = true,
+        ResultsDirectory = "results",
         Verbosity = DotNetCoreVerbosity.Minimal,
     };
 
@@ -362,7 +372,6 @@ Task("GenerateCoverage")
     .IsDependentOn("GenerateCoverageManaged");
 
 Task("Default")
-    .IsDependentOn("RestoreNuGet")
     .IsDependentOn("Build")
     .IsDependentOn("RunTests")
     .IsDependentOn("GenerateCoverage")

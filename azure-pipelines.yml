@@ -17,3 +17,9 @@ jobs:
   steps:
   - script: ./build.cmd
     workingDirectory: build
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'VSTest'
+      testResultsFiles: '*.trx'
+      searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
+      testRunTitle: 'Managed Tests'
