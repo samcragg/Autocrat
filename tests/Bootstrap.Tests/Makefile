@@ -50,8 +50,8 @@ TESTS = \
  mock_method_handles.cpp \
  pal_mock.cpp
 
-TEST_PROGRAM = bin/$(mode)/Bootstrap.Tests
-TEST_OUTPUT = bootstrap_results_linux.xml
+TEST_PROGRAM = bin/Bootstrap.Tests
+TEST_OUTPUT = test_results.xml
 
 build: $(TEST_PROGRAM);
 

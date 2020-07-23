@@ -322,25 +322,16 @@ Task("RunManagedTests")
     };
 });
 
-Task("RunNativeLinuxTests")
-    .WithCriteria(IsRunningOnUnix())
+Task("RunNativeTests")
+    .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    VerifyCommandSucceeded(Run(
-        "../tests/Bootstrap.Tests",
-        "make",
-        "test",
-        "mode=" + configuration));
-});
-
-Task("RunNativeWindowsTests")
-    .WithCriteria(IsRunningOnWindows())
-    .Does(() =>
-{
+    var results = MakeAbsolute(Directory("results") + File("bootstrap_results.xml")).FullPath;
+    var program = IsRunningOnWindows() ? "Bootstrap.Tests.exe" : "Bootstrap.Tests";
     VerifyCommandSucceeded(Run(
         "../tests/Bootstrap.Tests/bin",
-        "../tests/Bootstrap.Tests/bin/Bootstrap.Tests.exe",
-        "--gtest_output=xml:bootstrap_results_windows.xml"));
+        "../tests/Bootstrap.Tests/bin/" + program,
+        $"\"--gtest_output=xml:{results}\""));
 });
 
 Task("UpdateVersions")
@@ -364,8 +355,7 @@ Task("Build")
 
 Task("RunTests")
     .IsDependentOn("RunManagedTests")
-    .IsDependentOn("RunNativeWindowsTests")
-    .IsDependentOn("RunNativeLinuxTests");
+    .IsDependentOn("RunNativeTests");
 
 Task("GenerateCoverage")
     .IsDependentOn("GenerateCoverageNative")

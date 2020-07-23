@@ -10,6 +10,11 @@ jobs:
     env:
       CXX: g++-9
     workingDirectory: build
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: 'bootstrap_results.xml'
+      searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
+      testRunTitle: 'Native Tests (Linux)'
 
 - job: Windows
   pool:
@@ -23,3 +28,8 @@ jobs:
       testResultsFiles: '*.trx'
       searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
       testRunTitle: 'Managed Tests'
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: 'bootstrap_results.xml'
+      searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
+      testRunTitle: 'Native Tests (Windows)'
