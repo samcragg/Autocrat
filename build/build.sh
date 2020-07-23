@@ -20,4 +20,4 @@ for i in "$@"; do
 done
 
 # Start Cake
-dotnet tool run dotnet-cake -- "$SCRIPT" $CAKE_ARGUMENTS
+dotnet tool run dotnet-cake -- "$SCRIPT" "${CAKE_ARGUMENTS[@]}"
