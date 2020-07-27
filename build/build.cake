@@ -170,10 +170,7 @@ Task("GenerateCoverageNative")
     .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    Information("Restoring gcovr");
-    RunWithPythonEnvironment("pip install gcovr --disable-pip-version-check -q");
-
-    Information("Generating report");
+    PipInstall("gcovr");
     EnsureDirectoryExists("report/native");
     RunWithPythonEnvironment("gcovr --config gcovr.cfg ../tests/Bootstrap.Tests/obj/Debug/src");
 });

@@ -42,6 +42,17 @@ string GetLibsFolder()
     return MakeAbsolute(Directory("..")).FullPath + "/libs";
 }
 
+void PipInstall(string tool)
+{
+    int result = RunWithPythonEnvironment($"which {tool} > /dev/null");
+    if (result != 0)
+    {
+        Information($"Installing {tool} from pip");
+        VerifyCommandSucceeded(
+            RunWithPythonEnvironment("pip install --disable-pip-version-check -q " + tool));
+    }
+}
+
 int Run(string workingDirectory, string command, params string[] arguments)
 {
     var builder = new ProcessArgumentBuilder();
@@ -57,15 +68,16 @@ int Run(string workingDirectory, string command, params string[] arguments)
     });
 }
 
-void RunWithPythonEnvironment(string command)
+int RunWithPythonEnvironment(string command)
 {
-    if (!DirectoryExists("tools/py"))
+    if (!FileExists("tools/py/bin/activate"))
     {
         Information("Setting up Python virtual environment");
+        CleanDirectory("tools/py");
         Run(".", "python3", "-m", "venv", "tools/py");
     }
 
-    Run(
+    return Run(
         ".",
         "bash",
         "-c",
