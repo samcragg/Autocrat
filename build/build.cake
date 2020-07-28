@@ -73,19 +73,9 @@ Task("BuildNativeLinux")
     .WithCriteria(IsRunningOnUnix())
     .Does(() =>
 {
-    VerifyCommandSucceeded(Run(
-        "../src/Autocrat.Bootstrap",
-        "make",
-        "mode=" + configuration,
-        "-j"
-    ));
-
-    VerifyCommandSucceeded(Run(
-        "../tests/Bootstrap.Tests",
-        "make",
-        "mode=" + configuration,
-        "-j"
-    ));
+    PipInstall("scons");
+    VerifyCommandSucceeded(
+        RunWithPythonEnvironment("scons -Qj4 -C .. mode=" + configuration));
 });
 
 Task("BuildNativeWindows")
@@ -171,6 +161,15 @@ Task("GenerateCoverageNative")
     .Does(() =>
 {
     PipInstall("gcovr");
+    PipInstall("scons");
+
+    VerifyCommandSucceeded(
+        RunWithPythonEnvironment($"scons -Qj4 -C .. coverage=1 mode=" + configuration));
+
+    VerifyCommandSucceeded(Run(
+        "../tests/Bootstrap.Tests/bin",
+        "../tests/Bootstrap.Tests/bin/Bootstrap.Tests"));
+
     EnsureDirectoryExists("report/native");
     RunWithPythonEnvironment("gcovr --config gcovr.cfg ../tests/Bootstrap.Tests/obj/Debug/src");
 });

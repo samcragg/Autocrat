@@ -74,7 +74,7 @@ int RunWithPythonEnvironment(string command)
     {
         Information("Setting up Python virtual environment");
         CleanDirectory("tools/py");
-        Run(".", "python3", "-m", "venv", "tools/py");
+        VerifyCommandSucceeded(Run(".", "python3", "-m", "venv", "tools/py"));
     }
 
     return Run(
