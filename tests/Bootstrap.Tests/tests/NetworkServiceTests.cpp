@@ -13,10 +13,10 @@
 class MockSocket : public pal_socket
 {
 public:
-    MockMethod(void, bind, (const pal::socket_handle&, const pal::socket_address&));
-    MockMethod(pal::socket_handle, create_udp_socket, ());
-    MockMethod(std::optional<pal::poll_event>, get_poll_event, (const pal::socket_handle&));
-    MockMethod(int, recv_from, (const pal::socket_handle&, char*, std::size_t, pal::socket_address*));
+    MockMethod(void, bind, (const pal::socket_handle&, const pal::socket_address&))
+    MockMethod(pal::socket_handle, create_udp_socket, ())
+    MockMethod(std::optional<pal::poll_event>, get_poll_event, (const pal::socket_handle&))
+    MockMethod(int, recv_from, (const pal::socket_handle&, char*, std::size_t, pal::socket_address*))
 };
 
 namespace
