@@ -4,7 +4,7 @@ trigger:
 jobs:
 - job: Linux
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update
@@ -15,8 +15,8 @@ jobs:
     workingDirectory: build
   - task: PublishTestResults@2
     inputs:
-      testResultsFiles: 'bootstrap_results.xml'
       searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
+      testResultsFiles: 'bootstrap_results.xml'
       testRunTitle: 'Native Tests (Linux)'
 
 - job: Windows
@@ -27,12 +27,30 @@ jobs:
     workingDirectory: build
   - task: PublishTestResults@2
     inputs:
+      mergeTestResults: true
+      searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
       testResultsFormat: 'VSTest'
       testResultsFiles: '*.trx'
-      searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
       testRunTitle: 'Managed Tests'
   - task: PublishTestResults@2
     inputs:
-      testResultsFiles: 'bootstrap_results.xml'
       searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
+      testResultsFiles: 'bootstrap_results.xml'
       testRunTitle: 'Native Tests (Windows)'
+
+- job: CodeCoverage
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y --no-install-recommends python3-venv
+      ./build.sh --target=GenerateCoverage
+    env:
+      CXX: g++-9
+    workingDirectory: build
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/build/report'
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/build/results/merged/Cobertura.xml'

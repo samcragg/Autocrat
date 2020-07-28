@@ -1,4 +1,3 @@
-#tool nuget:?package=ReportGenerator&version=4.6.1
 #load "utilities.cake"
 
 string configuration = Argument("configuration", "Release");
@@ -108,8 +107,7 @@ Task("CleanResults")
     .Does(() =>
 {
     CleanDirectory("results");
-    CleanDirectory("report/managed"); 
-    CleanDirectory("report/native");
+    CleanDirectory("report");
 });
 
 Task("FetchCoreRT")
@@ -146,13 +144,15 @@ Task("GenerateCoverageManaged")
     };
 
     Information("Generating report");
-    ReportGenerator(
-        GetFiles("results/**/*.xml"),
-        "report/managed",
-        new ReportGeneratorSettings
-        {
-            Verbosity = ReportGeneratorVerbosity.Error
-        });
+    VerifyCommandSucceeded(Run(
+        ".",
+        "dotnet",
+        "tool",
+        "run",
+        "reportgenerator",
+        "-verbosity:Error",
+        "-targetdir:report/managed",
+        "-reports:results/**/coverage*.xml"));
 });
 
 Task("GenerateCoverageNative")
@@ -172,6 +172,21 @@ Task("GenerateCoverageNative")
 
     EnsureDirectoryExists("report/native");
     RunWithPythonEnvironment("gcovr --config gcovr.cfg ../tests/Bootstrap.Tests/obj/Debug/src");
+});
+
+Task("MergeReports")
+    .Does(() =>
+{
+    VerifyCommandSucceeded(Run(
+        ".",
+        "dotnet",
+        "tool",
+        "run",
+        "reportgenerator",
+        "-verbosity:Error",
+        "-targetdir:results/merged",
+        "-reporttypes:Cobertura",
+        "-reports:results/**/*.xml"));
 });
 
 Task("Package")
@@ -354,13 +369,14 @@ Task("RunTests")
     .IsDependentOn("RunNativeTests");
 
 Task("GenerateCoverage")
+    .IsDependentOn("BuildManaged")
     .IsDependentOn("GenerateCoverageNative")
-    .IsDependentOn("GenerateCoverageManaged");
+    .IsDependentOn("GenerateCoverageManaged")
+    .IsDependentOn("MergeReports");
 
 Task("Default")
     .IsDependentOn("Build")
     .IsDependentOn("RunTests")
-    .IsDependentOn("GenerateCoverage")
     .IsDependentOn("Package")
     .IsDependentOn("PackageCoreRT");
 
