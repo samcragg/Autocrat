@@ -1,0 +1,4 @@
+Import("env sources")
+
+objects = env.BuildObjects("", sources)
+env.Library("bin/Autocrat.Bootstrap.a", objects)

@@ -1,0 +1,23 @@
+Import("env sources coverage")
+
+test_flags = ["-DUNIT_TESTS"]
+
+env = env.Clone()
+env.Append(CPPPATH = ["."])
+
+if coverage:
+    test_flags.append("--coverage")
+    env.Append(LIBS = ["gcov"])
+else:
+    sanitizers = ["-fsanitize=address", "-fsanitize=leak", "-fsanitize=undefined"]
+    test_flags.extend(sanitizers)
+    env.Append(LINKFLAGS = sanitizers)
+
+env.Append(CXXFLAGS = test_flags)
+
+objects = (env.BuildObjects("src", sources, exclude="main.cpp")
+           + env.BuildObjects("", Glob("*.cpp"))
+           + env.BuildObjects("tests", Glob("tests/*.cpp"))
+           + env.BuildObjects("gtest", [File("#libs/gtest/gtest-all.cc")]))
+
+env.Program("bin/Bootstrap.Tests", objects)

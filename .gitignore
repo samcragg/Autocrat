@@ -5,6 +5,9 @@
 *.vcxproj.user
 bootstrap_results*.xml
 
+# Scons
+*.dblite
+
 # SpecFlow
 SpecFlow/
 *.feature.cs

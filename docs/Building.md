@@ -19,17 +19,15 @@ To build under Linux, the following will need installing:
 
 + [.NET Core SDK 3.1](https://docs.microsoft.com/en-gb/dotnet/core/install/linux)
 + g++ (version 9 is currently used, but versions supporting C++17 should work)
-+ make
++ python (version 3+, should be installed by default)
 
-In addition to these, for a full build (including code analysis), the following
-additional packages will need to be available:
+You will also need to install `python3-venv` if running under Ubuntu, as by
+default the python that ships with it doesn't include it. In addition to these,
+for a full build (including code analysis), the following additional packages
+will need to be available:
 
 + clang-format
 + clang-tidy
-+ python3 (should be installed by default)
-
-You will also need to install `python3-venv` if running under Ubuntu, as by
-default the python that ships with it doesn't include it.
 
 With all the above, you should then be able to run the `builds.sh` script from
 inside the `build` directory and it will perform a full build, run the tests,
