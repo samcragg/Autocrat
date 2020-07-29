@@ -73,8 +73,8 @@ Task("BuildNativeLinux")
     .Does(() =>
 {
     PipInstall("scons");
-    VerifyCommandSucceeded(
-        RunWithPythonEnvironment("scons -Qj4 -C .. mode=" + configuration));
+    VerifyCommandSucceeded(RunWithPythonEnvironment(
+        $"scons -Qj4 -C .. mode={configuration}"));
 });
 
 Task("BuildNativeWindows")
@@ -163,15 +163,17 @@ Task("GenerateCoverageNative")
     PipInstall("gcovr");
     PipInstall("scons");
 
-    VerifyCommandSucceeded(
-        RunWithPythonEnvironment($"scons -Qj4 -C .. coverage=1 mode=" + configuration));
+    VerifyCommandSucceeded(RunWithPythonEnvironment(
+        $"scons -Qj4 -C .. coverage=1 mode={configuration}"));
 
     VerifyCommandSucceeded(Run(
         "../tests/Bootstrap.Tests/bin",
         "../tests/Bootstrap.Tests/bin/Bootstrap.Tests"));
 
     EnsureDirectoryExists("report/native");
-    RunWithPythonEnvironment("gcovr --config gcovr.cfg ../tests/Bootstrap.Tests/obj/Debug/src");
+    var objectDirectory = $"../tests/Bootstrap.Tests/obj/{configuration}/src";
+    VerifyCommandSucceeded(RunWithPythonEnvironment(
+        $"gcovr --config gcovr.cfg --object-directory {objectDirectory} {objectDirectory}"));
 });
 
 Task("MergeReports")
