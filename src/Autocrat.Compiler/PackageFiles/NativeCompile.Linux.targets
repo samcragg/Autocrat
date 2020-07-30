@@ -1,10 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <PackageReference Include="Autocrat.CoreRT.Unix" Version="$(CoreRTVersion)" />
+    <PackageReference Include="Autocrat.CoreRT.Linux" Version="$(CoreRTVersion)" />
   </ItemGroup>
   
   <PropertyGroup>
-    <IlcPath>$(NuGetPackageFolders.Split(';')[0])/autocrat.corert.unix/$(CoreRTVersion)/</IlcPath>
+    <IlcPath>$(NuGetPackageFolders.Split(';')[0])/autocrat.corert.linux/$(CoreRTVersion)/</IlcPath>
     <BootstrapPath>$(IlcPath)sdk/</BootstrapPath>
     <CppCompilerAndLinker>g++</CppCompilerAndLinker>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
