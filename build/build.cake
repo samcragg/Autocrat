@@ -370,6 +370,7 @@ Task("Default")
     .IsDependentOn("Build")
     .IsDependentOn("RunTests")
     .IsDependentOn("Package")
-    .IsDependentOn("PackageCoreRT");
+    .IsDependentOn("PackageCoreRT")
+    .IsDependentOn("RunIntegrationTests");
 
 RunTarget(Argument("target", "Default"));
