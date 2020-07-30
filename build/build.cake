@@ -44,7 +44,7 @@ Task("AnalyzeNative")
 });
 
 Task("BuildManaged")
-    .IsDependentOn("RestoreNuGet")
+    .IsDependentOn("Restore")
     .IsDependentOn("UpdateVersions")
     .Does(() =>
 {
@@ -123,7 +123,9 @@ Task("GenerateCoverageManaged")
     .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings("--collect:\"XPlat Code Coverage\"");
+    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings(
+        configuration,
+        "--collect:\"XPlat Code Coverage\"");
     testSettings.Settings = "runsettings.xml";
 
     foreach (string project in managedTestProjects)
@@ -229,34 +231,7 @@ Task("Publish")
     DotNetCorePublish("../src/Autocrat.Compiler/Autocrat.Compiler.csproj", settings);
 });
 
-Task("RestoreCppMock")
-    .Does(() =>
-{
-    CheckoutGitRepo(
-        "cpp_mock",
-        "https://github.com/samcragg/cpp_mock",
-        "v1.0.2",
-        "include");
-
-    CopyDirectory("repos/cpp_mock/include", GetLibsFolder());
-});
-
-Task("RestoreGoogleTest")
-    .Does(() =>
-{
-    CheckoutGitRepo(
-        "googletest",
-        "https://github.com/google/googletest",
-        "release-1.10.0",
-        "googletest/include/gtest",
-        "googletest/scripts",
-        "googletest/src");
-
-    Information("Fusing gtest");
-    Run("repos/googletest/googletest/scripts", "python", "fuse_gtest_files.py", GetLibsFolder());
-});
-
-Task("RestoreNuGet")
+Task("Restore")
     .Does(() =>
 {
     var restoreSettings = new DotNetCoreRestoreSettings
@@ -278,35 +253,11 @@ Task("RestoreNuGet")
     });
 });
 
-Task("RestoreSpdlog")
-    .Does(() =>
-{
-    CheckoutGitRepo(
-        "spdlog",
-        "https://github.com/gabime/spdlog",
-        "v1.6.1",
-        "include/spdlog");
-
-    CopyDirectory("repos/spdlog/include", GetLibsFolder());
-});
-
-Task("RestoreTermColor")
-    .Does(() =>
-{
-    CheckoutGitRepo(
-        "termcolor",
-        "https://github.com/ikalnytskyi/termcolor",
-        "",
-        "include/termcolor");
-
-    CopyDirectory("repos/termcolor/include", GetLibsFolder());
-});
-
 Task("RunIntegrationTests")
     .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings();
+    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings(configuration);
     testSettings.Logger = "trx";
 
     DotNetCoreTest("../tests/Integration.Tests/Integration.Tests.csproj", testSettings);
@@ -316,7 +267,7 @@ Task("RunManagedTests")
     .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings();
+    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings(configuration);
     testSettings.Logger = "trx";
 
     foreach (string project in managedTestProjects)
