@@ -123,20 +123,8 @@ Task("GenerateCoverageManaged")
     .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    var testSettings = new DotNetCoreTestSettings
-    {
-        ArgumentCustomization = args =>
-        {
-            return args.Append("--nologo")
-                       .Append("--collect:\"XPlat Code Coverage\"");
-        },
-        Configuration = configuration,
-        NoBuild = true,
-        NoRestore = true,
-        ResultsDirectory = "results",
-        Settings = "runsettings.xml",
-        Verbosity = DotNetCoreVerbosity.Minimal,
-    };
+    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings("--collect:\"XPlat Code Coverage\"");
+    testSettings.Settings = "runsettings.xml";
 
     foreach (string project in managedTestProjects)
     {
@@ -314,20 +302,22 @@ Task("RestoreTermColor")
     CopyDirectory("repos/termcolor/include", GetLibsFolder());
 });
 
+Task("RunIntegrationTests")
+    .IsDependentOn("CleanResults")
+    .Does(() =>
+{
+    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings();
+    testSettings.Logger = "trx";
+
+    DotNetCoreTest("../tests/Integration.Tests/Integration.Tests.csproj", testSettings);
+});
+
 Task("RunManagedTests")
     .IsDependentOn("CleanResults")
     .Does(() =>
 {
-    var testSettings = new DotNetCoreTestSettings
-    {
-        ArgumentCustomization = args => args.Append("--nologo"),
-        Configuration = configuration,
-        Logger = "trx",
-        NoBuild = true,
-        NoRestore = true,
-        ResultsDirectory = "results",
-        Verbosity = DotNetCoreVerbosity.Minimal,
-    };
+    DotNetCoreTestSettings testSettings = CreateDefaultTestSettings();
+    testSettings.Logger = "trx";
 
     foreach (string project in managedTestProjects)
     {

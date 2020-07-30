@@ -29,6 +29,27 @@ void CheckoutGitRepo(string repo, string url, string tag, params string[] subDir
     }
 }
 
+DotNetCoreTestSettings CreateDefaultTestSettings(params string[] additionalArgs)
+{
+    return new DotNetCoreTestSettings
+    {
+        ArgumentCustomization = args =>
+        {
+            args.Append("--nologo");
+            foreach (string a in additionalArgs)
+            {
+                args = args.Append(a);
+            }
+            return args;
+        },
+        Configuration = configuration,
+        NoBuild = true,
+        NoRestore = true,
+        ResultsDirectory = "results",
+        Verbosity = DotNetCoreVerbosity.Minimal,
+    };
+}
+
 void VerifyCommandSucceeded(int returnCode)
 {
     if (returnCode != 0)
