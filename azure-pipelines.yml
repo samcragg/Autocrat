@@ -18,6 +18,8 @@ jobs:
       searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
       testResultsFiles: 'bootstrap_results.xml'
       testRunTitle: 'Native Tests (Linux)'
+  - publish: $(System.DefaultWorkingDirectory)/build/packages
+    artifact: Packages (Linux)
 
 - job: Windows
   pool:
@@ -37,6 +39,8 @@ jobs:
       searchFolder: '$(System.DefaultWorkingDirectory)/build/results'
       testResultsFiles: 'bootstrap_results.xml'
       testRunTitle: 'Native Tests (Windows)'
+  - publish: $(System.DefaultWorkingDirectory)/build/packages
+    artifact: Packages (Windows)
 
 - job: CodeCoverage
   pool:
