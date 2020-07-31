@@ -14,8 +14,8 @@
           AfterTargets="Publish">
     <ItemGroup>
       <AutocratFiles Include="$(AutocratOutputSource)" />
-      <AutocratFiles Include="$(PublishDir)ManagedToNative.a" />
       <AutocratFiles Include="$(BootstrapPath)/libAutocrat.Bootstrap.a" />
+      <AutocratFiles Include="$(PublishDir)ManagedToNative.a" />
       <CompilerOptions Include="-I &quot;$(BootstrapPath)&quot;" />
       <CompilerOptions Include="-march=x86-64" />
       <CompilerOptions Include="-ldl" />
