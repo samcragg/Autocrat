@@ -117,7 +117,4 @@
   <Target Name="CleanOutput" BeforeTargets="ClCompile">
     <RemoveDir Directories="$(OutDir)" />
   </Target>
-  <Target Name="CopyHeaders" AfterTargets="Build">
-    <Copy SourceFiles="include\method_handles.h" DestinationFolder="$(OutDir)" />
-  </Target>
 </Project>
