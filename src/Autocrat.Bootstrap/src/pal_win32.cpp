@@ -64,6 +64,11 @@ std::int64_t get_clock_frequency()
     return frequency.QuadPart;
 }
 
+[[noreturn]] void throw_last_error()
+{
+    throw std::system_error(GetLastError(), std::system_category());
+}
+
 }
 
 namespace pal::detail
@@ -252,6 +257,18 @@ void bind(const socket_handle& socket, const socket_address& address)
 socket_handle create_udp_socket()
 {
     return socket_handle(SOCK_DGRAM, IPPROTO_UDP);
+}
+
+std::filesystem::path get_current_executable()
+{
+    char path[MAX_PATH] = {};
+    std::size_t size = GetModuleFileName(nullptr, path, sizeof(path));
+    if (size == 0)
+    {
+        throw_last_error();
+    }
+
+    return std::filesystem::path(path, path + size);
 }
 
 std::size_t get_current_processor()

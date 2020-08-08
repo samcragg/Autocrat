@@ -234,6 +234,11 @@ socket_handle create_udp_socket()
     return socket_handle(SOCK_DGRAM, IPPROTO_UDP);
 }
 
+std::filesystem::path get_current_executable()
+{
+    return std::filesystem::read_symlink("/proc/self/exe");
+}
+
 std::size_t get_current_processor()
 {
     return static_cast<std::size_t>(sched_getcpu());

@@ -29,16 +29,6 @@ namespace
     std::string ctrl_c_argument = "ctrl_c_test_child_process";
 
 #if defined(_WIN32)
-    std::string get_current_process()
-    {
-        char executable_path[_MAX_PATH + 1] = {};
-        GetModuleFileName(
-            nullptr,
-            executable_path,
-            _MAX_PATH);
-        return executable_path;
-    }
-
     void raise_ctrl_c()
     {
         GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
@@ -71,11 +61,6 @@ namespace
     }
 
 #else
-    std::string get_current_process()
-    {
-        return std::filesystem::read_symlink("/proc/self/exe").string();
-    }
-
     void raise_ctrl_c()
     {
         raise(SIGINT);
@@ -118,6 +103,21 @@ int run_ctrl_c_test()
     return 123;
 }
 
+TEST_F(PalServicesTests, ShouldGetTheCurrentExecutable)
+{
+#if defined(_WIN32)
+    const char exe_name[] = "Bootstrap.Tests.exe";
+#else
+    const char exe_name[] = "Bootstrap.Tests";
+#endif
+
+    std::filesystem::path exe = pal::get_current_executable();
+
+    EXPECT_TRUE(std::filesystem::is_regular_file(exe));
+    EXPECT_EQ(exe_name, exe.filename().string());
+    EXPECT_NE(std::string::npos, exe.generic_string().find("tests/Bootstrap.Tests/bin"));
+}
+
 TEST_F(PalServicesTests, ShouldGetTheCurrentTimeStamp)
 {
     std::chrono::microseconds start = pal::get_current_time();
@@ -130,7 +130,7 @@ TEST_F(PalServicesTests, ShouldGetTheCurrentTimeStamp)
 
 TEST_F(PalServicesDeathTest, ShouldHandleConsoleCloseSignals)
 {
-    int result = run_process(get_current_process(), ctrl_c_argument);
+    int result = run_process(pal::get_current_executable().string(), ctrl_c_argument);
 
     EXPECT_EQ(123, result);
 }

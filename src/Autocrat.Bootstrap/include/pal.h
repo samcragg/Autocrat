@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <filesystem>
 #include <thread>
 
 namespace pal
@@ -52,6 +53,12 @@ void bind(const socket_handle& socket, const socket_address& address);
  * @returns A wrapper over a native handle.
  */
 socket_handle create_udp_socket();
+
+/**
+ * Gets the full path of the current executable.
+ * @returns The absolute path of the running executable.
+ */
+std::filesystem::path get_current_executable();
 
 /**
  * Gets the index of the CPU the current thread is running on.
