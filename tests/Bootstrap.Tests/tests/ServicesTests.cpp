@@ -5,14 +5,12 @@
 
 struct MockThreadPool
 {
-    MockThreadPool(int value) :
-        constructor_value(value)
+    static std::unique_ptr<MockThreadPool> make_unique()
     {
+        return std::make_unique<MockThreadPool>();
     }
 
     MockMethod(void, add_observer, (autocrat::lifetime_service*), )
-
-    int constructor_value;
 };
 
 struct MockService
@@ -43,11 +41,6 @@ struct MockLifetimeService : autocrat::lifetime_service
 class ServicesTests : public testing::Test
 {
 protected:
-    ServicesTests()
-    {
-        _services.initialize_thread_pool(123);
-    }
-
     autocrat::services<MockThreadPool, MockService, MockLifetimeService> _services;
 };
 
@@ -67,7 +60,7 @@ TEST_F(ServicesTests, InitializeShouldCreateNewInstances)
     MockService* instance = _services.get_service<MockService>();
 
     EXPECT_NE(nullptr, instance);
-    EXPECT_EQ(123, instance->thread_pool->constructor_value);
+    EXPECT_NE(nullptr, instance->thread_pool);
 }
 
 TEST_F(ServicesTests, InitializeShouldSubscribeLifetimeServices)

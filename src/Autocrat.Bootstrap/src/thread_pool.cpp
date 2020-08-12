@@ -47,6 +47,11 @@ thread_pool::~thread_pool() noexcept
     }
 }
 
+std::unique_ptr<thread_pool> thread_pool::make_unique()
+{
+    return std::make_unique<thread_pool>(0, 1);
+}
+
 void thread_pool::add_observer(lifetime_service* service)
 {
     _observers.emplace_back(service);

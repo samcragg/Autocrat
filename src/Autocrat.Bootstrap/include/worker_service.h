@@ -58,7 +58,7 @@ private:
 /**
  * Exposes functionality for obtaining worker services.
  */
-class worker_service FINAL_CLASS
+class worker_service FINAL
     : public thread_specific_storage<small_vector<worker_info*>>
 {
 public:

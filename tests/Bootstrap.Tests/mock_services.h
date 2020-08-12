@@ -8,6 +8,8 @@ class mock_gc_service : public autocrat::gc_service
 {
 public:
     MockMethod(void*, allocate, (std::size_t))
+    MockMethod(void, begin_work, (std::size_t))
+    MockMethod(void, end_work, (std::size_t))
 
     autocrat::gc_heap reset_heap() override
     {
@@ -31,6 +33,14 @@ class mock_task_service : public autocrat::task_service
 public:
     MockMethod(void, enqueue, (managed_delegate*, void*))
     MockMethod(void, start_new, (managed_delegate*))
+};
+
+class mock_thread_pool : public autocrat::thread_pool
+{
+public:
+    MockMethod(void, add_observer, (autocrat::lifetime_service*))
+    MockMethod(std::size_t, size, (), const noexcept)
+    MockMethod(void, start, (initialize_function))
 };
 
 class mock_timer_service : public autocrat::timer_service
@@ -76,8 +86,12 @@ public:
 class mock_services : public autocrat::global_services_type
 {
 public:
+    MockMethod(void, check_and_dispatch, ())
+    MockMethod(void, initialize, ())
+
     void create_services()
     {
+        _thread_pool = std::make_unique<mock_thread_pool>();
         _services = std::make_tuple(
             std::make_unique<mock_gc_service>(),
             std::make_unique<mock_network_service>(),

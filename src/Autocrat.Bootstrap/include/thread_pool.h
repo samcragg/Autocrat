@@ -6,6 +6,7 @@
 #include <any>
 #include <atomic>
 #include <cassert>
+#include <functional>
 #include <limits>
 #include <thread>
 
@@ -56,7 +57,7 @@ public:
      * Represents the function signature of methods to invoke during
      * background thread initialization.
      */
-    using initialize_function = void (*)(std::size_t thread_id);
+    using initialize_function = std::function<void(std::size_t thread_id)>;
 
     /**
      * Constructs a new instance of the `thread_pool` class.
@@ -65,10 +66,18 @@ public:
      */
     thread_pool(std::size_t cpu_id, std::size_t threads);
 
+    MOCKABLE_CONSTRUCTOR(thread_pool)
+
     /**
      * Destructs the `thread_pool` instance.
      */
     MOCKABLE_METHOD ~thread_pool() noexcept;
+
+    /**
+     * Factory method to create a new instance of the `thread_pool` class.
+     * @returns A new instance of the `thread_pool` class.
+     */
+    static std::unique_ptr<thread_pool> make_unique();
 
     /**
      * Registers the service to receive notifications.
@@ -127,7 +136,7 @@ template <class T>
 class thread_specific_storage : public lifetime_service
 {
 public:
-    void begin_work(std::size_t thread_id) final
+    MOCKABLE_METHOD void begin_work(std::size_t thread_id) FINAL
     {
         assert(thread_storage == nullptr);
 
@@ -138,7 +147,7 @@ public:
         on_begin_work(storage);
     }
 
-    void end_work(std::size_t thread_id) final
+    MOCKABLE_METHOD void end_work(std::size_t thread_id) FINAL
     {
         T* storage = &_storage[thread_id + 1u];
         assert(thread_storage == storage);

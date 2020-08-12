@@ -31,7 +31,7 @@ public:
      * Allows each service to check for work to do and dispatch it to the
      * thread pool.
      */
-    void check_and_dispatch()
+    MOCKABLE_METHOD void check_and_dispatch()
     {
         invoke_all<has_check_and_dispatch>(
             [](auto& service) { service.check_and_dispatch(); });
@@ -58,24 +58,13 @@ public:
     /**
      * Initializes the service classes.
      */
-    void initialize()
+    MOCKABLE_METHOD void initialize()
     {
+        _thread_pool = ThreadPool::make_unique();
         _services =
             std::make_tuple(std::make_unique<Services>(_thread_pool.get())...);
         invoke_all<is_base_of_lifetime_service>(
             [this](auto& service) { _thread_pool->add_observer(&service); });
-    }
-
-    /**
-     * Initializes the thread pool.
-     * @tparam Args The argument types.
-     * @param args The constructor arguments for the thread pool.
-     */
-    template <class... Args>
-    void initialize_thread_pool(Args&&... args)
-    {
-        _thread_pool =
-            std::make_unique<ThreadPool>(std::forward<Args>(args)...);
     }
 
 private:
