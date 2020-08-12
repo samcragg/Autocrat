@@ -124,6 +124,11 @@ public:
             get_service<autocrat::task_service>());
     }
 
+    mock_thread_pool& thread_pool()
+    {
+        return *static_cast<mock_thread_pool*>(_thread_pool.get());
+    }
+
     mock_timer_service& timer_service()
     {
         return *static_cast<mock_timer_service*>(

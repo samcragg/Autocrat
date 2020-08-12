@@ -149,5 +149,11 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="ConsoleTestPrinter.cpp" />
+    <ClCompile Include="tests\ApplicationTests.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\application.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

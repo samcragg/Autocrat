@@ -90,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc" />
+    <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\application.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\array_pool.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\gc_service.cpp" />
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\locks.cpp" />
@@ -108,6 +109,7 @@
     <ClCompile Include="MemoryMonitor.cpp" />
     <ClCompile Include="mock_method_handles.cpp" />
     <ClCompile Include="pal_mock.cpp" />
+    <ClCompile Include="tests\ApplicationTests.cpp" />
     <ClCompile Include="tests\DynamicArrayTests.cpp" />
     <ClCompile Include="tests\ExclusiveLockTests.cpp" />
     <ClCompile Include="tests\FixedHashmapTests.cpp" />

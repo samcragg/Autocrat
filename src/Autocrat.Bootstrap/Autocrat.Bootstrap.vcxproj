@@ -83,12 +83,14 @@
     <ClCompile Include="src\native_exports.cpp" />
     <ClCompile Include="src\network_service.cpp" />
     <ClCompile Include="src\pal_win32.cpp" />
+    <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\task_service.cpp" />
     <ClCompile Include="src\thread_pool.cpp" />
     <ClCompile Include="src\timer_service.cpp" />
     <ClCompile Include="src\worker_service.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\application.h" />
     <ClInclude Include="include\array_pool.h" />
     <ClInclude Include="include\collections.h" />
     <ClInclude Include="include\defines.h" />
