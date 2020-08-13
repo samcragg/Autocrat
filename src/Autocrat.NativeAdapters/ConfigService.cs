@@ -9,7 +9,7 @@ namespace Autocrat.NativeAdapters
     using System.Text.Json;
 
     /// <summary>
-    /// Responsible for the loaded of configuration data.
+    /// Responsible for the loading of configuration data.
     /// </summary>
     public static class ConfigService
     {
