@@ -25,11 +25,12 @@ void application::initialize()
 
 void application::run()
 {
-    while (_running)
+    _running = true;
+    do
     {
         global_services.check_and_dispatch();
         pause();
-    }
+    } while (_running);
 
     auto* gc = autocrat::global_services.get_service<autocrat::gc_service>();
     gc->set_heap(std::move(_global_heap));

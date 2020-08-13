@@ -1,7 +1,11 @@
 #include "application.h"
 #include "mock_services.h"
+#include <chrono>
+#include <thread>
 #include <gtest/gtest.h>
 #include <cpp_mock.h>
+
+using namespace std::chrono_literals;
 
 namespace
 {
@@ -71,4 +75,22 @@ TEST_F(ApplicationTests, InitializeShouldRegisterTheWorkerTypes)
     _application.initialize();
 
     EXPECT_EQ(1u, register_worker_types_call_count);
+}
+
+TEST_F(ApplicationTests, RunShouldDispatchWorkUntilStopIsCalled)
+{
+    std::thread stop_after_10ms([this]()
+        {
+            std::this_thread::sleep_for(10ms);
+            _application.stop();
+        });
+
+    auto start = std::chrono::steady_clock::now();
+    _application.run();
+    auto end = std::chrono::steady_clock::now();
+
+    EXPECT_GE(end - start, 10ms);
+    Verify(mock_global_services.check_and_dispatch);
+
+    stop_after_10ms.join();
 }
