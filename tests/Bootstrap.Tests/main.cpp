@@ -1,7 +1,9 @@
-#include <gtest/gtest.h>
 #include "ConsoleTestPrinter.h"
 #include "mock_services.h"
 #include "tests/PalTests.h"
+#include <gtest/gtest.h>
+#include <spdlog/sinks/null_sink.h>
+#include <spdlog/spdlog.h>
 
 mock_services mock_global_services;
 
@@ -32,6 +34,8 @@ int main(int argc, char** argv)
     }
     else
     {
+        spdlog::set_default_logger(spdlog::create<spdlog::sinks::null_sink_st>("disable_logging"));
+
         testing::InitGoogleTest(&argc, argv);
         testing::AddGlobalTestEnvironment(new Environment());
         testing::TestEventListeners& listeners = testing::UnitTest::GetInstance()->listeners();
