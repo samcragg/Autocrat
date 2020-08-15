@@ -3,6 +3,7 @@
 
 #include "gc_service.h"
 #include <atomic>
+#include <filesystem>
 
 namespace autocrat
 {
@@ -36,6 +37,11 @@ private:
     gc_heap _global_heap;
     std::atomic_bool _running;
 };
+
+/**
+ * Gets the path to the configuration file.
+ */
+std::filesystem::path get_config_file();
 
 }
 
