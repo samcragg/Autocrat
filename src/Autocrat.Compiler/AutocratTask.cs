@@ -51,6 +51,7 @@ namespace Autocrat.Compiler
         {
             try
             {
+                LogManager.SetLogger(this.Log);
                 using var output = new OutputStreams(this.OutputAssembly, this.OutputSource);
                 Task<bool> task = this.ExecuteAsync(
                     output,
