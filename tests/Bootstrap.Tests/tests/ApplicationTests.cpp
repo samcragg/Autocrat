@@ -15,7 +15,7 @@ namespace
     std::size_t initialize_managed_thread_call_count;
     std::size_t load_configuration_call_count;
     std::size_t on_configuration_loaded_call_count;
-    std::size_t register_worker_types_call_count;
+    std::size_t register_managed_types_call_count;
     std::function<bool(void*)> WhenLoadConfiguration;
 
     extern "C" void CDECL InitializeManagedThread()
@@ -34,9 +34,9 @@ namespace
         on_configuration_loaded_call_count++;
     }
 
-    extern "C" void CDECL RegisterWorkerTypes()
+    extern "C" void CDECL RegisterManagedTypes()
     {
-        register_worker_types_call_count++;
+        register_managed_types_call_count++;
     }
 }
 
@@ -111,11 +111,11 @@ TEST_F(ApplicationTests, InitializeShouldLoadTheConfigFile)
 
 TEST_F(ApplicationTests, InitializeShouldRegisterTheWorkerTypes)
 {
-    register_worker_types_call_count = 0;
+    register_managed_types_call_count = 0;
 
     _application.initialize();
 
-    EXPECT_EQ(1u, register_worker_types_call_count);
+    EXPECT_EQ(1u, register_managed_types_call_count);
 }
 
 TEST_F(ApplicationTests, InitializeShouldThrowIfLoadingTheConfigFails)
