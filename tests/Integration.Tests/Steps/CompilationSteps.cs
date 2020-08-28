@@ -1,6 +1,5 @@
 ﻿namespace Integration.Tests.Steps
 {
-    using System;
     using System.Diagnostics;
     using System.IO;
     using System.Text;
@@ -9,7 +8,7 @@
     using Xunit.Abstractions;
 
     [Binding]
-    public class CompilationSteps : IDisposable
+    public class CompilationSteps
     {
         // dotnet restore has some weirdness about specifying the web sources
         // via the command options (see https://stackoverflow.com/q/56231780/312325)
@@ -27,20 +26,24 @@
   <ItemGroup>
     <PackageReference Include='Autocrat.Abstractions' />
     <PackageReference Include='Autocrat.Compiler' PrivateAssets='all' />
+
+    <None Update='*.json'>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>";
 
         private static TempDirectory PackageDirectory;
+        private readonly CompilationContext compilationContext;
         private readonly ITestOutputHelper logger;
-        private readonly string nativeProgram;
         private readonly string packageSources;
-        private readonly TempDirectory projectDirectory;
         private int fileCount;
         private string nativeOutput;
 
-        public CompilationSteps(ITestOutputHelper logger)
+        public CompilationSteps(ITestOutputHelper logger, CompilationContext compilationContext)
         {
             this.logger = logger;
+            this.compilationContext = compilationContext;
 
             // The packages are in build/packages
             // The current directory is something like tests/Integration.Tests/bin/Debug/netcoreapp3.1
@@ -51,8 +54,6 @@
                 "packages");
 
             this.packageSources = buildPackages + @"; https://api.nuget.org/v3/index.json";
-            this.projectDirectory = new TempDirectory();
-            this.nativeProgram = Path.Combine(this.projectDirectory, "output", "NativeProgram");
         }
 
         [AfterTestRun]
@@ -71,14 +72,13 @@
         public void CompileTheCode()
         {
             File.WriteAllText(
-                Path.Combine(this.projectDirectory, "Project.csproj"),
+                Path.Combine(this.compilationContext.ProjectDirectory, "Project.csproj"),
                 string.Format(MinimalProjectFormat, this.packageSources));
 
             this.RunProcess("dotnet", $"restore -v:q --no-cache --packages \"{PackageDirectory}\"")
                 .Should().Be(0);
 
-            string outputDir = Path.GetDirectoryName(this.nativeProgram);
-            this.RunProcess("dotnet", $"publish -v:q --nologo --no-restore -o {outputDir}")
+            this.RunProcess("dotnet", $"publish -v:q --nologo --no-restore -o {this.compilationContext.OutputDirectory}")
                 .Should().Be(0);
         }
 
@@ -87,20 +87,15 @@
         {
             this.fileCount++;
             File.WriteAllText(
-                Path.Combine(this.projectDirectory, $"Code{this.fileCount}.cs"),
+                Path.Combine(this.compilationContext.ProjectDirectory, $"Code{this.fileCount}.cs"),
                 code);
-        }
-
-        public void Dispose()
-        {
-            this.projectDirectory.Dispose();
         }
 
         [When(@"I run the native program")]
         public void RunTheNativeProgram()
         {
             var output = new StringBuilder();
-            Process process = this.CreateProcess(this.nativeProgram, "");
+            Process process = this.CreateProcess(this.compilationContext.NativeProgram, "");
             process.OutputDataReceived += (_, e) => output.AppendLine(e.Data ?? string.Empty);
 
             process.Start();
@@ -127,7 +122,7 @@
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    WorkingDirectory = this.projectDirectory,
+                    WorkingDirectory = this.compilationContext.ProjectDirectory,
                 }
             };
         }

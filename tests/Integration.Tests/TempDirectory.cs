@@ -13,11 +13,6 @@
 
         public string FullName { get; }
 
-        public static implicit operator string(TempDirectory dir)
-        {
-            return dir.FullName;
-        }
-
         public void Dispose()
         {
             try
