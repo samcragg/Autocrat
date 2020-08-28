@@ -23,6 +23,7 @@ namespace Autocrat.Compiler
         private InterfaceResolver? interfaceResolver;
         private IKnownTypes? knownTypes;
         private ManagedCallbackGenerator? managedCallbackGenerator;
+        private ManagedExportsGenerator? managedExportsGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceFactory"/> class.
@@ -165,6 +166,20 @@ namespace Autocrat.Compiler
             }
 
             return this.managedCallbackGenerator;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ManagedExportsGenerator"/> instance.
+        /// </summary>
+        /// <returns>An instance of the <see cref="ManagedExportsGenerator"/> class.</returns>
+        public virtual ManagedExportsGenerator GetManagedExportsGenerator()
+        {
+            if (this.managedExportsGenerator is null)
+            {
+                this.managedExportsGenerator = new ManagedExportsGenerator();
+            }
+
+            return this.managedExportsGenerator;
         }
 
         /// <summary>

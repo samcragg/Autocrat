@@ -110,6 +110,18 @@
             }
         }
 
+        public sealed class GetManagedExportsGeneratorTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnTheSameInstance()
+            {
+                ManagedExportsGenerator result1 = this.factory.GetManagedExportsGenerator();
+                ManagedExportsGenerator result2 = this.factory.GetManagedExportsGenerator();
+
+                result1.Should().BeSameAs(result2);
+            }
+        }
+
         public sealed class GetNativeImportGeneratorTests : ServiceFactoryTests
         {
             [Fact]

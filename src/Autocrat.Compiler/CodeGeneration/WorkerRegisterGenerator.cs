@@ -18,6 +18,16 @@ namespace Autocrat.Compiler.CodeGeneration
     /// </summary>
     internal class WorkerRegisterGenerator : MethodGenerator
     {
+        /// <summary>
+        /// Represents the name of the generated class.
+        /// </summary>
+        internal const string GeneratedClassName = "Workers";
+
+        /// <summary>
+        /// Represents the name of the generated method.
+        /// </summary>
+        internal const string GeneratedMethodName = "RegisterWorkerTypes";
+
         // This class goes through every call to IWorkerFactory.GetWorker<Type>()
         // and generates a method that can create the type and registers that
         // method with the native code. This is to allow for dependency
@@ -42,7 +52,9 @@ namespace Autocrat.Compiler.CodeGeneration
         //// }
         //
         // where 123 is the method handle for the CreateMyClass method.
-        private static readonly TypeSyntax WorkerFactoryType = ParseTypeName("Autocrat.NativeAdapters.WorkerFactory");
+        private static readonly TypeSyntax WorkerFactoryType = ParseTypeName(
+            "Autocrat.NativeAdapters." + nameof(NativeAdapters.WorkerFactory));
+
         private readonly IReadOnlyCollection<INamedTypeSymbol> factoryTypes;
         private readonly Func<InstanceBuilder> instanceBuilder;
         private readonly List<(TypeSyntax, int)> methodHandles = new List<(TypeSyntax, int)>();
@@ -60,7 +72,7 @@ namespace Autocrat.Compiler.CodeGeneration
             Func<InstanceBuilder> instanceBuilder,
             IReadOnlyCollection<INamedTypeSymbol> factoryTypes,
             NativeImportGenerator nativeGenerator)
-            : base("Workers")
+            : base(GeneratedClassName)
         {
             this.factoryTypes = factoryTypes;
             this.instanceBuilder = instanceBuilder;
@@ -74,7 +86,7 @@ namespace Autocrat.Compiler.CodeGeneration
         /// This constructor is to make the class easier to be mocked.
         /// </remarks>
         protected WorkerRegisterGenerator()
-            : base("Workers")
+            : base(GeneratedClassName)
         {
             this.factoryTypes = null!;
             this.instanceBuilder = null!;
@@ -136,9 +148,11 @@ namespace Autocrat.Compiler.CodeGeneration
                         ArgumentList(SingletonSeparatedList(methodHandle))));
             }
 
-            return CreateMethod(
-                "RegisterWorkerTypes",
-                Block(this.methodHandles.Select(CallRegister).ToArray()));
+            return MethodDeclaration(
+                PredefinedType(Token(SyntaxKind.VoidKeyword)),
+                Identifier(GeneratedMethodName))
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+                .WithBody(Block(this.methodHandles.Select(CallRegister).ToArray()));
         }
     }
 }

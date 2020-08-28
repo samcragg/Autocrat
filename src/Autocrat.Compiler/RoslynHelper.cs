@@ -18,6 +18,20 @@ namespace Autocrat.Compiler
     internal static class RoslynHelper
     {
         /// <summary>
+        /// Creates a new member access for a static method on a class.
+        /// </summary>
+        /// <param name="className">The name of the class.</param>
+        /// <param name="method">The name of the method.</param>
+        /// <returns>A new <c>MemberAccessExpressionSyntax</c>.</returns>
+        public static MemberAccessExpressionSyntax AccessMember(string className, string method)
+        {
+            return MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName(className),
+                IdentifierName(method));
+        }
+
+        /// <summary>
         /// Generates an attribute indicating that the method can be called by
         /// native code.
         /// </summary>
@@ -28,10 +42,7 @@ namespace Autocrat.Compiler
             AttributeArgumentSyntax callingConvention = AttributeArgument(
                 NameEquals(IdentifierName("CallingConvention")),
                 null,
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    IdentifierName(nameof(CallingConvention)),
-                    IdentifierName(nameof(CallingConvention.Cdecl))));
+                AccessMember(nameof(CallingConvention), nameof(CallingConvention.Cdecl)));
 
             AttributeArgumentSyntax entryPoint = AttributeArgument(
                 NameEquals(IdentifierName("EntryPoint")),

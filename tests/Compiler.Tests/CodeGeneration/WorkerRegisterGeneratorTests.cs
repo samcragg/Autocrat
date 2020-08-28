@@ -1,6 +1,7 @@
 ﻿namespace Compiler.Tests.CodeGeneration
 {
     using System.Collections.Generic;
+    using System.Linq;
     using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
     using Microsoft.CodeAnalysis;
@@ -32,8 +33,6 @@
 
         public sealed class GenerateTests : WorkerRegisterGeneratorTests
         {
-            private const string GeneratedMethodName = "RegisterWorkerTypes";
-
             [Fact]
             public void ShouldCreateAClassWithTheRegisterWorkerTypesMethod()
             {
@@ -41,13 +40,16 @@
 
                 CompilationUnitSyntax compilation = this.generator.Generate();
 
-                MemberDeclarationSyntax member =
+                ClassDeclarationSyntax classDeclaration =
                     compilation.Members.Should().ContainSingle()
                     .Which.Should().BeAssignableTo<ClassDeclarationSyntax>()
-                    .Which.Members.Should().ContainSingle(m => ((MethodDeclarationSyntax)m).Identifier.ValueText == GeneratedMethodName)
                     .Subject;
 
-                CompilationHelper.AssertExportedAs(member, GeneratedMethodName);
+                classDeclaration.Identifier.ValueText
+                    .Should().Be(WorkerRegisterGenerator.GeneratedClassName);
+
+                classDeclaration.Members.OfType<MethodDeclarationSyntax>()
+                    .Should().ContainSingle(m => m.Identifier.ValueText == WorkerRegisterGenerator.GeneratedMethodName);
             }
 
             [Fact]
