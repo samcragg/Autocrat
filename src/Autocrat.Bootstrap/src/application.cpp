@@ -3,6 +3,7 @@
 #include "pal.h"
 #include "pause.h"
 #include "services.h"
+#include <cerrno>
 #include <fstream>
 #include <memory>
 #include <spdlog/spdlog.h>
@@ -45,11 +46,10 @@ byte_array_ptr make_byte_array(std::size_t length)
 
 void load_configuration(const fs::path& path)
 {
-    std::ifstream file(
-        path.native(), std::ios_base::binary | std::ios_base::in);
-    if (!file)
+    std::ifstream file(path, std::ios_base::binary | std::ios_base::in);
+    if (file.fail())
     {
-        spdlog::warn("Unable to open configuration file");
+        spdlog::warn("Unable to open configuration file ({})", errno);
     }
     else
     {
@@ -79,8 +79,8 @@ void application::initialize()
     spdlog::debug("Setting up native/manage transition for threads");
     initialize_threads();
 
-    spdlog::debug("Registering worker type constructors");
-    managed_exports::RegisterWorkerTypes();
+    spdlog::debug("Registering exported managed types");
+    managed_exports::RegisterManagedTypes();
 
     fs::path path = get_config_file();
     spdlog::info("Loading configuration from '{}'", path.string());
