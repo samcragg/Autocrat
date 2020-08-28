@@ -56,7 +56,7 @@ namespace Autocrat.Compiler
                 Task<bool> task = this.ExecuteAsync(
                     output,
                     new ProjectLoader(),
-                    new CodeGenerator());
+                    c => new CodeGenerator(new ServiceFactory(c), c));
 
                 return task.GetAwaiter().GetResult();
             }
@@ -73,12 +73,14 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="output">Where to save the generated output to.</param>
         /// <param name="loader">Used to load the projects.</param>
-        /// <param name="generator">Used to generate the code.</param>
+        /// <param name="createGenerator">
+        /// Used to create a class that generates the code.
+        /// </param>
         /// <returns><c>true</c> on success; otherwise, <c>false</c>.</returns>
         internal async Task<bool> ExecuteAsync(
             OutputStreams output,
             ProjectLoader loader,
-            CodeGenerator generator)
+            Func<Compilation, CodeGenerator> createGenerator)
         {
             this.logger.Info("Loading sources");
             Compilation compilation = await loader
@@ -86,7 +88,7 @@ namespace Autocrat.Compiler
                 .ConfigureAwait(false);
 
             this.logger.Info("Generating code");
-            generator.Add(compilation);
+            CodeGenerator generator = createGenerator(compilation);
 
             this.logger.Info("Emitting assembly");
             generator.EmitAssembly(output.Assembly, output.AssemblyPdb);

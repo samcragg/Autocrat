@@ -2,6 +2,7 @@
 {
     using System.Threading.Tasks;
     using Autocrat.Compiler;
+    using FluentAssertions;
     using Microsoft.CodeAnalysis;
     using NSubstitute;
     using Xunit;
@@ -25,9 +26,17 @@
                 this.loader.GetCompilationAsync(this.task.References, this.task.Sources)
                     .Returns(compilation);
 
-                await this.task.ExecuteAsync(this.output, this.loader, this.generator);
+                Compilation captured = null;
+                await this.task.ExecuteAsync(
+                    this.output,
+                    this.loader,
+                    c =>
+                    {
+                        captured = c;
+                        return this.generator;
+                    });
 
-                this.generator.Received().Add(compilation);
+                captured.Should().BeSameAs(compilation);
             }
         }
     }

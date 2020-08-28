@@ -13,25 +13,25 @@
     using NSubstitute;
     using Xunit;
 
-    [Collection(nameof(CodeGenerator))]
-    public class CodeGeneratorTests : IDisposable
+    public class CodeGeneratorTests
     {
         private readonly ServiceFactory factory;
-        private readonly CodeGenerator generator;
 
         private CodeGeneratorTests()
         {
             this.factory = Substitute.For<ServiceFactory>(new object[] { null });
-            CodeGenerator.ServiceFactory = _ => this.factory;
-            this.generator = new CodeGenerator();
 
             SyntaxTreeRewriter rewriter = this.factory.CreateSyntaxTreeRewriter();
             rewriter.Generate(null).ReturnsForAnyArgs(ci => ci.Arg<SyntaxTree>());
         }
 
-        public void Dispose()
+        private CodeGenerator CreateGenerator(string code = null, bool allowErrors = false)
         {
-            CodeGenerator.ServiceFactory = null;
+            Compilation compilation = CompilationHelper.CompileCode(
+                code ?? "namespace X {}",
+                allowErrors,
+                referenceAbstractions: true);
+            return new CodeGenerator(this.factory, compilation);
         }
 
         public sealed class EmitAssemblyTests : CodeGeneratorTests
@@ -106,24 +106,22 @@
             [Fact]
             public void ShouldThrowIfTheCodeFailsToCompile()
             {
-                this.generator.Add(CompilationHelper.CompileCode(@"
+                CodeGenerator generator = this.CreateGenerator(@"
 public class Test
 {
     public UnknownType Invalid { get; set; }
 }",
-                    allowErrors: true,
-                    referenceAbstractions: true));
+                    allowErrors: true);
 
-                this.generator.Invoking(g => g.EmitAssembly(Stream.Null, Stream.Null))
+                generator.Invoking(g => g.EmitAssembly(Stream.Null, Stream.Null))
                     .Should().Throw<InvalidOperationException>();
             }
 
-            private Assembly EmitCode(string originalCode = "namespace X {}")
+            private Assembly EmitCode(string originalCode = null)
             {
                 using var stream = new MemoryStream();
-                this.generator.Add(CompilationHelper.CompileCode(originalCode, referenceAbstractions: true));
-
-                this.generator.EmitAssembly(stream, Stream.Null);
+                CodeGenerator generator = this.CreateGenerator(originalCode);
+                generator.EmitAssembly(stream, Stream.Null);
                 return Assembly.Load(stream.ToArray());
             }
         }
@@ -134,13 +132,9 @@ public class Test
             public void ShouldWriteTheNativeImportCode()
             {
                 NativeImportGenerator nativeGenerator = this.factory.GetNativeImportGenerator();
-                this.generator.Add(CompilationHelper.CompileCode(
-                    referenceAbstractions: true,
-                    code: @"
-public class Test
-{
-}"));
-                this.generator.EmitNativeCode(Stream.Null);
+                CodeGenerator generator = this.CreateGenerator("public class Test { }");
+
+                generator.EmitNativeCode(Stream.Null);
 
                 nativeGenerator.Received().WriteTo(Stream.Null);
             }
