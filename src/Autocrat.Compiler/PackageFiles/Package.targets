@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <UsingTask TaskName="Autocrat.Compiler.AutocratTask"
              AssemblyFile="$(AutocratCompiler)" />
-
+  
   <Target Name="AutocratTarget"
           AfterTargets="Publish"
           DependsOnTargets="ResolveAssemblyReferences;_GetAssemblyInfoFromTemplateFile">
@@ -49,6 +49,38 @@
 
     <!-- Do a little cleaning -->
     <RemoveDir Directories="$(AutocratOutputDirectory)bin;$(AutocratOutputDirectory)publish" />
+
+  </Target>
+
+  <Target Name="AutocratCopyOutputFiles"
+          AfterTargets="AutocratTarget">
+    <ItemGroup>
+      <!-- Exclude the compiler added files -->
+      <FilteredTargets Include="@(_NoneWithTargetPath)"
+                       Condition="'%(_NoneWithTargetPath.Link)'==''" />
+
+      <AdditionalItemsAlways Include="@(FilteredTargets->'%(FullPath)')"
+                             Condition="'%(FilteredTargets.CopyToPublishDirectory)'=='Always'"/>
+      <AdditionalItemsPreserveNewest Include="@(FilteredTargets->'%(FullPath)')"
+                                     Condition="'%(FilteredTargets.CopyToPublishDirectory)'=='PreserveNewest'"/>
+    </ItemGroup>
+
+    <Copy SourceFiles="@(AdditionalItemsPreserveNewest)"
+          DestinationFolder="$(PublishDir)"
+          OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+          Retries="$(CopyRetryCount)"
+          RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+          UseHardlinksIfPossible="$(CreateHardLinksForPublishFilesIfPossible)"
+          UseSymboliclinksIfPossible="$(CreateSymbolicLinksForPublishFilesIfPossible)" />
+
+    <Copy SourceFiles="@(AdditionalItemsAlways)"
+          DestinationFolder="$(PublishDir)"
+          SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+          OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+          Retries="$(CopyRetryCount)"
+          RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+          UseHardlinksIfPossible="$(CreateHardLinksForPublishFilesIfPossible)"
+          UseSymboliclinksIfPossible="$(CreateSymbolicLinksForPublishFilesIfPossible)" />
 
   </Target>
 
