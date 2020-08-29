@@ -8,6 +8,10 @@
     <BootstrapPath>$(IlcPath)sdk/</BootstrapPath>
     <CppCompilerAndLinker>g++</CppCompilerAndLinker>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+
+    <!-- Prevent ilc from crashing, see https://github.com/dotnet/corert/issues/7907 -->
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <Target Name="AutocratCompile"
