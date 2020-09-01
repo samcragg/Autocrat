@@ -1,7 +1,7 @@
 #load "utilities.cake"
 
 string configuration = Argument("configuration", "Release");
-string coreRTVersion = "0.1";
+string coreRTVersion = "0.2";
 string environmentName = IsRunningOnWindows() ? "Windows" : "Linux";
 
 string[] managedTestProjects =
