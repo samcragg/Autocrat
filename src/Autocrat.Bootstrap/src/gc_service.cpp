@@ -1,5 +1,6 @@
 #include "gc_service.h"
 #include "defines.h"
+#include "services.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
@@ -19,6 +20,13 @@ std::size_t align_up(std::size_t value)
     return result;
 }
 
+}
+
+// The CoreRT native runtime will call this method to allocate memory
+extern "C" void* allocate_bytes(std::size_t bytes)
+{
+    return autocrat::global_services.get_service<autocrat::gc_service>()
+        ->allocate(bytes);
 }
 
 namespace autocrat
