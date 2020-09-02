@@ -9,7 +9,7 @@ namespace System.Runtime.InteropServices
     /// Marks a managed method as being callable from native code.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class NativeCallableAttribute : Attribute
+    public sealed class UnmanagedCallersOnlyAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the calling convention required to call the method.

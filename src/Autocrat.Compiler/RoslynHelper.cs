@@ -37,7 +37,7 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="method">The native name of the method.</param>
         /// <returns>An attribute syntax.</returns>
-        public static AttributeSyntax CreateNativeCallableAttribute(string method)
+        public static AttributeSyntax CreateUnmanagedCallersOnlyAttribute(string method)
         {
             AttributeArgumentSyntax callingConvention = AttributeArgument(
                 NameEquals(IdentifierName("CallingConvention")),
@@ -55,7 +55,7 @@ namespace Autocrat.Compiler
                 callingConvention,
             };
 
-            return Attribute(IdentifierName("NativeCallable"))
+            return Attribute(IdentifierName("UnmanagedCallersOnly"))
                 .WithArgumentList(AttributeArgumentList(SeparatedList(arguments)));
         }
 

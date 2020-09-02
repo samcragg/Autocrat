@@ -33,7 +33,7 @@
             private const string GeneratedMethodName = nameof(IInitializer.OnConfigurationLoaded);
 
             [Fact]
-            public void ShouldCreateAClassWithAnNativeCallableMethod()
+            public void ShouldCreateAClassWithAManagedExportedMethod()
             {
                 this.initializer.AddClass(CreateClass());
                 CompilationUnitSyntax compilation = this.initializer.Generate();

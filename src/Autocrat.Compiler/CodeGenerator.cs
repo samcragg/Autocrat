@@ -8,11 +8,11 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Runtime.InteropServices;
     using System.Text;
     using Autocrat.Abstractions;
     using Autocrat.Compiler.CodeGeneration;
     using Autocrat.Compiler.Logging;
+    using Autocrat.NativeAdapters;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -131,7 +131,7 @@ int main()
         private static IEnumerable<MetadataReference> GetAutocratReferences()
         {
             yield return MetadataReference.CreateFromFile(typeof(ConfigurationAttribute).Assembly.Location);
-            yield return MetadataReference.CreateFromFile(typeof(NativeCallableAttribute).Assembly.Location);
+            yield return MetadataReference.CreateFromFile(typeof(ConfigService).Assembly.Location);
         }
 
         private CSharpCompilation AddCallbackAdapters(CSharpCompilation compilation)

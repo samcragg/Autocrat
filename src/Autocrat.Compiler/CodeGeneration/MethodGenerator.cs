@@ -63,7 +63,7 @@ namespace Autocrat.Compiler.CodeGeneration
         protected static MemberDeclarationSyntax CreateMethod(string name, BlockSyntax body, TypeSyntax? returnType = null)
         {
             SyntaxList<AttributeListSyntax> attributes = SingletonList(AttributeList(SingletonSeparatedList(
-                    RoslynHelper.CreateNativeCallableAttribute(name))));
+                    RoslynHelper.CreateUnmanagedCallersOnlyAttribute(name))));
 
             MethodDeclarationSyntax method = MethodDeclaration(
                 returnType ?? PredefinedType(Token(SyntaxKind.VoidKeyword)),

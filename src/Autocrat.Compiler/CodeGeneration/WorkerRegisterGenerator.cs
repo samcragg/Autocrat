@@ -38,13 +38,13 @@ namespace Autocrat.Compiler.CodeGeneration
         // would cause the following to be generated (note that the original
         // call still happens and this is generated in a separate class):
         //
-        //// [NativeCallable("RegisterWorkerTypes")]
+        //// [UnmanagedCallersOnly("RegisterWorkerTypes")]
         //// public static void RegisterWorkerTypes()
         //// {
         ////     WorkerFactory.RegisterConstructor<MyClass>(123);
         //// }
         ////
-        //// [NativeCallable("CreateMyClass")]
+        //// [UnmanagedCallersOnly("CreateMyClass")]
         //// public static object CreateMyClass()
         //// {
         ////     var dependency = new InjectedDependency();

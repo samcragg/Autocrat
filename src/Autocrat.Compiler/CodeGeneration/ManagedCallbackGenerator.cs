@@ -108,7 +108,7 @@ namespace Autocrat.Compiler.CodeGeneration
             MethodDeclarationSyntax declaration = MethodDeclaration(returnType, methodName)
                 .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
                 .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
-                    RoslynHelper.CreateNativeCallableAttribute(methodName)))))
+                    RoslynHelper.CreateUnmanagedCallersOnlyAttribute(methodName)))))
                 .WithBody(this.CreateBody(method))
                 .WithParameterList(ParameterList(SeparatedList(
                     CreateParameters(method))));

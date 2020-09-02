@@ -18,7 +18,7 @@ namespace Autocrat.NativeAdapters
         /// Gets the handle for the byte array type.
         /// </summary>
         /// <returns>A pointer to a native type handle.</returns>
-        [NativeCallable(EntryPoint = nameof(GetByteArrayType), CallingConvention = CallingConvention.Cdecl)]
+        [UnmanagedCallersOnly(EntryPoint = nameof(GetByteArrayType), CallingConvention = CallingConvention.Cdecl)]
         public static IntPtr GetByteArrayType()
         {
             return typeof(byte[]).TypeHandle.Value;
@@ -27,7 +27,7 @@ namespace Autocrat.NativeAdapters
         /// <summary>
         /// Initialize managed resources for the current thread.
         /// </summary>
-        [NativeCallable(EntryPoint = nameof(InitializeManagedThread), CallingConvention = CallingConvention.Cdecl)]
+        [UnmanagedCallersOnly(EntryPoint = nameof(InitializeManagedThread), CallingConvention = CallingConvention.Cdecl)]
         public static void InitializeManagedThread()
         {
             SynchronizationContext.SetSynchronizationContext(
@@ -42,7 +42,7 @@ namespace Autocrat.NativeAdapters
         /// <c>true</c> if the configuration was correctly parsed; otherwise,
         /// <c>false</c>.
         /// </returns>
-        [NativeCallable(EntryPoint = nameof(LoadConfiguration), CallingConvention = CallingConvention.Cdecl)]
+        [UnmanagedCallersOnly(EntryPoint = nameof(LoadConfiguration), CallingConvention = CallingConvention.Cdecl)]
         public static bool LoadConfiguration(byte[] source)
         {
             return ConfigService.Load(source);
