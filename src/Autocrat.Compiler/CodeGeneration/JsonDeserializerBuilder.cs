@@ -332,19 +332,24 @@ namespace Autocrat.Compiler.CodeGeneration
             var body = new List<StatementSyntax>();
             IdentifierNameSyntax reader = IdentifierName("reader");
 
-            //// if (!reader.Read() || (reader.TokenType != JsonTokenType.StartObject))
-            ////     throw new FormatException("Missing start object token")
+            // We allow to be positioned on the start object for the scenario
+            // we're being used by a nested serializer
+            //// if (reader.TokenType != JsonTokenType.StartObject)
+            ////     if (!reader.Read() || (reader.TokenType != JsonTokenType.StartObject))
+            ////         throw new FormatException("Missing start object token")
             ExpressionSyntax callReaderRead = InvokeMethod(reader, nameof(Utf8JsonReader.Read));
             body.Add(
                 IfStatement(
-                    BinaryExpression(
-                        SyntaxKind.LogicalOrExpression,
-                        PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, callReaderRead),
-                        CheckTokenType(
-                            reader,
-                            SyntaxKind.NotEqualsExpression,
-                            JsonTokenType.StartObject)),
-                    CreateThrowFormatException("Missing start object token")));
+                    CheckTokenType(reader, SyntaxKind.NotEqualsExpression, JsonTokenType.StartObject),
+                    IfStatement(
+                        BinaryExpression(
+                            SyntaxKind.LogicalOrExpression,
+                            PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, callReaderRead),
+                            CheckTokenType(
+                                reader,
+                                SyntaxKind.NotEqualsExpression,
+                                JsonTokenType.StartObject)),
+                        CreateThrowFormatException("Missing start object token"))));
 
             //// this.instance = new ClassType()
             body.Add(

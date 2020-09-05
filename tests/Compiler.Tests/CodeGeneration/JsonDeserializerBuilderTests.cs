@@ -19,20 +19,32 @@
         private const string ClassTypeName = "SimpleClass";
         private readonly ConfigGenerator generator = Substitute.For<ConfigGenerator>();
 
+        private delegate Utf8JsonReader CreateReader();
+
         private delegate T ReadDelegate<T>(ref Utf8JsonReader reader);
 
-        private static T ReadJson<T>(Type serializerType, string json)
+        private static T ReadJson<T>(Type serializerType, CreateReader createReader)
         {
             var readMethod = (ReadDelegate<T>)Delegate.CreateDelegate(
                 typeof(ReadDelegate<T>),
                 Activator.CreateInstance(serializerType),
                 JsonDeserializerBuilder.ReadMethodName);
 
-            var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
+            Utf8JsonReader reader = createReader();
             return readMethod(ref reader);
         }
 
         private object DeserializeJson(string propertyDeclarations, string json)
+        {
+            (Type classType, Type serializer) = this.GenerateClasses(propertyDeclarations);
+            CreateReader createReader = () => new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
+            return typeof(JsonDeserializerBuilderTests)
+                .GetMethod(nameof(ReadJson), NonPublic | Static)
+                .MakeGenericMethod(classType)
+                .Invoke(null, new object[] { serializer, createReader });
+        }
+
+        private (Type classType, Type serialzier) GenerateClasses(string propertyDeclarations)
         {
             string classDeclaration = @$"
 #nullable enable
@@ -70,17 +82,43 @@ public class {ClassTypeName}
                 referenceAbstractions: true);
 
             System.Reflection.Assembly assembly = CompilationHelper.GenerateAssembly(generatedCompilation);
-            Type classType = assembly.GetType(ClassTypeName);
-            Type serializerType = assembly.GetType(ClassTypeName + JsonDeserializerBuilder.GeneratedClassSuffix);
-
-            return typeof(JsonDeserializerBuilderTests)
-                .GetMethod(nameof(ReadJson), NonPublic | Static)
-                .MakeGenericMethod(classType)
-                .Invoke(null, new object[] { serializerType, json });
+            return (
+                assembly.GetType(ClassTypeName),
+                assembly.GetType(ClassTypeName + JsonDeserializerBuilder.GeneratedClassSuffix));
         }
 
         public sealed class GenerateTests : JsonDeserializerBuilderTests
         {
+            [Fact]
+            public void ShouldAllowReadingFromTheStartObjectToken()
+            {
+                (Type classType, Type serializer) = this.GenerateClasses("public int Value { get; set; }");
+                CreateReader createReader = () =>
+                {
+                    var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(@"{""value"": 123}"));
+                    reader.Read();
+                    reader.TokenType.Should().Be(JsonTokenType.StartObject);
+                    return reader;
+                };
+
+                dynamic instance = typeof(JsonDeserializerBuilderTests)
+                    .GetMethod(nameof(ReadJson), NonPublic | Static)
+                    .MakeGenericMethod(classType)
+                    .Invoke(null, new object[] { serializer, createReader });
+
+                ((int)instance.Value).Should().Be(123);
+            }
+
+            [Fact]
+            public void ShouldIgnoreLeadingWhitespace()
+            {
+                dynamic instance = this.DeserializeJson(
+                    "public int Value { get; set; }",
+                    "\t { \"value\":123 }");
+
+                ((int)instance.Value).Should().Be(123);
+            }
+
             [Fact]
             public void ShouldIgnoreUnknownJsonProperties()
             {
@@ -217,6 +255,8 @@ public class {ClassTypeName}
             {
                 // Note we can't use a property in the other type, as that will
                 // get picked up in our test method and added to the deserializer
+                // The OtherTypeDeserializer matches the overall structure that
+                // are generators use to read the data
                 string classMembers = @"
     public OtherType Other { get; set; }
 }
@@ -228,14 +268,30 @@ public class OtherTypeDeserializer
 {
     public OtherType Read(ref System.Text.Json.Utf8JsonReader reader)
     {
-        return new OtherType { field = reader.GetString() };
+        // Read start object;
+        if (reader.TokenType != System.Text.Json.JsonTokenType.StartObject)
+        {
+            reader.Read();
+        }
+        var instance = new OtherType();
+
+        // Read property
+        reader.Read();
+
+        // Read value
+        reader.Read();
+        instance.field = reader.GetString();
+
+        // Read end object
+        reader.Read();
+        return instance;
     }";
                 this.generator.GetClassFor(null)
                     .ReturnsForAnyArgs(SyntaxFactory.IdentifierName("OtherTypeDeserializer"));
 
                 dynamic instance = this.DeserializeJson(
                     classMembers,
-                    @"{ ""other"":""Test Value"" }");
+                    @"{ ""other"": { ""field"":""Test Value"" } }");
 
                 ((string)instance.Other.field).Should().Be("Test Value");
             }
