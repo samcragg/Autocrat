@@ -10,7 +10,7 @@ The first thing you need to do is publish a debug build of the application:
     dotnet publish -c Debug
 
 This will generate the `exe` and `pdb` files in the
-`bin\Debug\netstandard2.0\publish` folder by default. To debug the application,
+`bin\Debug\netcoreapp3.1\publish` folder by default. To debug the application,
 open the `exe` with Visual Studio (either via the File -> Open ->
 Project/Solution option or dragging the `exe` file over an open Visual Studio
 instance). Open up any source files you want to place a breakpoint in, add the
