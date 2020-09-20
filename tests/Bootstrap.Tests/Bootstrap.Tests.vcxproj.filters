@@ -18,7 +18,6 @@
     </ClInclude>
     <ClInclude Include="pal_mock.h" />
     <ClInclude Include="mock_services.h" />
-    <ClInclude Include="mock_method_handles.h" />
     <ClInclude Include="TestUtils.h" />
     <ClInclude Include="ConsoleTestPrinter.h" />
     <ClInclude Include="ManagedObjects.h" />
@@ -27,6 +26,7 @@
     <ClInclude Include="tests\PalTests.h">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="mock_exports.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\gtest\gtest-all.cc">
@@ -67,7 +67,6 @@
     <ClCompile Include="tests\ServicesTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="mock_method_handles.cpp" />
     <ClCompile Include="tests\NativeExportsTests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -155,5 +154,6 @@
     <ClCompile Include="..\..\src\Autocrat.Bootstrap\src\application.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="mock_exports.cpp" />
   </ItemGroup>
 </Project>

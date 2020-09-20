@@ -1,8 +1,8 @@
-#ifndef MOCK_METHOD_HANDLES_H
-#define MOCK_METHOD_HANDLES_H
+#ifndef MOCK_EXPORTS_H
+#define MOCK_EXPORTS_H
 
 #include <unordered_map>
-#include "method_handles.h"
+#include "exports.h"
 
 class method_registration
 {

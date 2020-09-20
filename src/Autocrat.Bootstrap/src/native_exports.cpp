@@ -1,5 +1,5 @@
 #include "native_exports.h"
-#include "method_handles.h"
+#include "exports.h"
 #include "services.h"
 #include <string_view>
 

@@ -3,9 +3,9 @@
 
 #include "collections.h"
 #include "defines.h"
+#include "exports.h"
 #include "locks.h"
 #include "managed_interop.h"
-#include "method_handles.h"
 #include "thread_pool.h"
 #include <cstdint>
 #include <optional>

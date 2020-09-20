@@ -70,7 +70,7 @@ namespace Autocrat.Compiler.CodeGeneration
             writer.WriteLine("#include <array>");
             writer.WriteLine("#include <cstddef>");
             writer.WriteLine("#include <cstdint>");
-            writer.WriteLine("#include \"method_handles.h\"");
+            writer.WriteLine("#include \"exports.h\"");
         }
 
         private void AddExport(string signature, string name)

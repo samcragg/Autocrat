@@ -1,4 +1,4 @@
-#include "mock_method_handles.h"
+#include "mock_exports.h"
 
 std::int32_t method_registration::counter = 0;
 std::unordered_map<std::int32_t, method_types> method_registration::registrations;

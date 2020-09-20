@@ -2,7 +2,7 @@
 #define TIMER_SERVICE_H
 
 #include "defines.h"
-#include "method_handles.h"
+#include "exports.h"
 #include "smart_ptr.h"
 #include <chrono>
 #include <vector>

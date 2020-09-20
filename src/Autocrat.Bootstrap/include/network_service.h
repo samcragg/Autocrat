@@ -4,7 +4,7 @@
 #include "array_pool.h"
 #include "collections.h"
 #include "defines.h"
-#include "method_handles.h"
+#include "exports.h"
 #include "pal.h"
 #include <any>
 #include <cstdint>

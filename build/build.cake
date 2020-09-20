@@ -203,7 +203,7 @@ Task("PackageCoreRT")
     .IsDependentOn("FetchCoreRT")
     .Does(() =>
 {
-    CopyFileToDirectory("../src/Autocrat.Bootstrap/include/method_handles.h", "../src/Autocrat.Bootstrap/bin");
+    CopyFileToDirectory("../src/Autocrat.Bootstrap/include/exports.h", "../src/Autocrat.Bootstrap/bin");
     DotNetCorePack(
         "Autocrat.CoreRT.csproj",
         new DotNetCorePackSettings

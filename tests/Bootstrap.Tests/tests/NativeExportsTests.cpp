@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <cpp_mock.h>
 #include "managed_types.h"
-#include "mock_method_handles.h"
+#include "mock_exports.h"
 #include "mock_services.h"
 
 using namespace std::chrono_literals;

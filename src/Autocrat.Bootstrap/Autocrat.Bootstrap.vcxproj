@@ -100,7 +100,7 @@
     <ClInclude Include="include\managed_interop.h" />
     <ClInclude Include="include\managed_types.h" />
     <ClInclude Include="include\memory_pool.h" />
-    <ClInclude Include="include\method_handles.h" />
+    <ClInclude Include="include\exports.h" />
     <ClInclude Include="include\native_exports.h" />
     <ClInclude Include="include\network_service.h" />
     <ClInclude Include="include\pal.h" />

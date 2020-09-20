@@ -55,9 +55,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\method_handles.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\managed_exports.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -119,6 +116,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\application.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\exports.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

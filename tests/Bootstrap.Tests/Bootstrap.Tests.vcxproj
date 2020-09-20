@@ -81,7 +81,7 @@
     <ClInclude Include="ConsoleTestPrinter.h" />
     <ClInclude Include="ManagedObjects.h" />
     <ClInclude Include="MemoryMonitor.h" />
-    <ClInclude Include="mock_method_handles.h" />
+    <ClInclude Include="mock_exports.h" />
     <ClInclude Include="mock_services.h" />
     <ClInclude Include="pal_mock.h" />
     <ClInclude Include="TestMocks.h" />
@@ -107,7 +107,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ManagedObjects.cpp" />
     <ClCompile Include="MemoryMonitor.cpp" />
-    <ClCompile Include="mock_method_handles.cpp" />
+    <ClCompile Include="mock_exports.cpp" />
     <ClCompile Include="pal_mock.cpp" />
     <ClCompile Include="tests\ApplicationTests.cpp" />
     <ClCompile Include="tests\DynamicArrayTests.cpp" />
