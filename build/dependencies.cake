@@ -4,7 +4,7 @@ var repos = new Dictionary<string, (string url, string tag)>
 {
     { "cpp_mock", ("https://github.com/samcragg/cpp_mock", "v1.0.2") },
     { "googletest", ("https://github.com/google/googletest", "release-1.10.0") },
-    { "spdlog", ("https://github.com/gabime/spdlog", "v1.7.0") },
+    { "spdlog", ("https://github.com/gabime/spdlog", "v1.8.0") },
     { "termcolor", ("https://github.com/ikalnytskyi/termcolor", "") },
 };
 

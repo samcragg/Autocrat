@@ -41,6 +41,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{AA76D151-33C7-443C-A454-4E7C62FA4B7D}"
 	ProjectSection(SolutionItems) = preProject
 		build\build.cake = build\build.cake
+		build\dependencies.cake = build\dependencies.cake
 		build\utilities.cake = build\utilities.cake
 	EndProjectSection
 EndProject
