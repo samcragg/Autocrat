@@ -5,6 +5,7 @@
 #include <thread>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <gtest/gtest.h>
 #include <cpp_mock.h>
 
@@ -63,15 +64,48 @@ class ApplicationTests : public testing::Test
 protected:
     ApplicationTests()
     {
+       _args[0] = "unit_test";
         WhenLoadConfiguration = [](void*) { return true; };
     }
 
     autocrat::application _application;
+    const char* _args[1];
 };
+
+class ApplicationDeathTests : public ApplicationTests
+{
+protected:
+    void ExpectExitWithMessage(const char* arg, const char* message)
+    {
+        const char* args[2] = { "unit_test", arg };
+        EXPECT_EXIT(
+            {
+                // gtest only looks at the stderr stream
+                std::cout.rdbuf(std::cerr.rdbuf());
+                _application.initialize(2, args);
+            },
+            testing::ExitedWithCode(0),
+            message);
+    }
+};
+
+TEST_F(ApplicationDeathTests, DescriptionShouldSetTheHelpText)
+{
+    _application.description("Application description");
+
+    ExpectExitWithMessage("--help", "Application description");
+}
+
+TEST_F(ApplicationDeathTests, VersionShouldAddTheVersionCommandLineOption)
+{
+    _application.version("1.2.3");
+
+    ExpectExitWithMessage("--version", "1.2.3");
+}
 
 TEST_F(ApplicationTests, InitializeShouldInitializeTheGlobalServices)
 {
-    _application.initialize();
+    _application.initialize(1, _args);
 
     Verify(mock_global_services.initialize);
 }
@@ -85,7 +119,7 @@ TEST_F(ApplicationTests, InitializeShouldInitializeTheManagedThreads)
             });
     initialize_managed_thread_call_count = 0;
 
-    _application.initialize();
+    _application.initialize(1, _args);
 
     // Should initialize the global thread and the thread pool threads (which
     // we invoke once in the above lambda)
@@ -104,7 +138,7 @@ TEST_F(ApplicationTests, InitializeShouldLoadTheConfigFile)
         return true;
     };
 
-    _application.initialize();
+    _application.initialize(1, _args);
 
     EXPECT_EQ(1u, load_configuration_call_count);
 }
@@ -113,7 +147,7 @@ TEST_F(ApplicationTests, InitializeShouldRegisterTheWorkerTypes)
 {
     register_managed_types_call_count = 0;
 
-    _application.initialize();
+    _application.initialize(1, _args);
 
     EXPECT_EQ(1u, register_managed_types_call_count);
 }
@@ -123,7 +157,7 @@ TEST_F(ApplicationTests, InitializeShouldThrowIfLoadingTheConfigFails)
     auto config = ConfigFile("");
     WhenLoadConfiguration = [](void*) {return false; };
 
-    EXPECT_THROW(_application.initialize(), std::runtime_error);
+    EXPECT_THROW(_application.initialize(1, _args), std::runtime_error);
 }
 
 

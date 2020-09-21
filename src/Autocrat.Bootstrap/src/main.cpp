@@ -40,12 +40,12 @@ void on_close_callback()
 
 }
 
-int autocrat_main()
+int autocrat_main(int argc, char* argv[])
 {
     initialize_logging();
     try
     {
-        application.initialize();
+        application.initialize(argc, argv);
         spdlog::info("Initialization complete, program started");
 
         pal::set_close_signal_handler(&on_close_callback);

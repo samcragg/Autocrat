@@ -1,7 +1,10 @@
-#ifndef APPLICATION_LIFETIME_H
-#define APPLICATION_LIFETIME_H
+#ifndef APPLICATION_H
+#define APPLICATION_H
 
 #include "gc_service.h"
+#include <CLI/App.hpp>
+#include <CLI/Config.hpp>
+#include <CLI/Formatter.hpp>
 #include <atomic>
 #include <filesystem>
 
@@ -15,9 +18,17 @@ class application
 {
 public:
     /**
-     * Initializes the services and loads the configuration data.
+     * Sets the applications description in the help text.
+     * @param value The value for the description.
      */
-    void initialize();
+    void description(const char* value);
+
+    /**
+     * Initializes the services and loads the configuration data.
+     * @param argc The number of arguments passed to the program.
+     * @param argv The arguments passed to the program.
+     */
+    void initialize(int argc, const char* const* argv);
 
     /**
      * Runs the main program loop.
@@ -30,10 +41,17 @@ public:
      */
     void stop();
 
+    /**
+     * Sets the applications version information.
+     * @param value The value for the version.
+     */
+    void version(const char* value);
+
 private:
     void initialize_managed_thread(gc_service* gc);
     void initialize_threads();
 
+    CLI::App _app;
     gc_heap _global_heap;
     std::atomic_bool _running;
 };

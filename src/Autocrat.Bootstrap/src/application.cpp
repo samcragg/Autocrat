@@ -4,6 +4,7 @@
 #include "pause.h"
 #include "services.h"
 #include <cerrno>
+#include <cstdlib>
 #include <fstream>
 #include <memory>
 #include <spdlog/spdlog.h>
@@ -71,8 +72,23 @@ void load_configuration(const fs::path& path)
 namespace autocrat
 {
 
-void application::initialize()
+void application::description(const char* value)
 {
+    _app.description(value);
+}
+
+void application::initialize(int argc, const char* const* argv)
+{
+    spdlog::debug("Parsing command line arguments");
+    try
+    {
+        _app.parse(argc, argv);
+    }
+    catch (const CLI::Error& error)
+    {
+        std::exit(_app.exit(error));
+    }
+
     spdlog::debug("Creating native services");
     autocrat::global_services.initialize();
 
@@ -105,6 +121,17 @@ void application::run()
 void application::stop()
 {
     _running = false;
+}
+
+void application::version(const char* value)
+{
+    _app.add_flag_callback(
+        "--version",
+        [value]() {
+            std::cout << value << std::endl;
+            throw CLI::Success();
+        },
+        "Show version information");
 }
 
 void application::initialize_managed_thread(autocrat::gc_service* gc)
