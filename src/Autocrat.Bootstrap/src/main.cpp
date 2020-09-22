@@ -1,4 +1,5 @@
 #include "application.h"
+#include "exports.h"
 #include "services.h"
 #include <cstdio>
 #include <spdlog/async.h>
@@ -38,6 +39,18 @@ void on_close_callback()
     application.stop();
 }
 
+}
+
+// Exported functions
+
+void set_description(const char* value)
+{
+    application.description(value);
+}
+
+void set_version(const char* value)
+{
+    application.version(value);
 }
 
 int autocrat_main(int argc, char* argv[])
