@@ -4,6 +4,7 @@
     using System.IO;
     using System.Linq;
     using System.Reflection;
+    using System.Text;
     using Autocrat.Compiler;
     using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
@@ -129,14 +130,36 @@ public class Test
         public sealed class EmitNativeCodeTests : CodeGeneratorTests
         {
             [Fact]
+            public void ShouldSetTheDescription()
+            {
+                this.GetOutput(null, "Test description")
+                    .Should().Contain("set_description(\"Test description\");");
+            }
+
+            [Fact]
+            public void ShouldSetTheVersion()
+            {
+                this.GetOutput("1.2.3", null)
+                    .Should().Contain("set_version(\"1.2.3\");");
+            }
+
+            [Fact]
             public void ShouldWriteTheNativeImportCode()
             {
                 NativeImportGenerator nativeGenerator = this.factory.GetNativeImportGenerator();
                 CodeGenerator generator = this.CreateGenerator("public class Test { }");
 
-                generator.EmitNativeCode(Stream.Null);
+                generator.EmitNativeCode(null, null, Stream.Null);
 
                 nativeGenerator.Received().WriteTo(Stream.Null);
+            }
+
+            private string GetOutput(string version, string description)
+            {
+                using var stream = new MemoryStream();
+                CodeGenerator generator = this.CreateGenerator("public class Test { }");
+                generator.EmitNativeCode(version, description, stream);
+                return Encoding.UTF8.GetString(stream.ToArray());
             }
         }
     }

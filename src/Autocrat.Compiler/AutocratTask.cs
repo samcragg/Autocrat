@@ -20,6 +20,11 @@ namespace Autocrat.Compiler
         private readonly Logging.ILogger logger = LogManager.GetLogger();
 
         /// <summary>
+        /// Gets or sets the description of the program.
+        /// </summary>
+        public string? Description { get; set; }
+
+        /// <summary>
         /// Gets or sets the filename of the generates managed assembly.
         /// </summary>
         [Required]
@@ -44,6 +49,11 @@ namespace Autocrat.Compiler
         [Required]
         [SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Required for MSBuild to be able to inject multiple values.")]
         public string[] Sources { get; set; } = null!;
+
+        /// <summary>
+        /// Gets or sets the version of the program.
+        /// </summary>
+        public string? Version { get; set; }
 
         /// <inheritdoc />
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "This is the main entry point.")]
@@ -94,7 +104,7 @@ namespace Autocrat.Compiler
             generator.EmitAssembly(output.Assembly, output.AssemblyPdb);
 
             this.logger.Info("Emitting native source");
-            generator.EmitNativeCode(output.Source);
+            generator.EmitNativeCode(this.Version, this.Description, output.Source);
             return true;
         }
     }

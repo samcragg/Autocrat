@@ -98,20 +98,16 @@ namespace Autocrat.Compiler
         /// <summary>
         /// Generates the native source code.
         /// </summary>
+        /// <param name="version">The version information to report at runtime.</param>
+        /// <param name="description">The description to report at runtime.</param>
         /// <param name="destination">Where to save the source code to.</param>
-        public virtual void EmitNativeCode(Stream destination)
+        public virtual void EmitNativeCode(string? version, string? description, Stream destination)
         {
             NativeImportGenerator nativeGenerator = this.serviceFactory.GetNativeImportGenerator();
             nativeGenerator.WriteTo(destination);
 
-            const string MainStub = @"
-extern int autocrat_main();
-
-int main()
-{
-    return autocrat_main();
-}";
-            byte[] bytes = Encoding.UTF8.GetBytes(MainStub);
+            string mainMethod = CreateNativeMain(version, description);
+            byte[] bytes = Encoding.UTF8.GetBytes(mainMethod);
             destination.Write(bytes);
         }
 
@@ -126,6 +122,27 @@ int main()
             {
                 return compilation;
             }
+        }
+
+        private static string CreateNativeMain(string? version, string? description)
+        {
+            var buffer = new StringBuilder();
+            buffer.AppendLine("int main(int argc, char* argv[])");
+            buffer.AppendLine("{");
+
+            if (!string.IsNullOrEmpty(description))
+            {
+                buffer.Append("    set_description(\"").Append(description).AppendLine("\");");
+            }
+
+            if (!string.IsNullOrEmpty(version))
+            {
+                buffer.Append("    set_version(\"").Append(version).AppendLine("\");");
+            }
+
+            buffer.AppendLine("    return autocrat_main(argc, argv);");
+            buffer.AppendLine("}");
+            return buffer.ToString();
         }
 
         private static IEnumerable<MetadataReference> GetAutocratReferences()

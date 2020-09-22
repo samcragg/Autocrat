@@ -24,10 +24,12 @@
       <ReferencePath Include="$(AutocratNativeAdapters)" />
     </ItemGroup>
 
-    <AutocratTask OutputAssembly="$(AutocratOutputAssembly)"
+    <AutocratTask Description="$(Description)"
+                  OutputAssembly="$(AutocratOutputAssembly)"
                   OutputSource="$(AutocratOutputSource)"
                   References="@(ReferencePath)"
-                  Sources="@(Compile)" />
+                  Sources="@(Compile)"
+                  Version="$(Version)" />
 
     <Move SourceFiles="@(PublishedFiles)"
           DestinationFolder="$(AutocratOutputDirectory)" />
