@@ -20,11 +20,15 @@
                 "NativeProgram");
         }
 
+        public string Description { get; set; }
+
         public string NativeProgram { get; }
 
         public string OutputDirectory { get; }
 
         public string ProjectDirectory => this.projectDirectory.FullName;
+
+        public string Version { get; set; }
 
         public void Dispose()
         {

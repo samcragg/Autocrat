@@ -21,6 +21,8 @@
     <LangVersion>latest</LangVersion>
     <NoWarn>NU1604</NoWarn> <!-- Project dependency ... does not contain an inclusive lower bound. -->
     <RestoreSources>{0}</RestoreSources>
+    <Description>{1}</Description>
+    <Version>{2}</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -73,7 +75,11 @@
         {
             File.WriteAllText(
                 Path.Combine(this.compilationContext.ProjectDirectory, "Project.csproj"),
-                string.Format(MinimalProjectFormat, this.packageSources));
+                string.Format(
+                    MinimalProjectFormat,
+                    this.packageSources,
+                    this.compilationContext.Description,
+                    this.compilationContext.Version));
 
             this.RunProcess("dotnet", $"restore -v:q --no-cache --packages \"{PackageDirectory}\"")
                 .Should().Be(0);
@@ -94,9 +100,16 @@
         [When(@"I run the native program")]
         public void RunTheNativeProgram()
         {
+            this.RunTheNativeProgram(string.Empty);
+        }
+
+        [When(@"I run the native program with ""(.*)""")]
+        public void RunTheNativeProgram(string arguments)
+        {
             var output = new StringBuilder();
             Process process = this.CreateProcess(this.compilationContext.NativeProgram, "");
             process.OutputDataReceived += (_, e) => output.AppendLine(e.Data ?? string.Empty);
+            process.StartInfo.Arguments = arguments;
 
             process.Start();
             process.BeginOutputReadLine();
