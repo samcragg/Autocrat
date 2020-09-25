@@ -20,17 +20,6 @@ public:
 
 class ThreadPoolTests : public testing::Test
 {
-public:
-    static constexpr std::size_t thread_count = 2;
-
-    ThreadPoolTests() :
-        _pool(0, thread_count)
-    {
-    }
-
-    ~ThreadPoolTests()
-    {
-    }
 protected:
     autocrat::thread_pool _pool;
 };
@@ -66,7 +55,7 @@ TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceBeforeAndAfterWork)
 
     _pool.add_observer(&service);
     _pool.enqueue(&CheckLifetimeService, std::make_tuple(&service, &condition));
-    _pool.start([](std::size_t) {});
+    _pool.start(0, 1, [](std::size_t) {});
     auto result = condition.wait_for(lock, 20ms);
 
     EXPECT_EQ(std::cv_status::no_timeout, result);
@@ -95,7 +84,7 @@ TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceInOrder)
     _pool.add_observer(&service2);
 
     _pool.enqueue([](std::any&) {}, 0);
-    _pool.start([](std::size_t) {});
+    _pool.start(0, 1, [](std::size_t) {});
 
     while (order != 4)
     {
@@ -109,18 +98,18 @@ TEST_F(ThreadPoolTests, ShouldPerformTheWorkOnASeparateThread)
     auto worker_future = worker_promise->get_future();
 
     _pool.enqueue(&SetThreadId, worker_promise);
-    _pool.start([](std::size_t) {});
+    _pool.start(0, 1, [](std::size_t) {});
     std::future_status wait_result = worker_future.wait_for(20ms);
 
     ASSERT_EQ(std::future_status::ready, wait_result);
     EXPECT_NE(std::this_thread::get_id(), worker_future.get());
 }
 
-TEST_F(ThreadPoolTests, StartShouldInitializeManagedThreads)
+TEST_F(ThreadPoolTests, StartShouldInitializeEachThreadPoolThread)
 {
     std::size_t initialized_called_count = 0;
 
-    _pool.start([&](std::size_t) { initialized_called_count++; });
+    _pool.start(0, 2, [&](std::size_t) { initialized_called_count++; });
 
-    EXPECT_EQ(thread_count, initialized_called_count);
+    EXPECT_EQ(2, initialized_called_count);
 }

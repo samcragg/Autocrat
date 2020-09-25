@@ -60,24 +60,9 @@ public:
     using initialize_function = std::function<void(std::size_t thread_id)>;
 
     /**
-     * Constructs a new instance of the `thread_pool` class.
-     * @param cpu_id  The index of the first core to bind to.
-     * @param threads The number of threads the pool should contain.
-     */
-    thread_pool(std::size_t cpu_id, std::size_t threads);
-
-    MOCKABLE_CONSTRUCTOR(thread_pool)
-
-    /**
      * Destructs the `thread_pool` instance.
      */
     MOCKABLE_METHOD ~thread_pool() noexcept;
-
-    /**
-     * Factory method to create a new instance of the `thread_pool` class.
-     * @returns A new instance of the `thread_pool` class.
-     */
-    static std::unique_ptr<thread_pool> make_unique();
 
     /**
      * Registers the service to receive notifications.
@@ -100,11 +85,17 @@ public:
 
     /**
      * Starts the background threads and, therefore, processing of work.
+     * @param cpu_id     The index of the first core to bind to.
+     * @param threads    The number of threads the pool should contain.
+     * @param initialize Called on each thread at startup.
      * @remarks This method blocks until all the background threads have
      *          completed initialization and, therefore, are ready for
      *          processing work.
      */
-    MOCKABLE_METHOD void start(initialize_function initialize);
+    MOCKABLE_METHOD void start(
+        std::size_t cpu_id,
+        std::size_t threads,
+        initialize_function initialize);
 
 private:
     struct work_item
@@ -120,11 +111,10 @@ private:
     bounded_queue<work_item, 1024> _work;
     small_vector<lifetime_service*> _observers;
     dynamic_array<std::thread> _threads;
-    std::size_t _starting_cpu;
-    std::atomic_uint32_t _initialized;
-    std::atomic_uint32_t _sleeping;
-    std::uint32_t _wait_handle;
-    std::atomic_bool _is_running;
+    std::atomic_uint32_t _initialized = 0;
+    std::atomic_uint32_t _sleeping = 0;
+    std::uint32_t _wait_handle = 0;
+    std::atomic_bool _is_running = true;
 };
 
 /**

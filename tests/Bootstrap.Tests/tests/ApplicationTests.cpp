@@ -113,7 +113,7 @@ TEST_F(ApplicationTests, InitializeShouldInitializeTheGlobalServices)
 TEST_F(ApplicationTests, InitializeShouldInitializeTheManagedThreads)
 {
     When(mock_global_services.thread_pool().start)
-        .Do([](auto initialize)
+        .Do([](std::size_t, std::size_t, auto initialize)
             {
                 initialize(0);
             });

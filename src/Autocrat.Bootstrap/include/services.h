@@ -60,7 +60,7 @@ public:
      */
     MOCKABLE_METHOD void initialize()
     {
-        _thread_pool = ThreadPool::make_unique();
+        _thread_pool = std::make_unique<ThreadPool>();
         _services =
             std::make_tuple(std::make_unique<Services>(_thread_pool.get())...);
         invoke_all<is_base_of_lifetime_service>(

@@ -14,16 +14,6 @@ static std::mutex thread_initializing;
 namespace autocrat
 {
 
-thread_pool::thread_pool(std::size_t cpu_id, ::size_t threads) :
-    _threads(threads),
-    _starting_cpu(cpu_id),
-    _initialized(0),
-    _sleeping(0),
-    _wait_handle(0),
-    _is_running(true)
-{
-}
-
 thread_pool::~thread_pool() noexcept
 {
     _is_running = false;
@@ -47,11 +37,6 @@ thread_pool::~thread_pool() noexcept
     }
 }
 
-std::unique_ptr<thread_pool> thread_pool::make_unique()
-{
-    return std::make_unique<thread_pool>(0, 1);
-}
-
 void thread_pool::add_observer(lifetime_service* service)
 {
     _observers.emplace_back(service);
@@ -72,18 +57,20 @@ std::size_t thread_pool::size() const noexcept
     return _threads.size();
 }
 
-void thread_pool::start(initialize_function initialize)
+void thread_pool::start(
+    std::size_t cpu_id,
+    std::size_t threads,
+    initialize_function initialize)
 {
     spdlog::info(
-        "Creating {} threads with affinity starting from {}",
-        _threads.size(),
-        _starting_cpu);
+        "Creating {} threads with affinity starting from {}", threads, cpu_id);
 
+    _threads = decltype(_threads)(threads);
     for (std::size_t i = 0; i != _threads.size(); ++i)
     {
         _threads[i] =
             std::thread(&thread_pool::perform_work, this, i, initialize);
-        pal::set_affinity(_threads[i], _starting_cpu + i);
+        pal::set_affinity(_threads[i], cpu_id + i);
     }
 
     while (_initialized != _threads.size())

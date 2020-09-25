@@ -6,10 +6,6 @@
 class FakeThreadPool : public autocrat::thread_pool
 {
 public:
-    FakeThreadPool() : autocrat::thread_pool(0u, 0u)
-    {
-    }
-
     void enqueue(callback_function callback, std::any&& data) override
     {
         enqueue_count++;
