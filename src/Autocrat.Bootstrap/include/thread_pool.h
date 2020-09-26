@@ -93,8 +93,8 @@ public:
      *          processing work.
      */
     MOCKABLE_METHOD void start(
-        std::size_t cpu_id,
-        std::size_t threads,
+        int cpu_id,
+        int threads,
         initialize_function initialize);
 
 private:

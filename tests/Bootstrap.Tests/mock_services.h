@@ -40,7 +40,7 @@ class mock_thread_pool : public autocrat::thread_pool
 public:
     MockMethod(void, add_observer, (autocrat::lifetime_service*))
     MockMethod(std::size_t, size, (), const noexcept)
-    MockMethod(void, start, (std::size_t, std::size_t, initialize_function))
+    MockMethod(void, start, (int, int, initialize_function))
 };
 
 class mock_timer_service : public autocrat::timer_service

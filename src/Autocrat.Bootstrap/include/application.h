@@ -54,6 +54,8 @@ private:
     CLI::App _app;
     gc_heap _global_heap;
     std::atomic_bool _running;
+    int _thread_affinity = -1;
+    int _thread_count = -1;
 };
 
 /**

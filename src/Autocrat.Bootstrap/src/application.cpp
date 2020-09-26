@@ -82,6 +82,16 @@ void application::initialize(int argc, const char* const* argv)
     spdlog::debug("Parsing command line arguments");
     try
     {
+        _app.add_option(
+            "affinity",
+            _thread_affinity,
+            "Specifies the starting CPU affinity for the process");
+
+        _app.add_option(
+            "thread_pool",
+            _thread_count,
+            "Specifies the number of threads to use in the thread pool");
+
         _app.parse(argc, argv);
     }
     catch (const CLI::Error& error)
@@ -143,13 +153,25 @@ void application::initialize_managed_thread(autocrat::gc_service* gc)
 
 void application::initialize_threads()
 {
+    if (_thread_count < 0)
+    {
+        _thread_count = static_cast<int>(std::thread::hardware_concurrency());
+    }
+
+    if (_thread_affinity >= 0)
+    {
+        spdlog::info("Running main thread on CPU {}", _thread_affinity);
+        pal::set_affinity(nullptr, _thread_affinity);
+        ++_thread_affinity;
+    }
+
     auto* gc = autocrat::global_services.get_service<autocrat::gc_service>();
     gc->begin_work(autocrat::lifetime_service::global_thread_id);
     _global_heap = gc->reset_heap();
     initialize_managed_thread(gc); // Initialize the current thread
 
     autocrat::global_services.get_thread_pool().start(
-        [this, gc](std::size_t thread_id) {
+        _thread_affinity, _thread_count, [this, gc](std::size_t thread_id) {
             gc->begin_work(thread_id);
             initialize_managed_thread(gc);
             gc->end_work(thread_id);
