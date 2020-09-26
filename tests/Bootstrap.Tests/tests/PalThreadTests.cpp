@@ -39,7 +39,7 @@ TEST_F(PalThreadTests, ShouldSetTheThreadAffinity)
 {
     std::size_t cpu = 0;
     std::thread thread = run_in_background(
-        [](std::thread& thread) { pal::set_affinity(thread, 1); },
+        [](std::thread& thread) { pal::set_affinity(&thread, 1); },
         [&] { cpu = pal::get_current_processor(); });
 
     thread.join();

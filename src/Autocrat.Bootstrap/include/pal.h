@@ -88,10 +88,11 @@ int recv_from(
 
 /**
  * Sets the index of the CPU the specified thread should run on.
- * @param thread The thread to set the affinity of.
+ * @param thread The thread to set the affinity of. Can be null to set the
+ *               affinity of the current thread.
  * @param index  The index of the CPU to run on.
  */
-void set_affinity(std::thread& thread, std::size_t index);
+void set_affinity(std::thread* thread, int index);
 
 /**
  * Sets the function for handling the console close signal.

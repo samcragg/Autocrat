@@ -326,10 +326,14 @@ int recv_from(
     return result;
 }
 
-void set_affinity(std::thread& thread, std::size_t index)
+void set_affinity(std::thread* thread, int index)
 {
-    DWORD_PTR result = SetThreadAffinityMask(
-        thread.native_handle(), static_cast<DWORD_PTR>(1) << index);
+    HANDLE handle =
+        (thread != nullptr) ? thread->native_handle() : GetCurrentThread();
+
+    DWORD_PTR result =
+        SetThreadAffinityMask(handle, static_cast<DWORD_PTR>(1) << index);
+
     if (result == 0)
     {
         spdlog::error(

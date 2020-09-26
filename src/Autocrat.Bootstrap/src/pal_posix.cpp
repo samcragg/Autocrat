@@ -286,12 +286,14 @@ int recv_from(
     return result;
 }
 
-void set_affinity(std::thread& thread, std::size_t index)
+void set_affinity(std::thread* thread, int index)
 {
+    pthread_t handle =
+        (thread != nullptr) ? thread->native_handle() : pthread_self();
+
     cpu_set_t cpu = {};
     CPU_SET(index, &cpu);
-    int result =
-        pthread_setaffinity_np(thread.native_handle(), sizeof(cpu), &cpu);
+    int result = pthread_setaffinity_np(handle, sizeof(cpu), &cpu);
     if (result != 0)
     {
         spdlog::error(
