@@ -52,18 +52,20 @@ void thread_pool::enqueue(callback_function function, std::any&& arg)
     _work.emplace<work_item>({function, std::move(arg)});
 }
 
-std::size_t thread_pool::size() const noexcept
-{
-    return _threads.size();
-}
-
 void thread_pool::start(int cpu_id, int threads, initialize_function initialize)
 {
     spdlog::info(
         "Creating {} threads with affinity starting from {}", threads, cpu_id);
 
+    // Allocate the threads first, letting the observers know too
     _threads = decltype(_threads)(threads);
-    for (int i = 0; i != static_cast<int>(_threads.size()); ++i)
+    for (auto observer : _observers)
+    {
+        observer->pool_created(_threads.size());
+    }
+
+    // Initialize them
+    for (int i = 0; i != threads; ++i)
     {
         _threads[i] =
             std::thread(&thread_pool::perform_work, this, i, initialize);
@@ -73,6 +75,7 @@ void thread_pool::start(int cpu_id, int threads, initialize_function initialize)
         }
     }
 
+    // Wait for initialization to complete before returning
     while (_initialized != _threads.size())
     {
         std::this_thread::yield();

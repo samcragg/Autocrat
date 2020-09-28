@@ -39,6 +39,7 @@ protected:
         _worker_id("id"),
         _worker_type(0)
     {
+        _service.pool_created(2u);
         _service.begin_work(0u);
 
         When(mock_global_services.gc_service().allocate)

@@ -124,7 +124,6 @@ void application::run()
     } while (_running);
 
     auto* gc = autocrat::global_services.get_service<autocrat::gc_service>();
-    gc->set_heap(std::move(_global_heap));
     gc->end_work(autocrat::lifetime_service::global_thread_id);
 }
 
@@ -166,16 +165,20 @@ void application::initialize_threads()
     }
 
     auto* gc = autocrat::global_services.get_service<autocrat::gc_service>();
-    gc->begin_work(autocrat::lifetime_service::global_thread_id);
-    _global_heap = gc->reset_heap();
-    initialize_managed_thread(gc); // Initialize the current thread
-
     autocrat::global_services.get_thread_pool().start(
         _thread_affinity, _thread_count, [this, gc](std::size_t thread_id) {
             gc->begin_work(thread_id);
             initialize_managed_thread(gc);
             gc->end_work(thread_id);
         });
+
+    // Initialize the current thread too. Note we have to do this after we've
+    // started the thread pool so that the thread specific storage has been
+    // allocated and that all the other threads have finished with the global
+    // heap
+    gc->begin_work(autocrat::lifetime_service::global_thread_id);
+    gc->set_heap(std::move(_global_heap));
+    managed_exports::InitializeManagedThread();
 }
 
 fs::path get_config_file()

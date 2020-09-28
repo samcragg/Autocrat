@@ -160,7 +160,6 @@ TEST_F(ApplicationTests, InitializeShouldThrowIfLoadingTheConfigFails)
     EXPECT_THROW(_application.initialize(1, _args), std::runtime_error);
 }
 
-
 TEST_F(ApplicationTests, RunShouldDispatchWorkUntilStopIsCalled)
 {
     std::thread stop_after_10ms([this]()

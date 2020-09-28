@@ -35,7 +35,7 @@ std::size_t worker_key_hash::operator()(const worker_key& key) const
 namespace autocrat
 {
 
-worker_service::worker_service(thread_pool* pool) : base_type(pool)
+worker_service::worker_service(thread_pool*)
 {
 }
 

@@ -29,21 +29,29 @@ namespace
 class GcServiceTests : public testing::Test
 {
 protected:
+    GcServiceTests() :
+        _gc(&_threadPool)
+    {
+        _gc.pool_created(1u);
+    }
+
     static constexpr std::size_t large_allocation = 200'000u;
-    static constexpr std::size_t small_allocation = 192u; // Must be divisible by 16
+    static constexpr std::size_t small_allocation = 192u;
+    static_assert(small_allocation % 16u == 0, "Must be divisible by 16");
+
     FakeThreadPool _threadPool;
+    autocrat::gc_service _gc;
 };
 
 TEST_F(GcServiceTests, AllocateShouldAllocateMultipleSmallBuffers)
 {
     constexpr std::size_t allocation_count = 100u;
-    autocrat::gc_service gc(&_threadPool);
-    gc.begin_work(0u);
+    _gc.begin_work(0u);
 
     std::unordered_set<void*> allocations;
     for (std::size_t i = 0; i != allocation_count; ++i)
     {
-        allocations.insert(gc.allocate(20'000));
+        allocations.insert(_gc.allocate(20'000));
     }
 
     EXPECT_EQ(allocation_count, allocations.size());
@@ -51,21 +59,27 @@ TEST_F(GcServiceTests, AllocateShouldAllocateMultipleSmallBuffers)
 
 TEST_F(GcServiceTests, AllocateShouldZeroFillLargeBuffers)
 {
-    autocrat::gc_service gc(&_threadPool);
-    CheckAllocation(gc, large_allocation);
+    CheckAllocation(_gc, large_allocation);
 }
 
 TEST_F(GcServiceTests, AllocateShouldZeroFillSmallBuffers)
 {
-    autocrat::gc_service gc(&_threadPool);
-    CheckAllocation(gc, small_allocation);
+    CheckAllocation(_gc, small_allocation);
 }
 
 TEST_F(GcServiceTests, DestructorShouldReleaseAllTheMemory)
 {
+    {
+        // The GC heap is allocated from a global store - preallocate some
+        // memory that can be re-used later
+        autocrat::gc_service gc(&_threadPool);
+        gc.pool_created(1u);
+    }
+
     std::size_t before_bytes = allocated_bytes();
     {
         autocrat::gc_service gc(&_threadPool);
+        gc.pool_created(1u);
         gc.begin_work(0);
         EXPECT_NE(nullptr, gc.allocate(small_allocation));
         EXPECT_NE(nullptr, gc.allocate(large_allocation));
@@ -76,33 +90,30 @@ TEST_F(GcServiceTests, DestructorShouldReleaseAllTheMemory)
 
 TEST_F(GcServiceTests, OnEndWorkShouldReleaseAllTheMemory)
 {
-    autocrat::gc_service gc(&_threadPool);
     std::size_t before_bytes = allocated_bytes();
 
-    gc.begin_work(0);
-    void* small = gc.allocate(small_allocation);
-    EXPECT_NE(nullptr, small);
-    EXPECT_NE(nullptr, gc.allocate(large_allocation));
+    _gc.begin_work(0);
+    EXPECT_NE(nullptr, _gc.allocate(small_allocation));
+    EXPECT_NE(nullptr, _gc.allocate(large_allocation));
 
-    gc.end_work(0);
+    _gc.end_work(0);
     std::size_t after_bytes = allocated_bytes();
     EXPECT_EQ(before_bytes, after_bytes);
 }
 
 TEST_F(GcServiceTests, ShouldBeAbleToUseDifferentHeaps)
 {
-    autocrat::gc_service gc(&_threadPool);
-    gc.begin_work(0);
+    _gc.begin_work(0);
 
-    auto first = static_cast<std::byte*>(gc.allocate(small_allocation));
-    auto second = static_cast<std::byte*>(gc.allocate(small_allocation));
+    auto first = static_cast<std::byte*>(_gc.allocate(small_allocation));
+    auto second = static_cast<std::byte*>(_gc.allocate(small_allocation));
     EXPECT_EQ(first + small_allocation, second);
 
-    autocrat::gc_heap heap = gc.reset_heap();
-    auto new_heap = static_cast<std::byte*>(gc.allocate(small_allocation));
+    autocrat::gc_heap heap = _gc.reset_heap();
+    auto new_heap = static_cast<std::byte*>(_gc.allocate(small_allocation));
     EXPECT_NE(second + small_allocation, new_heap);
 
-    gc.set_heap(std::move(heap));
-    auto original_heap = static_cast<std::byte*>(gc.allocate(small_allocation));
+    _gc.set_heap(std::move(heap));
+    auto original_heap = static_cast<std::byte*>(_gc.allocate(small_allocation));
     EXPECT_EQ(second + small_allocation, original_heap);
 }

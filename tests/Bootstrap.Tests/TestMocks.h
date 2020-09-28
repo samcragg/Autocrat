@@ -12,11 +12,6 @@ public:
         callback(data);
     }
 
-    std::size_t size() const noexcept override
-    {
-        return 2u;
-    }
-
     std::size_t enqueue_count = 0u;
 };
 

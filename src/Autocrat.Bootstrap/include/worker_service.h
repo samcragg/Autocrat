@@ -63,7 +63,6 @@ class worker_service FINAL
 {
 public:
     using storage_type = small_vector<worker_info*>;
-    using base_type = thread_specific_storage<storage_type>;
     using object_collection = dynamic_array<void*>;
     using worker_collection = dynamic_array<worker_info*>;
 

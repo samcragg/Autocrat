@@ -37,6 +37,12 @@ public:
      */
     virtual void end_work(std::size_t thread_id) = 0;
 
+    /**
+     * Called when the thread pool is created.
+     * @param size The size of the thread pool.
+     */
+    virtual void pool_created(std::size_t size) = 0;
+
 protected:
     ~lifetime_service() = default;
 };
@@ -76,12 +82,6 @@ public:
      * @param arg      The data to pass to the function.
      */
     MOCKABLE_METHOD void enqueue(callback_function function, std::any&& arg);
-
-    /**
-     * Gets the size of the thread pool.
-     * @returns The number of worker threads.
-     */
-    [[nodiscard]] MOCKABLE_METHOD std::size_t size() const noexcept;
 
     /**
      * Starts the background threads and, therefore, processing of work.
@@ -147,18 +147,13 @@ public:
         thread_storage = nullptr;
     }
 
-protected:
-    MOCKABLE_CONSTRUCTOR(thread_specific_storage)
-
-    /**
-     * Constructs a new instance of the `thread_specific_storage` class.
-     * @param pool Used to dispatch work to.
-     */
-    explicit thread_specific_storage(thread_pool* pool) :
-        _storage(pool->size() + 1u) // Allow for the global thread
+    MOCKABLE_METHOD void pool_created(std::size_t size) FINAL
     {
+        assert(_storage.size() == 0); // Ensure we're initialized only once
+        _storage = decltype(_storage)(size + 1u); // Allow for the global thread
     }
 
+protected:
 #ifdef UNIT_TESTS
     virtual ~thread_specific_storage()
     {

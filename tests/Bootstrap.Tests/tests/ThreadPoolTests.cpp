@@ -16,6 +16,7 @@ class MockLifetimeService : public autocrat::lifetime_service
 public:
     MockMethod(void, begin_work, (std::size_t))
     MockMethod(void, end_work, (std::size_t))
+    MockMethod(void, pool_created, (std::size_t))
 };
 
 class ThreadPoolTests : public testing::Test
@@ -92,6 +93,15 @@ TEST_F(ThreadPoolTests, ShouldCallLifetimeServiceInOrder)
     }
 }
 
+TEST_F(ThreadPoolTests, ShouldCallPoolCreatedWithThreadCount)
+{
+    MockLifetimeService service;
+    _pool.add_observer(&service);
+
+    _pool.start(-1, 3, [](std::size_t) {});
+
+    Verify(service.pool_created).With(3u);
+}
 TEST_F(ThreadPoolTests, ShouldPerformTheWorkOnASeparateThread)
 {
     auto worker_promise = std::make_shared<promise_thread_id>();

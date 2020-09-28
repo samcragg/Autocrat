@@ -66,8 +66,6 @@ private:
 class gc_service FINAL : public thread_specific_storage<gc_heap>
 {
 public:
-    using base_type = thread_specific_storage<gc_heap>;
-
     MOCKABLE_CONSTRUCTOR(gc_service)
 
     /**

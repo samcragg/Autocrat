@@ -139,7 +139,7 @@ void gc_heap::free_small()
     _tail = _head;
 }
 
-gc_service::gc_service(thread_pool* pool) : base_type(pool)
+gc_service::gc_service(thread_pool*)
 {
 }
 
