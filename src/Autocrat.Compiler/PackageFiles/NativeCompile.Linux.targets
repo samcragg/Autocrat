@@ -1,12 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <PackageReference Include="Autocrat.CoreRT.Linux" Version="$(CoreRTVersion)" />
-  </ItemGroup>
-  
   <PropertyGroup>
-    <IlcPath>$(NuGetPackageFolders.Split(';')[0])/autocrat.corert.linux/$(CoreRTVersion)/</IlcPath>
-    <BootstrapPath>$(IlcPath)sdk/</BootstrapPath>
+    <BootstrapPath>$(IlcPath)sdk</BootstrapPath>
+    <CoreRTNativeProps>$(IlcPath)build/Microsoft.NETCore.Native.Unix.props</CoreRTNativeProps>
+    <CoreRTNativeTargets>$(IlcPath)/build/Microsoft.NETCore.Native.targets</CoreRTNativeTargets>
     <CppCompilerAndLinker>g++</CppCompilerAndLinker>
+    <NativeLib>Static</NativeLib>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
 
     <!-- Prevent ilc from crashing, see https://github.com/dotnet/corert/issues/7907 -->
@@ -14,42 +12,54 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
 
-  <Target Name="AutocratCompile"
-          AfterTargets="Publish">
-    <ItemGroup>
-      <AutocratFiles Include="$(AutocratOutputSource)" />
-      <AutocratFiles Include="$(BootstrapPath)/libAutocrat.Bootstrap.a" />
-      <AutocratFiles Include="$(PublishDir)ManagedToNative.a" />
-      <CompilerOptions Include="-I &quot;$(BootstrapPath)&quot;" />
-      <CompilerOptions Include="-march=x86-64" />
-      <CompilerOptions Include="-ldl" />
-      <CompilerOptions Include="-lgssapi_krb5" />
-      <CompilerOptions Include="-lm" />
-      <CompilerOptions Include="-lrt" />
-      <CompilerOptions Include="-lstdc++" />
-      <CompilerOptions Include="-lz" />
-      <CompilerOptions Include="-o &quot;$(OutputName)&quot;" />
-      <CompilerOptions Include="-pthread" />
-      <CompilerOptions Include="-std=c++17" />
-      <CompilerOptions Include="-Wl,-rpath,'$ORIGIN'" />
-      <CompilerOptions Include="-Wl,--as-needed" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(Configuration)'=='Debug'">
-      <CompilerOptions Include="-g" />
-      <CompilerOptions Include="-Og" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(Configuration)'!='Debug'">
-      <CompilerOptions Include="-D NDEBUG" />
-      <CompilerOptions Include="-flto" />
-      <CompilerOptions Include="-O3" />
-    </ItemGroup>
+  <ItemGroup>
+    <CompilerOptions Include="-I &quot;$(BootstrapPath)&quot;" />
+    <CompilerOptions Include="-march=x86-64" />
+    <CompilerOptions Include="-ldl" />
+    <CompilerOptions Include="-lgssapi_krb5" />
+    <CompilerOptions Include="-lm" />
+    <CompilerOptions Include="-lrt" />
+    <CompilerOptions Include="-lstdc++" />
+    <CompilerOptions Include="-lz" />
+    <CompilerOptions Include="-pthread" />
+    <CompilerOptions Include="-std=c++17" />
+    <CompilerOptions Include="-Wl,-rpath,'$ORIGIN'" />
+    <CompilerOptions Include="-Wl,--as-needed" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)'=='Debug'">
+    <CompilerOptions Include="-g" />
+    <CompilerOptions Include="-Og" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)'!='Debug'">
+    <CompilerOptions Include="-D NDEBUG" />
+    <CompilerOptions Include="-flto" />
+    <CompilerOptions Include="-O3" />
+  </ItemGroup>
 
-    <Message Importance="high" Text="Compiling native code"/>
-    <Exec Command="g++ @(AutocratFiles, ' ') @(NativeLibrary, ' ') @(CompilerOptions, ' ')"
+  <Target Name="AutocratCompile">
+
+    <Message Importance="high" Text="Compiling native code for $(Configuration)"/>
+    <Exec Command="g++ -c $(AutocratOutputSource) @(CompilerOptions, ' ') -o main.o"
           IgnoreExitCode="true">
       <Output TaskParameter="ExitCode" PropertyName="CompilerExitCode" />
     </Exec>
     <Error Condition="'$(CompilerExitCode)' != '0'" Text="Native compilation failed." />
+  </Target>
+
+  <Target Name="AutocratLink"
+          DependsOnTargets="SetupOSSpecificProps">
+    <ItemGroup>
+      <AutocratFiles Include="main.o" />
+      <AutocratFiles Include="$(BootstrapPath)/libAutocrat.Bootstrap.a" />
+      <AutocratFiles Include="$(PublishDir)/ManagedToNative.a" />
+    </ItemGroup>
+
+    <Message Importance="high" Text="Linking executable"/>
+    <Exec Command="g++ -o &quot;$(OutputName)&quot; @(AutocratFiles, ' ') @(NativeLibrary, ' ') @(CompilerOptions, ' ')"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="LinkExitCode" />
+    </Exec>
+    <Error Condition="'$(LinkExitCode)' != '0'" Text="Linking failed." />
     <Message Importance="high" Text="Generated $(OutputName)"/>
   </Target>
 

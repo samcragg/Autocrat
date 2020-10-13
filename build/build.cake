@@ -294,7 +294,7 @@ Task("UpdateVersions")
 {
     string version = XmlPeek("../Directory.Build.props", "/Project/PropertyGroup/Version");
     XmlPoke(
-        "../src/Autocrat.Compiler/PackageFiles/ManagedToNative.csproj",
+        "../src/Autocrat.Compiler/PackageFiles/Dependencies.proj",
         "/Project/PropertyGroup/CoreRTVersion",
         version,
         new XmlPokeSettings

@@ -12,13 +12,11 @@
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     
-    <CoreRTVersion>0.0.2</CoreRTVersion>
     <IlcDisableReflection>true</IlcDisableReflection>
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
     <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
     <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
     <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
-    <NativeLib>Static</NativeLib>
     <RootAllApplicationAssemblies>true</RootAllApplicationAssemblies>
     <TargetName>ManagedToNative</TargetName>
   </PropertyGroup>
@@ -35,11 +33,7 @@
     <IlcArg Include="$(AutocratNativeAdapters)" />
   </ItemGroup>
 
-  <Import Condition="'$([MSBuild]::IsOSPlatform(Linux))' == 'true'" Project="$(AutocratContentDir)/NativeCompile.Linux.targets" />
-
-  <Import Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'" Project="$(AutocratContentDir)/NativeCompile.Windows.targets" />
-
-  <!-- We run the restore task separately, as the imported variables aren't available until we rerun the build -->
-  <Import Condition="$(Restoring) != 'true'" Project="$(IlcPath)/build/Microsoft.NETCore.Native.targets" />
+  <Import Project="$(AutocratNativeTargets)" />
+  <Import Project="$(CoreRTNativeTargets)" />
 
 </Project>

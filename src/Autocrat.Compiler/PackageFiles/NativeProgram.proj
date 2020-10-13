@@ -1,0 +1,14 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- This file hands off the work to the platform specific tasks -->
+  <Import Project="$(AutocratNativeTargets)" />
+  <Import Project="$(CoreRTNativeProps)" />
+
+  <Target Name="Build">
+  </Target>
+
+  <Target Name="Publish" DependsOnTargets="AutocratCompile">
+  </Target>
+
+  <Target Name="Link" DependsOnTargets="AutocratLink">
+  </Target>
+</Project>

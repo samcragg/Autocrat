@@ -2,8 +2,12 @@
   <PropertyGroup>
     <AutocratCompiler>$(MSBuildThisFileDirectory)../tools/Autocrat.Compiler.dll</AutocratCompiler>
     <AutocratContentDir>$(MSBuildThisFileDirectory)../content/</AutocratContentDir>
+    <AutocratDependenciesProject>Dependencies.proj</AutocratDependenciesProject>
     <AutocratManagedProject>ManagedToNative.csproj</AutocratManagedProject>
     <AutocratNativeAdapters>$(MSBuildThisFileDirectory)../tools/Autocrat.NativeAdapters.dll</AutocratNativeAdapters>
+    <AutocratNativeProject>NativeProgram.proj</AutocratNativeProject>
+    <AutocratNativeTargets Condition="'$([MSBuild]::IsOSPlatform(Linux))' == 'true'">$(AutocratContentDir)NativeCompile.Linux.targets</AutocratNativeTargets>
+    <AutocratNativeTargets Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'">$(AutocratContentDir)NativeCompile.Windows.targets</AutocratNativeTargets>
     <AutocratOutputDirectory>$(MSBuildProjectDirectory)/obj/autocrat/</AutocratOutputDirectory>
     <AutocratOutputAssembly>$(AutocratOutputDirectory)AutocratGeneratedAssembly.dll</AutocratOutputAssembly>
     <AutocratOutputSource>$(AutocratOutputDirectory)source.cpp</AutocratOutputSource>

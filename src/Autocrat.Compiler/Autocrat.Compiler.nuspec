@@ -12,7 +12,7 @@
   <files>
     <file src="bin\Publish\*.dll" target="tools" />
     <file src="bin\Publish\*.json" target="tools" />
-    <file src="PackageFiles\ManagedToNative.csproj" target="content" />
+    <file src="PackageFiles\*.*proj" target="content" />
     <file src="PackageFiles\NativeCompile.Linux.targets" target="content" />
     <file src="PackageFiles\NativeCompile.Windows.targets" target="content" />
     <file src="PackageFiles\Package.props" target="build/$id$.props" />

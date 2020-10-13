@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    
+    <!-- This value is set by cake - see UpdateVersions in build.cake -->
+    <CoreRTVersion>0.0.2</CoreRTVersion>
+
+    <CoreRTPackage Condition="'$([MSBuild]::IsOSPlatform(Linux))' == 'true'">Autocrat.CoreRT.Linux</CoreRTPackage>
+    <CoreRTPackage Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'">Autocrat.CoreRT.Windows</CoreRTPackage>
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)../packages/</RestorePackagesPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="$(CoreRTPackage)" Version="$(CoreRTVersion)" />
+  </ItemGroup>
+
+  <Target Name="RestoreCoreRT" DependsOnTargets="Restore" Returns="$(CoreRTLocation)">
+    <PropertyGroup>
+      <!-- Link in windows doesn't like mixing absolute and relative paths, -->
+      <!-- hence the usage of GetFullPath -->
+      <CoreRTPackageFolder>$(RestorePackagesPath)$(CoreRTPackage.ToLowerInvariant())/$(CoreRTVersion)/</CoreRTPackageFolder>
+      <CoreRTLocation>$([System.IO.Path]::GetFullPath('$(CoreRTPackageFolder)'))</CoreRTLocation>
+    </PropertyGroup>
+  </Target>
+</Project>

@@ -1,11 +1,9 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <PackageReference Include="Autocrat.CoreRT.Windows" Version="$(CoreRTVersion)" />
-  </ItemGroup>
-  
   <PropertyGroup>
-    <IlcPath>$(NuGetPackageFolders.Split(';')[0])/autocrat.corert.windows/$(CoreRTVersion)/</IlcPath>
-    <BootstrapPath>$(IlcPath)sdk/</BootstrapPath>
+    <BootstrapPath>$(IlcPath)sdk</BootstrapPath>
+    <CoreRTNativeProps>$(IlcPath)build/Microsoft.NETCore.Native.Windows.props</CoreRTNativeProps>
+    <CoreRTNativeTargets>$(IlcPath)/build/Microsoft.NETCore.Native.targets</CoreRTNativeTargets>
+    <NativeLib>Static</NativeLib>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
@@ -29,7 +27,6 @@
   </Target>
 
   <Target Name="AutocratCompile"
-          AfterTargets="Publish"
           DependsOnTargets="VCEnvironment">
     <ItemGroup>
       <CompilerOptions Include="/c" />
@@ -55,8 +52,8 @@
       <CompilerOptions Include="/O2" />
     </ItemGroup>
 
-    <Message Importance="high" Text="Compiling native code"/>
-    <Exec Command="$(VCSetEnvironment) &amp; cl.exe @(CompilerOptions, ' ') $(AutocratOutputSource)"
+    <Message Importance="high" Text="Compiling native code for $(Configuration)"/>
+    <Exec Command="$(VCSetEnvironment) &amp; cl.exe @(CompilerOptions, ' ') &quot;$(AutocratOutputSource)&quot;"
           IgnoreExitCode="true">
       <Output TaskParameter="ExitCode" PropertyName="CLExitCode" />
     </Exec>
@@ -64,12 +61,11 @@
   </Target>
 
   <Target Name="AutocratLink"
-          AfterTargets="AutocratCompile"
-          DependsOnTargets="VCEnvironment">
+          DependsOnTargets="VCEnvironment;SetupOSSpecificProps">
     <ItemGroup>
-      <AutocratFiles Include="$(BootstrapPath)Autocrat.Bootstrap.lib" />
+      <AutocratFiles Include="&quot;$(BootstrapPath)\Autocrat.Bootstrap.lib&quot;" />
       <AutocratFiles Include="main.obj" />
-      <AutocratFiles Include="$(PublishDir)ManagedToNative.lib" />
+      <AutocratFiles Include="$(PublishDir)\ManagedToNative.lib" />
       <LinkerOptions Include="/DYNAMICBASE" />
       <LinkerOptions Include="/IGNORE:4099" />
       <LinkerOptions Include="/MACHINE:X64" />
@@ -80,7 +76,7 @@
       <LinkerOptions Include="/SUBSYSTEM:CONSOLE" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)'=='Debug'">
-      <LinkerOptions Include="/DEBUG" />
+      <LinkerOptions Include="/DEBUG:FASTLINK" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)'!='Debug'">
       <LinkerOptions Include="/OPT:ICF" />
