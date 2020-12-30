@@ -1,18 +1,14 @@
 ﻿namespace Compiler.Tests.CodeGeneration
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Text;
     using System.Text.Json;
     using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Mono.Cecil;
     using NSubstitute;
     using Xunit;
-    using static System.Reflection.BindingFlags;
+    using SR = System.Reflection;
 
     public class JsonDeserializerBuilderTests
     {
@@ -39,7 +35,7 @@
             (Type classType, Type serializer) = this.GenerateClasses(propertyDeclarations);
             CreateReader createReader = () => new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
             return typeof(JsonDeserializerBuilderTests)
-                .GetMethod(nameof(ReadJson), NonPublic | Static)
+                .GetMethod(nameof(ReadJson), SR.BindingFlags.NonPublic | SR.BindingFlags.Static)
                 .MakeGenericMethod(classType)
                 .Invoke(null, new object[] { serializer, createReader });
         }
@@ -53,35 +49,17 @@ public class {ClassTypeName}
 {{
     {propertyDeclarations}
 }}";
-            Compilation compilation = CompilationHelper.CompileCode(classDeclaration);
-            SyntaxTree tree = compilation.SyntaxTrees.Single();
-            SemanticModel model = compilation.GetSemanticModel(tree);
-            var builder = new JsonDeserializerBuilder(
-                this.generator,
-                compilation.GetTypeByMetadataName(ClassTypeName));
+            ModuleDefinition module = CodeHelper.CompileCode(classDeclaration);
+            TypeDefinition classType = module.GetType(ClassTypeName);
+            var builder = new JsonDeserializerBuilder(this.generator, classType);
 
-            IEnumerable<PropertyDeclarationSyntax> properties =
-                tree.GetRoot()
-                    .DescendantNodes()
-                    .OfType<PropertyDeclarationSyntax>();
-
-            foreach (PropertyDeclarationSyntax property in properties)
+            foreach (PropertyDefinition property in classType.Properties)
             {
-                builder.AddProperty(model.GetDeclaredSymbol(property));
+                builder.AddProperty(property);
             }
 
-            string generatedCode = SyntaxFactory
-                .CompilationUnit()
-                .WithUsings(SyntaxFactory.List(JsonDeserializerBuilder.GetUsingStatements()))
-                .WithMembers(SyntaxFactory.SingletonList<MemberDeclarationSyntax>(builder.GenerateClass()))
-                .NormalizeWhitespace()
-                .ToFullString();
-
-            Compilation generatedCompilation = CompilationHelper.CompileCode(
-                generatedCode + classDeclaration,
-                referenceAbstractions: true);
-
-            System.Reflection.Assembly assembly = CompilationHelper.GenerateAssembly(generatedCompilation);
+            builder.GenerateClass(module);
+            SR.Assembly assembly = CodeHelper.LoadModule(module);
             return (
                 assembly.GetType(ClassTypeName),
                 assembly.GetType(ClassTypeName + JsonDeserializerBuilder.GeneratedClassSuffix));
@@ -102,7 +80,7 @@ public class {ClassTypeName}
                 };
 
                 dynamic instance = typeof(JsonDeserializerBuilderTests)
-                    .GetMethod(nameof(ReadJson), NonPublic | Static)
+                    .GetMethod(nameof(ReadJson), SR.BindingFlags.NonPublic | SR.BindingFlags.Static)
                     .MakeGenericMethod(classType)
                     .Invoke(null, new object[] { serializer, createReader });
 
@@ -287,7 +265,7 @@ public class OtherTypeDeserializer
         return instance;
     }";
                 this.generator.GetClassFor(null)
-                    .ReturnsForAnyArgs(SyntaxFactory.IdentifierName("OtherTypeDeserializer"));
+                    .ReturnsForAnyArgs(ci => ci.Arg<TypeReference>().Module.GetType("OtherTypeDeserializer"));
 
                 dynamic instance = this.DeserializeJson(
                     classMembers,

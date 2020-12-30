@@ -1,5 +1,6 @@
 ﻿namespace NativeAdapters.Tests
 {
+    using System;
     using System.Text.Json;
     using System.Threading;
     using Autocrat.NativeAdapters;
@@ -8,13 +9,23 @@
 
     public class ManagedExportsTests
     {
+        // .NET 5.0 made it an error to call the method from managed code,
+        // however, as we're targeting .NET Core 3.1, we can still invoke
+        // it at runtime
+        private static object InvokeMethod(string name, params object[] parameters)
+        {
+            return typeof(ManagedExports)
+                .GetMethod(name)
+                .Invoke(null, parameters);
+        }
+
         public sealed class GetByteArrayTypeTests : ManagedExportsTests
         {
             [Fact]
             public void ShouldReturnTheManagedTypeHandle()
             {
-                ManagedExports.GetByteArrayType()
-                    .Should().Be(typeof(byte[]).TypeHandle.Value);
+                InvokeMethod(nameof(ManagedExports.GetByteArrayType))
+                   .Should().Be(typeof(byte[]).TypeHandle.Value);
             }
         }
 
@@ -23,7 +34,7 @@
             [Fact]
             public void ShouldSetTheSynchronizationContext()
             {
-                ManagedExports.InitializeManagedThread();
+                InvokeMethod(nameof(ManagedExports.InitializeManagedThread));
 
                 SynchronizationContext.Current
                     .Should().BeOfType<TaskServiceSynchronizationContext>();
@@ -41,7 +52,9 @@
                     bool loadCalled = false;
                     ConfigService.Initialize((ref Utf8JsonReader reader) => loadCalled = true);
 
-                    ManagedExports.LoadConfiguration(new byte[0]);
+                    InvokeMethod(
+                        nameof(ManagedExports.LoadConfiguration),
+                        IntPtr.Zero);
 
                     loadCalled.Should().BeTrue();
                 }

@@ -5,154 +5,163 @@
     using Autocrat.Compiler;
     using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
     using NSubstitute;
     using Xunit;
 
     public class InstanceBuilderTests
     {
-        private const string ClassDeclarations = @"
-public class Dependency
-{
-    public Dependency(object injected)
-    {
-        this.Injected = injected;
-    }
-
-    public object Injected { get; }
-}
-
-public class DerivedClass : SimpleClass
-{
-}
-
-public class SimpleClass
-{
-}";
-
         private readonly InstanceBuilder builder;
-        private readonly Compilation compilation;
+        private readonly ConfigResolver configResolver;
         private readonly ConstructorResolver constructorResolver;
-        private readonly INamedTypeSymbol dependency;
-        private readonly INamedTypeSymbol derivedClass;
         private readonly InterfaceResolver interfaceResolver;
-        private readonly INamedTypeSymbol simpleClass;
 
         private InstanceBuilderTests()
         {
-            this.compilation = CompilationHelper.CompileCode(ClassDeclarations);
-            this.dependency = this.compilation.GetTypeByMetadataName("Dependency");
-            this.derivedClass = this.compilation.GetTypeByMetadataName("DerivedClass");
-            this.simpleClass = this.compilation.GetTypeByMetadataName("SimpleClass");
+            this.configResolver = Substitute.For<ConfigResolver>();
+            this.interfaceResolver = Substitute.For<InterfaceResolver>();
 
             this.constructorResolver = Substitute.For<ConstructorResolver>();
-            this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<IKnownTypes>());
-            this.builder = new InstanceBuilder(this.constructorResolver, this.interfaceResolver);
+            this.constructorResolver
+                .WhenForAnyArgs(x => x.GetConstructor(null)).CallBase();
+
+            this.builder = new InstanceBuilder(
+                this.configResolver,
+                this.constructorResolver,
+                this.interfaceResolver);
         }
 
-        private object GetLocal(IdentifierNameSyntax identifier)
+        private dynamic EmitAndCreate(TypeReference type)
         {
-            string locals = string.Join(
-                Environment.NewLine,
-                this.builder.LocalDeclarations.Select(x => x.NormalizeWhitespace()));
-
-            string code = ClassDeclarations + @"
-public static class WrapperClass
-{
-    public static object WrapperMethod()
-    {
-        " + locals + @"
-        return " + identifier.ToString() + @";
-    }
-}";
-            Type wrapperType = CompilationHelper
-                .GenerateAssembly(CompilationHelper.CompileCode(code))
-                .GetType("WrapperClass");
-            return wrapperType.GetMethod("WrapperMethod").Invoke(null, null);
+            var method = new CodeHelper.GeneratedMethod(type.Module);
+            this.builder.EmitNewObj(type, method.IL);
+            return method.GetResult();
         }
 
-        public sealed class GenerateTypeForTests : InstanceBuilderTests
+        public sealed class EmitNewObjTests : InstanceBuilderTests
         {
             [Fact]
             public void ShouldCheckForCyclicDependencies()
             {
-                this.constructorResolver.GetParameters(this.simpleClass)
-                    .Returns(new[] { this.simpleClass });
+                var classType = new TypeDefinition("", "CyclicClass", default);
+                this.constructorResolver.GetParameters(null)
+                    .ReturnsForAnyArgs(new[] { classType });
 
-                this.builder.Invoking(x => x.GenerateForType(this.simpleClass))
+                var method = new CodeHelper.GeneratedMethod();
+                this.builder.Invoking(x => x.EmitNewObj(classType, method.IL))
                     .Should().Throw<InvalidOperationException>();
             }
 
             [Fact]
             public void ShouldCreateAnInstanceOfTheSpecifiedType()
             {
-                IdentifierNameSyntax identifier = this.builder.GenerateForType(this.simpleClass);
+                TypeReference simpleClass = CodeHelper.CompileType("class SimpleClass {}");
 
-                object instance = this.GetLocal(identifier);
-                instance.GetType().Name.Should().Be(this.simpleClass.Name);
+                object result = this.EmitAndCreate(simpleClass);
+
+                result.GetType().Name.Should().Be("SimpleClass");
             }
 
             [Fact]
             public void ShouldInjectArrays()
             {
-                this.constructorResolver.GetParameters(this.dependency)
-                    .Returns(new[] { this.compilation.CreateArrayTypeSymbol(this.simpleClass) });
+                TypeReference arrayDependency = CodeHelper.CompileType(@"
+public class ArrayDependency
+{
+    public class Dependency
+    {
+    }
 
-                this.interfaceResolver.FindClasses(this.simpleClass)
-                    .Returns(new[] { this.simpleClass, this.derivedClass });
+    public ArrayDependency(Dependency[] injected)
+    {
+        this.Injected = injected;
+    }
 
-                IdentifierNameSyntax identifier = this.builder.GenerateForType(this.dependency);
+    public Dependency[] Injected { get; }
+}");
+                TypeDefinition dependencyType = arrayDependency.Resolve()
+                    .NestedTypes.Single()
+                    .Resolve();
 
-                dynamic instance = this.GetLocal(identifier);
-                ((int)instance.Injected.Length).Should().Be(2);
-                ((object)instance.Injected[0]).Should().NotBeNull();
-                ((object)instance.Injected[1]).Should().NotBeNull();
-                ((object)instance.Injected[0]).Should().NotBe(instance.Injected[1]);
+                this.constructorResolver.GetParameters(Arg.Is<MethodDefinition>(m => m.DeclaringType == arrayDependency))
+                    .Returns(new[] { new ArrayType(dependencyType) });
+
+                this.interfaceResolver.FindClasses(dependencyType)
+                    .Returns(new[] { dependencyType, dependencyType });
+
+                dynamic result = this.EmitAndCreate(arrayDependency);
+
+                ((int)result.Injected.Length).Should().Be(2);
+                ((object)result.Injected[0]).Should().NotBeNull();
+                ((object)result.Injected[1]).Should().NotBeNull();
+                ((object)result.Injected[0]).Should().NotBeSameAs(result.Injected[1]);
             }
 
             [Fact]
-            public void ShouldInjectDependencies()
+            public void ShouldInjectConfiguration()
             {
-                this.constructorResolver.GetParameters(this.dependency)
-                    .Returns(new[] { this.simpleClass });
+                var configType = new TypeDefinition("", "ConfigType", default);
+                TypeReference injectedValue = CodeHelper.CompileType(@"
+public class InjectedValue
+{
+    public InjectedValue(int value)
+    {
+        this.Value = value;
+    }
 
-                IdentifierNameSyntax identifier = this.builder.GenerateForType(this.dependency);
+    public int Value { get; }
+}");
 
-                dynamic instance = this.GetLocal(identifier);
-                ((object)instance.Injected).GetType().Name.Should().Be(this.simpleClass.Name);
+                this.constructorResolver.GetParameters(null)
+                    .ReturnsForAnyArgs(new[] { configType });
+
+                this.configResolver.EmitAccessConfig(configType, Arg.Any<ILProcessor>())
+                    .Returns(ci =>
+                    {
+                        ci.Arg<ILProcessor>().Emit(OpCodes.Ldc_I4, 123);
+                        return true;
+                    });
+
+                dynamic result = this.EmitAndCreate(injectedValue);
+
+                ((int)result.Value).Should().Be(123);
             }
 
             [Fact]
-            public void ShouldInjectExpressions()
+            public void ShouldInjectTransientDependencies()
             {
-                this.constructorResolver.GetParameters(this.dependency)
-                    .Returns(new[] { SyntaxFactory.ParseExpression("123") });
+                TypeReference multipleDependencies = CodeHelper.CompileType(@"
+public class MultipleDependencies
+{
+    public class Dependency
+    {
+    }
 
-                IdentifierNameSyntax identifier = this.builder.GenerateForType(this.dependency);
+    public MultipleDependencies(Dependency a, Dependency b)
+    {
+        this.A = a;
+        this.B = b;
+    }
 
-                dynamic instance = this.GetLocal(identifier);
-                ((object)instance.Injected).Should().Be(123);
-            }
+    public Dependency A { get; }
+    public Dependency B { get; }
+}");
+                TypeDefinition dependencyType = multipleDependencies.Resolve()
+                    .NestedTypes.Single()
+                    .Resolve();
 
-            [Fact]
-            public void ShouldReturnExistingInstances()
-            {
-                IdentifierNameSyntax first = this.builder.GenerateForType(this.simpleClass);
-                IdentifierNameSyntax second = this.builder.GenerateForType(this.simpleClass);
+                this.constructorResolver.GetParameters(Arg.Is<MethodDefinition>(m => m.DeclaringType == multipleDependencies))
+                    .Returns(new[] { dependencyType, dependencyType });
 
-                second.Should().BeSameAs(first);
-            }
+                this.interfaceResolver.FindClasses(dependencyType)
+                    .Returns(new[] { dependencyType, dependencyType });
 
-            [Fact]
-            public void ShouldThrowForUnknownParameterTypes()
-            {
-                this.constructorResolver.GetParameters(this.dependency)
-                    .Returns(new[] { "123" });
+                dynamic result = this.EmitAndCreate(multipleDependencies);
 
-                this.builder.Invoking(x => x.GenerateForType(this.dependency))
-                    .Should().Throw<InvalidOperationException>();
+                ((object)result.A).Should().NotBeNull();
+                ((object)result.B).Should().NotBeNull();
+                ((object)result.A).Should().NotBeSameAs(result.B);
             }
         }
     }

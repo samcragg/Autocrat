@@ -5,45 +5,49 @@
 
 namespace Autocrat.Compiler.CodeGeneration
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Autocrat.Abstractions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
 
     /// <summary>
     /// Rewrites code used to initialize the application.
     /// </summary>
-    internal class InitializerGenerator : MethodGenerator
+    internal class InitializerGenerator
     {
+        /// <summary>
+        /// Gets the name of the generated class.
+        /// </summary>
+        internal const string GeneratedClassName = "Initialization";
+
         // This class generates a static method to invoke the
         // IInitialize.OnInitialize method on classes, so given this:
         //
         //// public class Startup : IInitializer
         //// {
-        ////     private readonly IUdpEvent udpEvent;
-        ////
         ////     public Startup(IUdpEvent udpEvent)
         ////     {
-        ////         this.updEvent = updEvent;
+        ////         ...
         ////     }
         ////
         ////     public void OnInitialize()
         ////     {
-        ////         int port = 123;
-        ////         udpEvent.Register<MyReceiver>(port);
+        ////         ...
         ////     }
         //// }
         //
-        // then a method like this would be generated:
+        // then a method like this will be generated:
         //
-        //// public static void OnInitialize()
+        //// public class Initialization
         //// {
-        ////     var udpEvent = new UdpEvent();
-        ////     var startup = new Startup(udpEvent);
-        ////     startup.OnInitialize();
+        ////     [UnmanagedCallersOnly("OnInitialize")]
+        ////     public static void OnInitialize()
+        ////     {
+        ////         var startup = new Startup(new UdpEvent());
+        ////         startup.OnInitialize();
+        ////     }
         //// }
         //
         // Note that only a single method is generated, so multiple
@@ -51,15 +55,14 @@ namespace Autocrat.Compiler.CodeGeneration
         // not specified.
         private readonly InstanceBuilder instanceBuilder;
 
-        private readonly List<(INamedTypeSymbol, IMethodSymbol)> methods =
-            new List<(INamedTypeSymbol, IMethodSymbol)>();
+        private readonly List<(TypeDefinition, MethodDefinition)> methods =
+            new List<(TypeDefinition, MethodDefinition)>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InitializerGenerator"/> class.
         /// </summary>
         /// <param name="instanceBuilder">Generates code to create objects.</param>
         public InitializerGenerator(InstanceBuilder instanceBuilder)
-            : base("Initialization")
         {
             this.instanceBuilder = instanceBuilder;
         }
@@ -71,52 +74,85 @@ namespace Autocrat.Compiler.CodeGeneration
         /// This constructor is to make the class easier to be mocked.
         /// </remarks>
         protected InitializerGenerator()
-            : base(string.Empty)
         {
             this.instanceBuilder = null!;
         }
-
-        /// <inheritdoc />
-        public override bool HasCode => this.methods.Count != 0;
 
         /// <summary>
         /// Registers the class for invoking during initialization.
         /// </summary>
         /// <param name="type">The type information.</param>
-        public virtual void AddClass(INamedTypeSymbol type)
+        public virtual void AddClass(TypeDefinition type)
         {
-            IMethodSymbol method = type.GetMembers(nameof(IInitializer.OnConfigurationLoaded))
-                .OfType<IMethodSymbol>()
-                .FirstOrDefault(m => m.Parameters.Length == 0);
-
+            MethodDefinition? method = type.Methods.FirstOrDefault(IsConfigurationMethod);
             if (method != null)
             {
                 this.methods.Add((type, method));
             }
         }
 
-        /// <inheritdoc />
-        protected override IEnumerable<MemberDeclarationSyntax> GetMethods()
+        /// <summary>
+        /// Emits the generated code to the specified module.
+        /// </summary>
+        /// <param name="module">Where to emit the new code to.</param>
+        public virtual void Emit(ModuleDefinition module)
         {
-            var statements = new List<StatementSyntax>(this.methods.Count);
-            foreach ((INamedTypeSymbol type, IMethodSymbol method) in this.methods)
-            {
-                IdentifierNameSyntax instance =
-                    this.instanceBuilder.GenerateForType(type);
+            //// public sealed class Initialization
+            TypeDefinition initializerType = CecilHelper.AddClass(module, GeneratedClassName);
 
-                statements.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                instance,
-                                IdentifierName(method.Name)))));
+            //// public static void OnConfigurationLoaded()
+            var initializeMethod = new MethodDefinition(
+                nameof(IInitializer.OnConfigurationLoaded),
+                Constants.PublicStaticMethod,
+                module.TypeSystem.Void);
+            initializerType.Methods.Add(initializeMethod);
+
+            CecilHelper.AddUmanagedAttribute(initializeMethod);
+            ILProcessor il = initializeMethod.Body.GetILProcessor();
+
+            //// (new Initializer()).OnConfigurationLoaded
+            foreach ((TypeDefinition type, MethodDefinition method) in this.methods)
+            {
+                this.instanceBuilder.EmitNewObj(type, il);
+                il.Emit(OpCodes.Callvirt, method);
             }
 
-            statements.InsertRange(0, this.instanceBuilder.LocalDeclarations);
-            yield return CreateMethod(
-                nameof(IInitializer.OnConfigurationLoaded),
-                Block(statements));
+            il.Emit(OpCodes.Ret);
+            CecilHelper.OptimizeBody(initializeMethod);
+        }
+
+        private static bool IsConfigurationMethod(MethodDefinition method)
+        {
+            static bool IsInterfaceMethod(MethodReference overrideMethod)
+            {
+                return string.Equals(
+                        overrideMethod.Name,
+                        nameof(IInitializer.OnConfigurationLoaded),
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        overrideMethod.DeclaringType.Name,
+                        nameof(IInitializer),
+                        StringComparison.Ordinal);
+            }
+
+            if (!method.IsVirtual)
+            {
+                return false;
+            }
+            else if (method.HasOverrides)
+            {
+                // Check for explicit interface implementations
+                return method.Overrides.Any(IsInterfaceMethod);
+            }
+            else
+            {
+                // Check for implicitly implemented methods
+                return string.Equals(
+                    method.Name,
+                    nameof(IInitializer.OnConfigurationLoaded),
+                    StringComparison.Ordinal) &&
+                    (method.Parameters.Count == 0);
+            }
         }
     }
 }

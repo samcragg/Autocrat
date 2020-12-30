@@ -1,77 +1,81 @@
-﻿using Autocrat.NativeAdapters;
-
-namespace Compiler.Tests.CodeGeneration
+﻿namespace Compiler.Tests.CodeGeneration
 {
-    using System.Linq;
-    using Autocrat.Compiler;
+    using System;
     using Autocrat.Compiler.CodeGeneration;
+    using Autocrat.NativeAdapters;
     using FluentAssertions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Mono.Cecil;
     using Xunit;
+    using SR = System.Reflection;
 
     public class ManagedExportsGeneratorTests
     {
         private readonly ManagedExportsGenerator generator = new ManagedExportsGenerator();
 
-        public sealed class GenerateTests : ManagedExportsGeneratorTests
+        public sealed class EmitTests : ManagedExportsGeneratorTests
         {
             [Fact]
             public void ShouldCreateAClassWithTheRegisterManagedTypesMethod()
             {
-                CompilationUnitSyntax compilation = this.generator.Generate();
+                var module = ModuleDefinition.CreateModule("TestModule", ModuleKind.Dll);
+                this.generator.Emit(module);
 
-                ClassDeclarationSyntax classDeclaration =
-                    compilation.Members.Should().ContainSingle()
-                    .Which.Should().BeAssignableTo<ClassDeclarationSyntax>()
-                    .Subject;
-
-                classDeclaration.Identifier.ValueText
-                    .Should().Be(ManagedExportsGenerator.GeneratedClassName);
-
-                MethodDeclarationSyntax methodDeclaration =
-                    classDeclaration.Members.OfType<MethodDeclarationSyntax>()
-                    .Should().ContainSingle(m => m.Identifier.ValueText == ManagedExportsGenerator.GeneratedMethodName)
-                    .Subject;
-
-                CompilationHelper.AssertExportedAs(methodDeclaration, ManagedExportsGenerator.GeneratedMethodName);
+                CodeHelper.AssertHasExportedMember(
+                    module.GetType(ManagedExportsGenerator.GeneratedClassName),
+                    ManagedExportsGenerator.GeneratedMethodName);
             }
 
             [Fact]
             public void ShouldInitializeTheConfigService()
             {
-                this.generator.IncludeConfig = true;
+                TypeDefinition configClass = CodeHelper.CompileType(@"public static class FakeAppConfig
+{
+    public static int CallCount;
 
-                string generatedCode = this.generator.Generate()
-                    .NormalizeWhitespace().ToFullString();
+    public static void ReadConfig(ref System.Text.Json.Utf8JsonReader reader)
+    {
+        CallCount++;
+    }
+}");
+                this.generator.ConfigClass = configClass;
+                this.generator.Emit(configClass.Module);
 
-                string generatedConfigMethod =
-                    $"{ConfigResolver.ConfigurationClassName}.{ConfigResolver.ReadConfigurationMethod}";
-                generatedCode.Should().Contain(
-                    $"{nameof(ConfigService)}.{nameof(ConfigService.Initialize)}({generatedConfigMethod})");
-            }
+                SR.Assembly assembly = CodeHelper.LoadModule(configClass.Module);
+                InvokeRegisterManagedTypes(assembly);
 
-            [Fact]
-            public void ShouldNotInitializeTheConfigServiceIfIncludeCondigIsFalse()
-            {
-                this.generator.IncludeConfig = false;
-
-                string generatedCode = this.generator.Generate()
-                    .NormalizeWhitespace().ToFullString();
-
-                // This class doesn't exist if IncludeConfig is false, so we
-                // mustn't mention it
-                generatedCode.Should().NotContain(ConfigResolver.ConfigurationClassName);
+                ConfigService.Load(new byte[0]);
+                Type configType = assembly.GetType("FakeAppConfig");
+                configType.GetField("CallCount").GetValue(null).Should().Be(1);
             }
 
             [Fact]
             public void ShouldRegisterTheWorkerTypes()
             {
-                string generatedCode = this.generator.Generate()
-                    .NormalizeWhitespace().ToFullString();
+                TypeDefinition workersClass = CodeHelper.CompileType(@"public static class FakeWorkers
+{
+    public static int CallCount;
 
-                generatedCode.Should().Contain(
-                    $"{WorkerRegisterGenerator.GeneratedClassName}.{WorkerRegisterGenerator.GeneratedMethodName}()");
+    public static void RegisterWorkerTypes()
+    {
+        CallCount++;
+    }
+}");
+
+                this.generator.WorkersClass = workersClass;
+                this.generator.Emit(workersClass.Module);
+
+                SR.Assembly assembly = CodeHelper.LoadModule(workersClass.Module);
+                InvokeRegisterManagedTypes(assembly);
+
+                Type workerType = assembly.GetType("FakeWorkers");
+                workerType.GetField("CallCount").GetValue(null).Should().Be(1);
+            }
+
+            private static void InvokeRegisterManagedTypes(SR.Assembly assembly)
+            {
+                Type generatedType = assembly.GetType(ManagedExportsGenerator.GeneratedClassName);
+                generatedType.GetMethod(ManagedExportsGenerator.GeneratedMethodName)
+                             .Invoke(null, null);
             }
         }
     }

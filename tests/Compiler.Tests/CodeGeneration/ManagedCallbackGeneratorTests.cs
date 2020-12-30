@@ -3,11 +3,11 @@
     using System.Linq;
     using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
     using NSubstitute;
     using Xunit;
+    using SR = System.Reflection;
 
     public class ManagedCallbackGeneratorTests
     {
@@ -17,97 +17,88 @@
 
         private ManagedCallbackGeneratorTests()
         {
-            this.instanceBuilder = Substitute.For<InstanceBuilder>(null, null);
-            this.instanceBuilder.GenerateForType(null)
-                .ReturnsForAnyArgs(SyntaxFactory.IdentifierName("instance"));
-
+            this.instanceBuilder = Substitute.For<InstanceBuilder>();
             this.nativeGenerator = Substitute.For<NativeImportGenerator>();
 
             this.generator = new ManagedCallbackGenerator(
-                () => this.instanceBuilder,
+                this.instanceBuilder,
                 this.nativeGenerator);
         }
 
-        public sealed class CreateMethodTests : ManagedCallbackGeneratorTests
+        public sealed class AddMethodTests : ManagedCallbackGeneratorTests
         {
-            [Fact]
-            public void ShouldCallTheMethodOnTheType()
-            {
-                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod");
-
-                MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
-
-                declaration.Body
-                    .DescendantNodes()
-                    .OfType<MemberAccessExpressionSyntax>()
-                    .Should().ContainSingle()
-                    .Which.Name.ToString().Should().Be("TestMethod");
-            }
-
-            [Fact]
-            public void ShouldHaveTheOriginalArguments()
-            {
-                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod", arguments: "int a");
-
-                MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
-
-                declaration.NormalizeWhitespace().ParameterList.Parameters.ToString()
-                    .Should().Be("int a");
-            }
-
-            [Fact]
-            public void ShouldHaveTheOriginalReturnType()
-            {
-                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod", returnType: "string");
-
-                MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
-
-                declaration.ReturnType.ToString()
-                    .Should().Be("string");
-            }
-
-            [Fact]
-            public void ShouldIncludeTheLocalDeclarations()
-            {
-                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod");
-                this.instanceBuilder.LocalDeclarations.Returns(new[] { SyntaxFactory.EmptyStatement() });
-
-                MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
-
-                declaration.Body.Statements.First().Should().BeOfType<EmptyStatementSyntax>();
-            }
-
-            [Fact]
-            public void ShouldReturnNonVoidMethods()
-            {
-                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod", returnType: "int");
-
-                MethodDeclarationSyntax declaration = this.CallCreateMethod(method);
-
-                declaration.Body.Statements.Last()
-                    .Should().BeOfType<ReturnStatementSyntax>();
-            }
-
             [Fact]
             public void ShouldReturnTheRegistrationOfTheGeneratedMethod()
             {
-                IMethodSymbol method = CompilationHelper.CreateMethodSymbol("TestMethod");
+                var method = new CodeHelper.GeneratedMethod();
                 this.nativeGenerator.RegisterMethod("signature", Arg.Any<string>())
                     .Returns(123);
 
-                int result = this.generator.CreateMethod("signature", method);
+                int result = this.generator.AddMethod("signature", method.Method);
 
                 result.Should().Be(123);
             }
+        }
 
-            private MethodDeclarationSyntax CallCreateMethod(IMethodSymbol method)
+        public sealed class EmitTypeTests : ManagedCallbackGeneratorTests
+        {
+            [Fact]
+            public void ShouldCallInstanceMethods()
             {
-                string name = null;
-                this.nativeGenerator.RegisterMethod("native", Arg.Do<string>(s => name = s));
-                this.generator.CreateMethod("native", method);
+                TypeDefinition definition = CodeHelper.CompileType(@"class SimpleClass
+{
+    public static int InvocationCount;
 
-                return this.generator.Methods
-                    .FirstOrDefault(m => m.Identifier.ValueText.Equals(name));
+    public void Method()
+    {
+        InvocationCount++;
+    }
+}");
+                MethodDefinition constructor = definition.Methods.Single(m => m.Name == ".ctor");
+                this.instanceBuilder
+                    .WhenForAnyArgs(x => x.EmitNewObj(null, null))
+                    .Do(ci =>
+                    {
+                        ci.Arg<ILProcessor>().Emit(OpCodes.Newobj, constructor);
+                    });
+
+                SR.MethodInfo generatedMethod = this.EmitMethod(definition, "Method");
+                generatedMethod.Invoke(null, null);
+
+                generatedMethod.DeclaringType.Assembly
+                    .GetType("SimpleClass")
+                    .GetField("InvocationCount")
+                    .GetValue(null)
+                    .Should().Be(1);
+            }
+
+            [Fact]
+            public void ShouldCallMethodsWithParameters()
+            {
+                TypeDefinition calculator = CodeHelper.CompileType(@"class Calculator
+{
+    public static int Add(int a, int b)
+    {
+        return a + b;
+    }
+}");
+                SR.MethodInfo generatedMethod = this.EmitMethod(calculator, "Add");
+
+                object result = generatedMethod.Invoke(null, new object[] { 1, 2 });
+                result.Should().Be(3);
+            }
+
+            private SR.MethodInfo EmitMethod(TypeDefinition type, string method)
+            {
+                this.generator.AddMethod(
+                    "",
+                    type.Methods.Single(m => m.Name == method));
+                this.generator.EmitType(type.Module);
+
+                SR.Assembly assembly = CodeHelper.LoadModule(type.Module);
+                return assembly.GetType(ManagedCallbackGenerator.GeneratedClassName)
+                            .GetMethods(SR.BindingFlags.Public | SR.BindingFlags.Static)
+                            .Should().ContainSingle().Subject;
             }
         }
     }

@@ -1,16 +1,24 @@
 #include "gc_service.h"
 #include "defines.h"
 #include "services.h"
+#include <atomic>
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <new>
+#include <type_traits>
 
 namespace
 {
 
+// We need to ensure that the pool is available in our constructor and
+// destructor, but since gc_heap is a global that we can't control the lifetime
+// of, we'll manually keep track of the pool via the Nifty Counter idiom
 using pool_type = autocrat::gc_heap::pool_type;
-autocrat::gc_heap::pool_type global_pool;
+pool_type* global_pool;
+std::atomic_size_t global_pool_count;
+std::aligned_storage<sizeof(pool_type), alignof(pool_type)>::type
+    global_pool_storage;
 
 std::size_t align_up(std::size_t value)
 {
@@ -18,6 +26,22 @@ std::size_t align_up(std::size_t value)
     std::size_t result = (value + (alignment - 1)) & ~(alignment - 1);
     assert(result >= value); // check for overflow
     return result;
+}
+
+void destruct_global_pool()
+{
+    if (--global_pool_count == 0)
+    {
+        global_pool->~node_pool();
+    }
+}
+
+void initialize_global_pool()
+{
+    if (global_pool_count++ == 0)
+    {
+        global_pool = new (&global_pool_storage) pool_type();
+    }
 }
 
 }
@@ -35,7 +59,8 @@ namespace autocrat
 gc_heap::gc_heap()
 {
     // Pre-allocate some memory
-    _head = global_pool.acquire();
+    initialize_global_pool();
+    _head = global_pool->acquire();
     _tail = _head;
 }
 
@@ -46,13 +71,16 @@ gc_heap::~gc_heap()
     {
         free_large();
         free_small();
-        global_pool.release(_head);
+        global_pool->release(_head);
         _head = nullptr;
     }
+
+    destruct_global_pool();
 }
 
 gc_heap::gc_heap(gc_heap&& other) noexcept : _head(nullptr), _tail(nullptr)
 {
+    initialize_global_pool();
     swap(other);
 }
 
@@ -102,7 +130,7 @@ std::byte* gc_heap::allocate_small(std::size_t size)
     if (available < size)
     {
         pool_type::node_type* previous = _tail;
-        _tail = global_pool.acquire();
+        _tail = global_pool->acquire();
         previous->next = _tail;
     }
 
@@ -131,7 +159,7 @@ void gc_heap::free_small()
     while (node != nullptr)
     {
         pool_type::node_type* next = node->next;
-        global_pool.release(node);
+        global_pool->release(node);
         node = next;
     }
 

@@ -5,64 +5,58 @@
 
 namespace Autocrat.Compiler.CodeGeneration
 {
-    using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
 
     /// <summary>
     /// Creates methods that are exported to native code.
     /// </summary>
-    internal class ManagedCallbackGenerator
+    internal partial class ManagedCallbackGenerator
     {
+        /// <summary>
+        /// Represents the name of the generated class.
+        /// </summary>
+        internal const string GeneratedClassName = "NativeCallableMethods";
+
         // This class generates static methods that invoke an instance method
-        // so that they can be called from native code. The arguments passed to
-        // the constructor will be created as local variables in the method,
-        // i.e.
+        // so that they can be called from native code, i.e.
         //
         //// class Example
         //// {
-        ////     private readonly object injected;
-        ////
         ////     public Example(object injected)
         ////     {
-        ////         this.injected = injected;
+        ////         ...
         ////     }
         ////
         ////     public object Method()
         ////     {
-        ////         this.injected;
+        ////         ...
         ////     }
         //// }
         //
-        // would be transformed to:
+        // will be transformed to:
         //
         //// public static class NativeCallableMethods
         //// {
-        ////     [NativeMethod("Example_Method")]
-        ////     public static object Method()
+        ////     [UnmanagedCallersOnly("Example_Method")]
+        ////     public static object Example_Method()
         ////     {
-        ////         object injected = new object();
-        ////         var instance = new Example(injected);
+        ////         var instance = new Example(new object());
         ////         return instance.Method();
         ////     }
         //// }
-        private readonly Func<InstanceBuilder> instanceBuilder;
-        private readonly List<MethodDeclarationSyntax> methods = new List<MethodDeclarationSyntax>();
+        private readonly InstanceBuilder instanceBuilder;
+        private readonly List<MethodRegistration> methods = new List<MethodRegistration>();
         private readonly NativeImportGenerator nativeGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ManagedCallbackGenerator"/> class.
         /// </summary>
-        /// <param name="instanceBuilder">
-        /// Factory that creates the builder to generates code to create objects.
-        /// </param>
+        /// <param name="instanceBuilder">Used to generate code to create objects.</param>
         /// <param name="nativeGenerator">Used to register the managed methods.</param>
         public ManagedCallbackGenerator(
-            Func<InstanceBuilder> instanceBuilder,
+            InstanceBuilder instanceBuilder,
             NativeImportGenerator nativeGenerator)
         {
             this.instanceBuilder = instanceBuilder;
@@ -82,84 +76,69 @@ namespace Autocrat.Compiler.CodeGeneration
         }
 
         /// <summary>
-        /// Gets the created methods.
-        /// </summary>
-        public virtual IReadOnlyCollection<MethodDeclarationSyntax> Methods => this.methods;
-
-        /// <summary>
         /// Generates a native callable method for the specified type.
         /// </summary>
         /// <param name="nativeSignature">The format of the native signature.</param>
         /// <param name="method">The method in the type to generate.</param>
-        /// <returns>The name of the generated method.</returns>
-        public virtual int CreateMethod(string nativeSignature, IMethodSymbol method)
+        /// <returns>The native index of the generated method.</returns>
+        public virtual int AddMethod(string nativeSignature, MethodDefinition method)
         {
-            TypeSyntax returnType;
-            if (method.ReturnType.SpecialType == SpecialType.System_Void)
-            {
-                returnType = PredefinedType(Token(SyntaxKind.VoidKeyword));
-            }
-            else
-            {
-                returnType = ParseTypeName(method.ReturnType.ToDisplayString());
-            }
-
-            string methodName = method.ContainingType.Name + "_" + method.Name;
-            MethodDeclarationSyntax declaration = MethodDeclaration(returnType, methodName)
-                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-                .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
-                    RoslynHelper.CreateUnmanagedCallersOnlyAttribute(methodName)))))
-                .WithBody(this.CreateBody(method))
-                .WithParameterList(ParameterList(SeparatedList(
-                    CreateParameters(method))));
-
-            this.methods.Add(declaration);
-            return this.nativeGenerator.RegisterMethod(nativeSignature, methodName);
+            var registration = new MethodRegistration(method);
+            this.methods.Add(registration);
+            return this.nativeGenerator.RegisterMethod(nativeSignature, registration.Name);
         }
 
-        private static IEnumerable<ParameterSyntax> CreateParameters(IMethodSymbol method)
+        /// <summary>
+        /// Emits the native callable methods to the specified module.
+        /// </summary>
+        /// <param name="module">Where to add the generated type to.</param>
+        public virtual void EmitType(ModuleDefinition module)
         {
-            foreach (IParameterSymbol parameter in method.Parameters)
+            //// public sealed class NativeCallableMethods
+            TypeDefinition generatedType = CecilHelper.AddClass(module, GeneratedClassName);
+            foreach (MethodRegistration method in this.methods)
             {
-                TypeSyntax type = ParseTypeName(parameter.Type.ToDisplayString());
-                SyntaxToken name = Identifier(parameter.Name);
-                yield return Parameter(name).WithType(type);
+                //// [UnmanagedCallersOnly(...)]
+                //// public static SomeType Class_Method(...)
+                var definition = new MethodDefinition(
+                    method.Name,
+                    Constants.PublicStaticMethod,
+                    method.ReturnType);
+
+                generatedType.Methods.Add(definition);
+                CecilHelper.AddUmanagedAttribute(definition);
+
+                foreach (ParameterDefinition parameter in method.Parameters)
+                {
+                    definition.Parameters.Add(CloneParameter(parameter));
+                }
+
+                this.EmitBody(method, definition.Body.GetILProcessor());
+                CecilHelper.OptimizeBody(definition);
             }
         }
 
-        private BlockSyntax CreateBody(IMethodSymbol method)
+        private static ParameterDefinition CloneParameter(ParameterDefinition parameter)
         {
-            static ArgumentSyntax CreateArgument(IParameterSymbol symbol)
+            return new ParameterDefinition(
+                parameter.Name,
+                parameter.Attributes,
+                parameter.ParameterType);
+        }
+
+        private void EmitBody(MethodRegistration registration, ILProcessor il)
+        {
+            //// return (new ClassType(...)).Method(arg1, arg2, ... )
+            this.instanceBuilder.EmitNewObj(registration.DeclaringType, il);
+            for (int i = 0; i < registration.Parameters.Count; i++)
             {
-                return Argument(IdentifierName(symbol.Name));
+                il.Emit(OpCodes.Ldarg, i);
             }
 
-            ArgumentListSyntax arguments = ArgumentList(SeparatedList(
-                    method.Parameters.Select(CreateArgument)));
-
-            InstanceBuilder builder = this.instanceBuilder();
-            IdentifierNameSyntax instance = builder.GenerateForType(
-                method.ContainingType);
-
-            InvocationExpressionSyntax invocation = InvocationExpression(
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    instance,
-                    IdentifierName(method.Name)))
-                .WithArgumentList(arguments);
-
-            var statements = new List<StatementSyntax>();
-            statements.AddRange(builder.LocalDeclarations);
-            if (method.ReturnsVoid)
-            {
-                statements.Add(ExpressionStatement(invocation));
-            }
-            else
-            {
-                statements.Add(ReturnStatement(invocation));
-            }
-
-            return Block(statements);
+            // No need for CallVirt here, as we put a new object of the exact
+            // type on the stack
+            il.Emit(OpCodes.Call, registration.OriginalMethod);
+            il.Emit(OpCodes.Ret);
         }
     }
 }

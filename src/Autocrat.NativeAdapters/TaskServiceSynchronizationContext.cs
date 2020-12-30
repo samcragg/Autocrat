@@ -20,7 +20,7 @@ namespace Autocrat.NativeAdapters
         /// <param name="action">The action to perform.</param>
         public static unsafe void StartNew(Action action)
         {
-            NativeMethods.TaskStartNew(NativeHelpers.GetObject(__makeref(action)));
+            NativeMethods.TaskStartNew(NativeHelpers.ToPointer(__makeref(action)));
         }
 
         /// <inheritdoc />
@@ -34,8 +34,8 @@ namespace Autocrat.NativeAdapters
         public unsafe override void Post(SendOrPostCallback d, object? state)
         {
             NativeMethods.TaskEnqueue(
-                NativeHelpers.GetObject(__makeref(d)),
-                NativeHelpers.GetObject(__makeref(state)));
+                NativeHelpers.ToPointer(__makeref(d)),
+                NativeHelpers.ToPointer(__makeref(state)));
         }
 
         private static unsafe class NativeMethods

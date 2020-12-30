@@ -5,18 +5,15 @@
 
 namespace Autocrat.Compiler.CodeGeneration
 {
-    using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+    using Autocrat.NativeAdapters;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
 
     /// <summary>
     /// Builds a method to register the known worker types.
     /// </summary>
-    internal class WorkerRegisterGenerator : MethodGenerator
+    internal class WorkerRegisterGenerator
     {
         /// <summary>
         /// Represents the name of the generated class.
@@ -38,7 +35,6 @@ namespace Autocrat.Compiler.CodeGeneration
         // would cause the following to be generated (note that the original
         // call still happens and this is generated in a separate class):
         //
-        //// [UnmanagedCallersOnly("RegisterWorkerTypes")]
         //// public static void RegisterWorkerTypes()
         //// {
         ////     WorkerFactory.RegisterConstructor<MyClass>(123);
@@ -52,27 +48,23 @@ namespace Autocrat.Compiler.CodeGeneration
         //// }
         //
         // where 123 is the method handle for the CreateMyClass method.
-        private static readonly TypeSyntax WorkerFactoryType = ParseTypeName(
-            "Autocrat.NativeAdapters." + nameof(NativeAdapters.WorkerFactory));
-
-        private readonly IReadOnlyCollection<INamedTypeSymbol> factoryTypes;
-        private readonly Func<InstanceBuilder> instanceBuilder;
-        private readonly List<(TypeSyntax, int)> methodHandles = new List<(TypeSyntax, int)>();
+        private readonly IReadOnlyCollection<TypeReference> factoryTypes;
+        private readonly InstanceBuilder instanceBuilder;
         private readonly NativeImportGenerator nativeGenerator;
+        private MethodDefinition? workerFactoryRegister;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WorkerRegisterGenerator"/> class.
         /// </summary>
         /// <param name="instanceBuilder">
-        /// Factory that creates the builder to generates code to create objects.
+        /// Used to generate code to create new objects.
         /// </param>
         /// <param name="factoryTypes">The worker types to register.</param>
         /// <param name="nativeGenerator">Used to register the managed methods.</param>
         public WorkerRegisterGenerator(
-            Func<InstanceBuilder> instanceBuilder,
-            IReadOnlyCollection<INamedTypeSymbol> factoryTypes,
+            InstanceBuilder instanceBuilder,
+            IReadOnlyCollection<TypeReference> factoryTypes,
             NativeImportGenerator nativeGenerator)
-            : base(GeneratedClassName)
         {
             this.factoryTypes = factoryTypes;
             this.instanceBuilder = instanceBuilder;
@@ -86,73 +78,76 @@ namespace Autocrat.Compiler.CodeGeneration
         /// This constructor is to make the class easier to be mocked.
         /// </remarks>
         protected WorkerRegisterGenerator()
-            : base(GeneratedClassName)
         {
             this.factoryTypes = null!;
             this.instanceBuilder = null!;
             this.nativeGenerator = null!;
         }
 
-        /// <inheritdoc />
-        public override bool HasCode => true;
-
-        /// <inheritdoc />
-        protected override IEnumerable<MemberDeclarationSyntax> GetMethods()
+        /// <summary>
+        /// Emits the generated code to the specified module.
+        /// </summary>
+        /// <param name="module">Where to emit the new code to.</param>
+        /// <returns>The generated type.</returns>
+        public virtual TypeDefinition EmitWorkerClass(ModuleDefinition module)
         {
-            foreach (INamedTypeSymbol type in this.factoryTypes)
+            TypeDefinition workers = CecilHelper.AddClass(module, GeneratedClassName);
+
+            //// public static void RegisterWorkerTypes()
+            var registerWorker = new MethodDefinition(
+                GeneratedMethodName,
+                Constants.PublicStaticMethod,
+                module.TypeSystem.Void);
+            workers.Methods.Add(registerWorker);
+
+            ILProcessor il = registerWorker.Body.GetILProcessor();
+            foreach (TypeReference type in this.factoryTypes)
             {
-                yield return this.AddCreateMethod(type);
+                int handle = this.EmitCreateMethod(workers, type);
+                this.EmitCallRegisterConstructor(il, type, handle);
             }
 
-            yield return this.CreateRegisterMethod();
+            il.Emit(OpCodes.Ret);
+            CecilHelper.OptimizeBody(registerWorker);
+            return workers;
         }
 
-        private MemberDeclarationSyntax AddCreateMethod(INamedTypeSymbol type)
+        private void EmitCallRegisterConstructor(ILProcessor il, TypeReference type, int handle)
         {
-            InstanceBuilder builder = this.instanceBuilder();
-            IdentifierNameSyntax instance = builder.GenerateForType(type);
-
-            var statements = new List<StatementSyntax>();
-            statements.AddRange(builder.LocalDeclarations);
-            statements.Add(ReturnStatement(instance));
-
-            string typeName = type.ToDisplayString();
-            string methodName = "Create_" + typeName.Replace('.', '_').Replace('+', '_');
-            int handle = this.nativeGenerator.RegisterMethod("void* {0}()", methodName);
-            this.methodHandles.Add((ParseTypeName(typeName), handle));
-
-            return CreateMethod(
-                methodName,
-                Block(statements),
-                PredefinedType(Token(SyntaxKind.ObjectKeyword)));
-        }
-
-        private MemberDeclarationSyntax CreateRegisterMethod()
-        {
-            static StatementSyntax CallRegister((TypeSyntax Type, int Handle) value)
+            ModuleDefinition module = il.Body.Method.Module;
+            if (this.workerFactoryRegister is null)
             {
-                GenericNameSyntax method = GenericName("RegisterConstructor").WithTypeArgumentList(
-                    TypeArgumentList(SingletonSeparatedList(value.Type)));
-
-                ArgumentSyntax methodHandle = Argument(
-                    LiteralExpression(
-                        SyntaxKind.NumericLiteralExpression,
-                        Literal(value.Handle)));
-
-                return ExpressionStatement(
-                    InvocationExpression(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            WorkerFactoryType,
-                            method),
-                        ArgumentList(SingletonSeparatedList(methodHandle))));
+                this.workerFactoryRegister = module
+                    .ImportReference(typeof(WorkerFactory).GetMethod(nameof(WorkerFactory.RegisterConstructor)))
+                    .Resolve();
             }
 
-            return MethodDeclaration(
-                PredefinedType(Token(SyntaxKind.VoidKeyword)),
-                Identifier(GeneratedMethodName))
-                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-                .WithBody(Block(this.methodHandles.Select(CallRegister).ToArray()));
+            var registerConstructor = new GenericInstanceMethod(this.workerFactoryRegister);
+            registerConstructor.GenericArguments.Add(type);
+
+            //// WorkerFactory.RegisterConstructor<Type>(123)
+            il.Emit(OpCodes.Ldc_I4, handle);
+            il.Emit(OpCodes.Call, registerConstructor);
+        }
+
+        private int EmitCreateMethod(TypeDefinition workers, TypeReference type)
+        {
+            //// [UnmanagedCallersOnly(...)]
+            //// public static object Create_Namespace_Class()
+            var method = new MethodDefinition(
+                "Create_" + type.FullName.Replace('.', '_').Replace('/', '_'),
+                Constants.PublicStaticMethod,
+                workers.Module.TypeSystem.Object);
+            workers.Methods.Add(method);
+            CecilHelper.AddUmanagedAttribute(method);
+
+            //// return new Class(...)
+            ILProcessor il = method.Body.GetILProcessor();
+            this.instanceBuilder.EmitNewObj(type, il);
+            il.Emit(OpCodes.Ret);
+
+            CecilHelper.OptimizeBody(method);
+            return this.nativeGenerator.RegisterMethod("void* {0}()", method.Name);
         }
     }
 }

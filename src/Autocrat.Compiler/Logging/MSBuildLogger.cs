@@ -8,7 +8,6 @@ namespace Autocrat.Compiler.Logging
     using System;
     using Microsoft.Build.Framework;
     using Microsoft.Build.Utilities;
-    using Microsoft.CodeAnalysis;
 
     /// <summary>
     /// Provides an adapter for logging to MSBuild.
@@ -33,18 +32,9 @@ namespace Autocrat.Compiler.Logging
         }
 
         /// <inheritdoc />
-        public void Error(Location location, string message, params object[] messageArgs)
+        public void Error(string message, params object[] messageArgs)
         {
-            FileLinePositionSpan position = location.GetMappedLineSpan();
             this.logger.LogError(
-                null,
-                null,
-                null,
-                position.Path,
-                position.StartLinePosition.Line,
-                position.StartLinePosition.Character,
-                position.EndLinePosition.Line,
-                position.EndLinePosition.Character,
                 message,
                 messageArgs);
         }

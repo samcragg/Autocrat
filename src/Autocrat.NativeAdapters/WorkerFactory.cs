@@ -97,7 +97,7 @@ namespace Autocrat.NativeAdapters
         {
             object? result = null;
             TypedReference tr = __makeref(result);
-            NativeMethods.LoadObjectString(type, NativeHelpers.GetObject(__makeref(id)), &tr);
+            NativeMethods.LoadObjectString(type, NativeHelpers.ToPointer(__makeref(id)), &tr);
             return result;
         }
 

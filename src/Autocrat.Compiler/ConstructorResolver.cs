@@ -7,44 +7,25 @@ namespace Autocrat.Compiler
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections.Immutable;
     using System.Linq;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Microsoft.CodeAnalysis.Operations;
+    using Mono.Cecil;
 
     /// <summary>
     /// Allows the resolving of constructor parameters for a type.
     /// </summary>
     internal class ConstructorResolver
     {
-        private readonly Compilation compilation;
-        private readonly ConfigResolver configResolver;
         private readonly InterfaceResolver interfaceResolver;
-        private readonly IKnownTypes knownTypes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConstructorResolver"/> class.
         /// </summary>
-        /// <param name="compilation">Represents the compiler.</param>
-        /// <param name="knownTypes">Contains the discovered types.</param>
-        /// <param name="configResolver">
-        /// Used to resolve classes representing configuration.
-        /// </param>
         /// <param name="interfaceResolver">
         /// Used to resolve classes implementing interfaces.
         /// </param>
-        public ConstructorResolver(
-            Compilation compilation,
-            IKnownTypes knownTypes,
-            ConfigResolver configResolver,
-            InterfaceResolver interfaceResolver)
+        public ConstructorResolver(InterfaceResolver interfaceResolver)
         {
-            this.compilation = compilation;
-            this.configResolver = configResolver;
             this.interfaceResolver = interfaceResolver;
-            this.knownTypes = knownTypes;
         }
 
         /// <summary>
@@ -55,101 +36,114 @@ namespace Autocrat.Compiler
         /// </remarks>
         protected ConstructorResolver()
         {
-            this.compilation = null!;
-            this.configResolver = null!;
             this.interfaceResolver = null!;
-            this.knownTypes = null!;
+        }
+
+        /// <summary>
+        /// Gets the constructor method for the specified type.
+        /// </summary>
+        /// <param name="classType">The type to find the constructor on.</param>
+        /// <returns>The constructor to invoke to create the type.</returns>
+        public virtual MethodDefinition GetConstructor(TypeReference classType)
+        {
+            return classType.Resolve().Methods
+                .Where(m => m.IsConstructor && m.IsPublic)
+                .OrderByDescending(m => m.Parameters.Count)
+                .First();
         }
 
         /// <summary>
         /// Finds the classes for injecting into the constructor.
         /// </summary>
-        /// <param name="classType">The type to find the constructor for.</param>
-        /// <returns>The types or expressions needed by the constructor.</returns>
+        /// <param name="constructor">The constructor to resolve.</param>
+        /// <returns>The types needed by the constructor.</returns>
         /// <remarks>
         /// The types returned will be in the order expected by the constructor.
         /// </remarks>
-        public virtual IReadOnlyList<object> GetParameters(INamedTypeSymbol classType)
+        public virtual IReadOnlyCollection<TypeReference> GetParameters(MethodDefinition constructor)
         {
-            ImmutableArray<IParameterSymbol> constructorParameters =
-                classType.Constructors
-                         .Select(c => c.Parameters)
-                         .OrderByDescending(p => p.Length)
-                         .FirstOrDefault();
-
-            if (constructorParameters.Length == 0)
+            if (!constructor.HasParameters)
             {
-                return Array.Empty<object>();
+                return Array.Empty<TypeReference>();
             }
             else
             {
-                var types = new List<object>(constructorParameters.Length);
-                types.AddRange(constructorParameters.Select(this.ResolveParameterType));
-                return types;
+                // Force evaluation eagerly in case there are issues with any
+                // of the dependencies
+                return constructor.Parameters
+                    .Select(p => this.ResolveParameter(p.ParameterType))
+                    .ToList();
             }
         }
 
-        private ITypeSymbol? GetArrayDependencyType(ITypeSymbol type)
+        private static TypeReference? GetArrayType(TypeReference type)
         {
-            static bool ContainsSingleGenericArgument(INamedTypeSymbol classType)
+            // Note we can't interrogate the interfaces for Array to see if any
+            // are compatible:
+            //
+            // https://docs.microsoft.com/en-gb/dotnet/api/system.array
+            //
+            // Single-dimensional arrays implement the IList<T>, ICollection<T>,
+            // IEnumerable<T>, IReadOnlyList<T> and IReadOnlyCollection<T>
+            // generic interfaces. The implementations are provided to arrays at
+            // run time, and as a result, the generic interfaces do not appear
+            // in the declaration syntax for the Array class.
+            static bool IsArrayRuntimeInterface(string name)
             {
-                return classType.IsGenericType && (classType.TypeArguments.Length == 1);
+                return name switch
+                {
+                    "ICollection`1" or
+                    "IEnumerable`1" or
+                    "IList`1" or
+                    "IReadOnlyCollection`1" or
+                    "IReadOnlyList`1" => true,
+                    _ => false,
+                };
             }
 
-            if (type is IArrayTypeSymbol)
+            if (type.IsArray)
             {
                 return type;
             }
-            else if ((type is INamedTypeSymbol classType) && ContainsSingleGenericArgument(classType))
+            else if (type.IsGenericInstance &&
+                     string.Equals(type.Namespace, "System.Collections.Generic", StringComparison.Ordinal) &&
+                     IsArrayRuntimeInterface(type.Name))
             {
-                IArrayTypeSymbol arrayType = this.compilation.CreateArrayTypeSymbol(
-                    classType.TypeArguments[0]);
-
-                CommonConversion conversion = this.compilation.ClassifyCommonConversion(
-                    arrayType,
-                    type);
-
-                if (conversion.Exists)
-                {
-                    return arrayType;
-                }
+                return new ArrayType(((GenericInstanceType)type).GenericArguments[0]);
             }
-
-            return null;
+            else
+            {
+                return null;
+            }
         }
 
-        private object ResolveClass(ITypeSymbol type)
+        private TypeReference ResolveClass(TypeReference type)
         {
-            IReadOnlyCollection<ITypeSymbol> classes =
-                this.interfaceResolver.FindClasses(type);
+            IReadOnlyCollection<TypeReference> classes =
+                 this.interfaceResolver.FindClasses(type);
 
             return classes.Count switch
             {
                 0 => throw new InvalidOperationException(
-                       "Unable to find a class for the dependency " + type.ToDisplayString()),
+                       "Unable to find a class for the dependency " + type.FullName),
 
                 1 => classes.First(),
 
                 _ => throw new InvalidOperationException(
-                        "Multiple dependencies found for " + type.ToDisplayString()),
+                        "Multiple dependencies found for " + type.FullName),
             };
         }
 
-        private object ResolveParameterType(IParameterSymbol parameter)
+        private TypeReference ResolveParameter(TypeReference type)
         {
-            ITypeSymbol? arrayType = this.GetArrayDependencyType(parameter.Type);
+            TypeReference? arrayType = GetArrayType(type);
             if (arrayType != null)
             {
                 return arrayType;
             }
-            else if (this.knownTypes.FindClassForInterface(parameter.Type) != null)
-            {
-                return SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
-            }
             else
             {
-                ExpressionSyntax? configType = this.configResolver.AccessConfig(parameter.Type);
-                return configType ?? this.ResolveClass(parameter.Type);
+                return this.ResolveClass(type);
             }
         }
     }

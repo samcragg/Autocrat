@@ -1,129 +1,56 @@
 ﻿namespace Compiler.Tests
 {
-    using System;
     using System.IO;
-    using System.Linq;
-    using System.Reflection;
     using System.Text;
     using Autocrat.Compiler;
-    using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Mono.Cecil;
     using NSubstitute;
     using Xunit;
 
     public class CodeGeneratorTests
     {
         private readonly ServiceFactory factory;
+        private readonly CodeGenerator generator;
+        private readonly ModuleDefinition module;
 
         private CodeGeneratorTests()
         {
-            this.factory = Substitute.For<ServiceFactory>(new object[] { null });
-
-            SyntaxTreeRewriter rewriter = this.factory.CreateSyntaxTreeRewriter();
-            rewriter.Generate(null).ReturnsForAnyArgs(ci => ci.Arg<SyntaxTree>());
-        }
-
-        private CodeGenerator CreateGenerator(string code = null, bool allowErrors = false)
-        {
-            Compilation compilation = CompilationHelper.CompileCode(
-                code ?? "namespace X {}",
-                allowErrors,
-                referenceAbstractions: true);
-            return new CodeGenerator(this.factory, compilation);
+            this.factory = Substitute.For<ServiceFactory>();
+            this.module = ModuleDefinition.CreateModule("TestModule", ModuleKind.Dll);
+            this.generator = new CodeGenerator(this.factory, this.module);
         }
 
         public sealed class EmitAssemblyTests : CodeGeneratorTests
         {
             [Fact]
-            public void ShouldIncludeTheConfigurationClasses()
+            public void ShouldGenerateTheCallbacks()
             {
-                CompilationUnitSyntax serializers = SyntaxFactory.ParseCompilationUnit(
-                    @"public class TestSerializer { }");
+                this.generator.EmitAssembly(Stream.Null, Stream.Null);
 
-                var configClass = (ClassDeclarationSyntax)SyntaxFactory.ParseMemberDeclaration(
-                    @"public class TestConfig { }");
-
-                ConfigResolver resolver = this.factory.GetConfigResolver();
-                resolver.CreateConfigurationClass().Returns(configClass);
-
-                ConfigGenerator generator = this.factory.GetConfigGenerator();
-                generator.Generate().Returns(serializers);
-
-                Assembly assembly = this.EmitCode();
-
-                assembly.GetType("TestConfig").Should().NotBeNull();
-                assembly.GetType("TestSerializer").Should().NotBeNull();
+                this.factory.GetManagedCallbackGenerator()
+                    .Received()
+                    .EmitType(this.module);
             }
 
             [Fact]
-            public void ShouldIncludeTheOriginalCode()
+            public void ShouldGenerateTheInitializers()
             {
-                Assembly assembly = this.EmitCode(@"namespace Original
-{
-    public class OriginalClass
-    {
-    }
-}");
+                this.generator.EmitAssembly(Stream.Null, Stream.Null);
 
-                assembly.GetType("Original.OriginalClass").Should().NotBeNull();
+                this.factory.CreateInitializerGenerator()
+                    .Received()
+                    .Emit(this.module);
             }
 
             [Fact]
-            public void ShouldRewriteTheInitializers()
+            public void ShouldRewriteTheModule()
             {
-                CompilationUnitSyntax unit = SyntaxFactory.ParseCompilationUnit(@"namespace Initialization
-{
-    public class Test
-    {
-    }
-}");
-                InitializerGenerator initializer = this.factory.CreateInitializerGenerator();
-                initializer.HasCode.Returns(true);
-                initializer.Generate().Returns(unit);
+                this.generator.EmitAssembly(Stream.Null, Stream.Null);
 
-                Assembly assembly = this.EmitCode();
-
-                assembly.GetType("Initialization.Test").Should().NotBeNull();
-            }
-
-            [Fact]
-            public void ShouldRewriteTheSytnaxTrees()
-            {
-                SyntaxTree tree = CompilationHelper.CompileCode(@"public class Rewritten { }")
-                    .SyntaxTrees
-                    .Single();
-
-                SyntaxTreeRewriter rewriter = this.factory.CreateSyntaxTreeRewriter();
-                rewriter.Generate(null).ReturnsForAnyArgs(tree);
-
-                Assembly assembly = this.EmitCode();
-
-                assembly.GetType("Rewritten").Should().NotBeNull();
-            }
-
-            [Fact]
-            public void ShouldThrowIfTheCodeFailsToCompile()
-            {
-                CodeGenerator generator = this.CreateGenerator(@"
-public class Test
-{
-    public UnknownType Invalid { get; set; }
-}",
-                    allowErrors: true);
-
-                generator.Invoking(g => g.EmitAssembly(Stream.Null, Stream.Null))
-                    .Should().Throw<InvalidOperationException>();
-            }
-
-            private Assembly EmitCode(string originalCode = null)
-            {
-                using var stream = new MemoryStream();
-                CodeGenerator generator = this.CreateGenerator(originalCode);
-                generator.EmitAssembly(stream, Stream.Null);
-                return Assembly.Load(stream.ToArray());
+                this.factory.CreateModuleRewriter()
+                    .Received()
+                    .Visit(this.module);
             }
         }
 
@@ -146,19 +73,17 @@ public class Test
             [Fact]
             public void ShouldWriteTheNativeImportCode()
             {
-                NativeImportGenerator nativeGenerator = this.factory.GetNativeImportGenerator();
-                CodeGenerator generator = this.CreateGenerator("public class Test { }");
+                this.generator.EmitNativeCode(null, null, Stream.Null);
 
-                generator.EmitNativeCode(null, null, Stream.Null);
-
-                nativeGenerator.Received().WriteTo(Stream.Null);
+                this.factory.GetNativeImportGenerator()
+                    .Received()
+                    .WriteTo(Stream.Null);
             }
 
             private string GetOutput(string version, string description)
             {
                 using var stream = new MemoryStream();
-                CodeGenerator generator = this.CreateGenerator("public class Test { }");
-                generator.EmitNativeCode(version, description, stream);
+                this.generator.EmitNativeCode(version, description, stream);
                 return Encoding.UTF8.GetString(stream.ToArray());
             }
         }

@@ -7,20 +7,16 @@ namespace Autocrat.Compiler.CodeGeneration
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
-    using System.Text;
     using System.Text.Json;
-    using Autocrat.Abstractions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using static System.Diagnostics.Debug;
-    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
 
     /// <summary>
     /// Generates classes to deserialize JSON into objects.
     /// </summary>
-    internal class JsonDeserializerBuilder
+    internal partial class JsonDeserializerBuilder
     {
         /// <summary>
         /// The suffix added to the class name used to create the name of the
@@ -34,23 +30,24 @@ namespace Autocrat.Compiler.CodeGeneration
         /// </summary>
         internal const string ReadMethodName = "Read";
 
-        private readonly SimpleNameSyntax classType;
+        private readonly TypeDefinition classType;
         private readonly ConfigGenerator generator;
-        private readonly IdentifierNameSyntax instanceField;
-        private readonly List<IPropertySymbol> properties = new List<IPropertySymbol>();
+        private readonly FieldDefinition instanceField;
+        private readonly List<PropertyData> properties = new List<PropertyData>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonDeserializerBuilder"/> class.
         /// </summary>
         /// <param name="generator">Used to generate custom deserializers.</param>
         /// <param name="classType">The name of the class to deserialize.</param>
-        public JsonDeserializerBuilder(ConfigGenerator generator, ITypeSymbol classType)
+        public JsonDeserializerBuilder(ConfigGenerator generator, TypeDefinition classType)
         {
             this.generator = generator;
-            this.classType = (SimpleNameSyntax)ParseName(
-                RoslynHelper.GetString(classType));
-
-            this.instanceField = IdentifierName("instance");
+            this.classType = classType;
+            this.instanceField = new FieldDefinition(
+                "instance",
+                FieldAttributes.Private | FieldAttributes.InitOnly,
+                classType);
         }
 
         /// <summary>
@@ -67,206 +64,230 @@ namespace Autocrat.Compiler.CodeGeneration
         }
 
         /// <summary>
-        /// Gets the using statements required for the generated classes.
-        /// </summary>
-        /// <returns>The using statements required for the compilation.</returns>
-        public static UsingDirectiveSyntax[] GetUsingStatements()
-        {
-            return new[]
-            {
-                UsingDirective(IdentifierName("System")),
-                UsingDirective(ParseName("System.Text.Json")),
-                UsingDirective(ParseName("Autocrat.Abstractions")),
-            };
-        }
-
-        /// <summary>
         /// Adds a property to be deserialized by the generated class.
         /// </summary>
         /// <param name="property">Contains the property information.</param>
-        public virtual void AddProperty(IPropertySymbol property)
+        public virtual void AddProperty(PropertyDefinition property)
         {
-            this.properties.Add(property);
+            this.properties.Add(new PropertyData(property));
         }
 
         /// <summary>
         /// Generates the class to deserialize JSON data.
         /// </summary>
-        /// <returns>A new class declaration.</returns>
-        public virtual ClassDeclarationSyntax GenerateClass()
+        /// <param name="module">The module to emit the class to.</param>
+        /// <returns>A new class definition.</returns>
+        public virtual TypeDefinition GenerateClass(ModuleDefinition module)
         {
-            FieldDeclarationSyntax field =
-                FieldDeclaration(VariableDeclaration(
-                    this.classType,
-                    SingletonSeparatedList(VariableDeclarator(this.instanceField.Identifier))))
-                .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
+            //// public sealed class Xxx_Deserializer
+            TypeDefinition deserializerClass = CecilHelper.AddClass(
+                module,
+                this.classType.Name + GeneratedClassSuffix);
 
-            return ClassDeclaration(this.classType.Identifier.ValueText + GeneratedClassSuffix)
-                .AddModifiers(Token(SyntaxKind.PublicKeyword))
-                .AddMembers(
-                    new[] { field }
-                    .Concat(this.GetMethods())
-                    .ToArray());
-        }
-
-        private static ExpressionSyntax CheckTokenType(
-            IdentifierNameSyntax reader,
-            SyntaxKind compare,
-            JsonTokenType tokenType)
-        {
-            return BinaryExpression(
-                compare,
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    reader,
-                    IdentifierName(nameof(Utf8JsonReader.TokenType))),
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    IdentifierName(nameof(JsonTokenType)),
-                    IdentifierName(tokenType.ToString())));
-        }
-
-        private static ExpressionSyntax CreateLiteral(int value)
-        {
-            return LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(value));
-        }
-
-        private static ExpressionSyntax CreateLiteral(string value)
-        {
-            return LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(value));
-        }
-
-        private static StatementSyntax CreateLocal(
-            IdentifierNameSyntax identifier,
-            ExpressionSyntax? initialValue = null,
-            TypeSyntax? type = null)
-        {
-            VariableDeclaratorSyntax variable = VariableDeclarator(identifier.Identifier);
-            if (initialValue != null)
+            deserializerClass.Fields.Add(this.instanceField);
+            foreach (MethodDefinition method in this.GetMethods(module))
             {
-                variable = variable.WithInitializer(EqualsValueClause(initialValue));
+                method.Body.InitLocals = true;
+                CecilHelper.OptimizeBody(method);
+                deserializerClass.Methods.Add(method);
             }
 
-            return LocalDeclarationStatement(
-                VariableDeclaration(
-                    type ?? IdentifierName("var"),
-                    SingletonSeparatedList(variable)));
+            return deserializerClass;
         }
 
-        private static MethodDeclarationSyntax CreateMethod(
-            SyntaxKind modifier,
-            string name,
-            IdentifierNameSyntax reader,
-            IEnumerable<StatementSyntax> body,
-            TypeSyntax? returnType = null)
+        private static void EmitCompareTokenType(ILContext context, JsonTokenType token)
         {
-            returnType ??= PredefinedType(Token(SyntaxKind.VoidKeyword));
-            return MethodDeclaration(returnType, Identifier(name))
-                .WithModifiers(TokenList(Token(modifier)))
-                .WithParameterList(
-                    ParameterList(
-                        SingletonSeparatedList(
-                            Parameter(reader.Identifier)
-                            .WithModifiers(TokenList(Token(SyntaxKind.RefKeyword)))
-                            .WithType(IdentifierName(nameof(Utf8JsonReader))))))
-                .WithBody(Block(body));
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.ReaderTokenType);
+            context.IL.Emit(OpCodes.Ldc_I4, (int)token);
         }
 
-        private static StatementSyntax CreateSwitchOnString(
-            ExpressionSyntax value,
-            IEnumerable<string> cases,
-            Func<string, StatementSyntax> caseStatment,
-            IEnumerable<StatementSyntax> defaultStatements)
+        private static void EmitConvertNullable(ILContext context, NullableTypeReference type)
         {
-            IdentifierNameSyntax switchValue = IdentifierName("switchValue");
-            var switchSections = new List<SwitchSectionSyntax>();
-            foreach (string caseValue in cases)
+            // We have to convert nullable value types to System.Nullable
+            if (type.NullableType != null)
             {
-                //// case 123 when CaseInsensitiveStringHelper.Equals("ABC", name):
-                int hashCode = CaseInsensitiveStringHelper.GetHashCode(
-                    Encoding.UTF8.GetBytes(caseValue));
+                context.IL.Emit(
+                    OpCodes.Newobj,
+                    context.References.NullableConstructor(type.Type));
+            }
+        }
 
-                SwitchLabelSyntax switchLabel = CasePatternSwitchLabel(
-                    ConstantPattern(CreateLiteral(hashCode)),
-                    WhenClause(
-                        InvokeMethod(
-                            IdentifierName(nameof(CaseInsensitiveStringHelper)),
-                            nameof(CaseInsensitiveStringHelper.Equals),
-                            CreateLiteral(caseValue.ToUpperInvariant()),
-                            switchValue)),
-                    Token(SyntaxKind.ColonToken));
+        private static void EmitLdConst(ILProcessor il, object constant)
+        {
+            switch (constant)
+            {
+                case long value:
+                    il.Emit(OpCodes.Ldc_I8, value);
+                    break;
 
-                switchSections.Add(SwitchSection(
-                    SingletonList(switchLabel),
-                    List(new[]
+                case ulong value:
+                    il.Emit(OpCodes.Ldc_I8, (long)value);
+                    break;
+
+                default:
+                    il.Emit(OpCodes.Ldc_I4, Convert.ToInt32(constant, NumberFormatInfo.InvariantInfo));
+                    break;
+            }
+        }
+
+        private static void EmitLoadNull(ILContext context, NullableTypeReference type)
+        {
+            if (type.NullableType != null)
+            {
+                // For Nullable<T> we must have a local to initialize. Since
+                // non-null Nullable values use the constructor, the only
+                // locals of type Nullable will be for null values, so if we
+                // find an existing one we can use that, otherwise, create it
+                // and initialize it to null at the start of the method in case
+                // we're currently inside some code that gets branched over.
+                VariableDefinition? local = context.IL.Body.Variables.FirstOrDefault(v =>
+                {
+                    return NullableTypeReference.GetNullableType(
+                        v.VariableType,
+                        out TypeReference? nullableType) &&
+                        string.Equals(nullableType.FullName, type.NullableType.FullName, StringComparison.Ordinal);
+                });
+
+                if (local == null)
+                {
+                    local = context.CreateLocal(type.NullableType);
+                    context.IL.Body.Instructions.Insert(
+                        0,
+                        Instruction.Create(OpCodes.Ldloca, local));
+                    context.IL.Body.Instructions.Insert(
+                        1,
+                        Instruction.Create(OpCodes.Initobj, type.NullableType));
+                }
+
+                context.IL.Emit(OpCodes.Ldloc, local);
+            }
+            else
+            {
+                context.IL.Emit(OpCodes.Ldnull);
+            }
+        }
+
+        private static void EmitNew(ILProcessor il, TypeDefinition type)
+        {
+            MethodDefinition constructor =
+                type.Methods
+                    .SingleOrDefault(m => m.IsConstructor && (m.Parameters.Count == 0))
+                ?? throw new InvalidOperationException("Unable to find default constructor for type " + type.FullName);
+
+            il.Emit(OpCodes.Newobj, constructor);
+        }
+
+        private static VariableDefinition EmitReadEnum(ILContext context, TypeReference type)
+        {
+            TypeDefinition typeDef = type.Resolve();
+            TypeReference underlyingType = typeDef.Fields
+                .First(f => f.Attributes.HasFlag(FieldAttributes.RTSpecialName))
+                .FieldType;
+
+            VariableDefinition switchValue = context.CreateLocal(context.Module.TypeSystem.String);
+            VariableDefinition result = context.CreateLocal(type);
+            var switchEmitter = new SwitchOnStringEmitter(context.Module, context.IL, switchValue);
+            foreach (FieldDefinition field in typeDef.Fields.Where(f => f.HasConstant))
+            {
+                switchEmitter.Add(
+                    field.Name,
+                    il =>
                     {
-                        caseStatment(caseValue),
-                        BreakStatement(),
-                    })));
+                        EmitLdConst(il, field.Constant);
+                        il.Emit(OpCodes.Stloc, result);
+                    });
             }
 
-            //// default:
-            switchSections.Add(SwitchSection(
-                SingletonList<SwitchLabelSyntax>(DefaultSwitchLabel()),
-                List(defaultStatements)));
-
-            //// var switchValue = ...
-            //// switch (CaseInsensitiveStringHelper.GetHashCode(switchValue))
-            return Block(
-                CreateLocal(switchValue, value),
-                SwitchStatement(
-                    InvokeMethod(
-                        IdentifierName(nameof(CaseInsensitiveStringHelper)),
-                        nameof(CaseInsensitiveStringHelper.GetHashCode),
-                        switchValue),
-                    List(switchSections)));
-        }
-
-        private static StatementSyntax CreateThrowFormatException(string message)
-        {
-            return ThrowStatement(
-                ObjectCreationExpression(IdentifierName(nameof(FormatException)))
-                .WithArgumentList(ArgumentList(SingletonSeparatedList(
-                    Argument(CreateLiteral(message))))));
-        }
-
-        private static string? GetJsonReaderMethod(ITypeSymbol typeSymbol)
-        {
-            return typeSymbol.SpecialType switch
+            ////     default: throw FormatException(...)
+            switchEmitter.DefaultCase = _ =>
             {
-                SpecialType.System_Boolean => nameof(Utf8JsonReader.GetBoolean),
-                SpecialType.System_Byte => nameof(Utf8JsonReader.GetByte),
-                SpecialType.System_DateTime => nameof(Utf8JsonReader.GetDateTime),
-                SpecialType.System_Decimal => nameof(Utf8JsonReader.GetDecimal),
-                SpecialType.System_Double => nameof(Utf8JsonReader.GetDouble),
-                SpecialType.System_Int16 => nameof(Utf8JsonReader.GetInt16),
-                SpecialType.System_Int32 => nameof(Utf8JsonReader.GetInt32),
-                SpecialType.System_Int64 => nameof(Utf8JsonReader.GetInt64),
-                SpecialType.System_SByte => nameof(Utf8JsonReader.GetSByte),
-                SpecialType.System_Single => nameof(Utf8JsonReader.GetSingle),
-                SpecialType.System_String => nameof(Utf8JsonReader.GetString),
-                SpecialType.System_UInt16 => nameof(Utf8JsonReader.GetUInt16),
-                SpecialType.System_UInt32 => nameof(Utf8JsonReader.GetUInt32),
-                SpecialType.System_UInt64 => nameof(Utf8JsonReader.GetUInt64),
-                _ => GetJsonReadMethodForUnknownSpecialType(typeSymbol),
+                EmitThrowFormatException(context, "Invalid enumerator value");
+            };
+
+            var elseBegin = Instruction.Create(OpCodes.Nop);
+            var elseEnd = Instruction.Create(OpCodes.Nop);
+
+            //// if (reader.TokenType == JsonTokenType.Number)
+            EmitCompareTokenType(context, JsonTokenType.Number);
+            context.IL.Emit(OpCodes.Bne_Un, elseBegin);
+
+            ////     (EnumType)reader.GetIntXx()
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.GetMethod("Get" + underlyingType.Name));
+            context.IL.Emit(OpCodes.Stloc, result);
+            context.IL.Emit(OpCodes.Br, elseEnd);
+
+            //// else
+            ////     value = reader.GetString()
+            ////     switch (value) ...
+            context.IL.Append(elseBegin);
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.GetMethod(nameof(Utf8JsonReader.GetString)));
+            context.IL.Emit(OpCodes.Stloc, switchValue);
+            switchEmitter.Emit();
+            context.IL.Append(elseEnd);
+
+            return result;
+        }
+
+        private static void EmitThrowFormatException(ILContext context, string message)
+        {
+            context.IL.Emit(OpCodes.Ldstr, message);
+            context.IL.Emit(OpCodes.Newobj, context.References.FormatException);
+            context.IL.Emit(OpCodes.Throw);
+        }
+
+        private static string? GetJsonReaderMethod(TypeReference type)
+        {
+            return type.MetadataType switch
+            {
+                MetadataType.Boolean => nameof(Utf8JsonReader.GetBoolean),
+                MetadataType.Byte => nameof(Utf8JsonReader.GetByte),
+                MetadataType.Double => nameof(Utf8JsonReader.GetDouble),
+                MetadataType.Int16 => nameof(Utf8JsonReader.GetInt16),
+                MetadataType.Int32 => nameof(Utf8JsonReader.GetInt32),
+                MetadataType.Int64 => nameof(Utf8JsonReader.GetInt64),
+                MetadataType.SByte => nameof(Utf8JsonReader.GetSByte),
+                MetadataType.Single => nameof(Utf8JsonReader.GetSingle),
+                MetadataType.String => nameof(Utf8JsonReader.GetString),
+                MetadataType.UInt16 => nameof(Utf8JsonReader.GetUInt16),
+                MetadataType.UInt32 => nameof(Utf8JsonReader.GetUInt32),
+                MetadataType.UInt64 => nameof(Utf8JsonReader.GetUInt64),
+                _ => GetJsonReadMethodForUnknownMetadataType(type),
             };
         }
 
-        private static string? GetJsonReadMethodForUnknownSpecialType(ITypeSymbol typeSymbol)
+        private static string? GetJsonReadMethodForUnknownMetadataType(TypeReference type)
         {
+            static bool IsByteArray(TypeReference type)
+            {
+                if (type is ArrayType arrayType)
+                {
+                    return arrayType.ElementType.MetadataType == MetadataType.Byte;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
             // Must check for the array _before_ the check for System types
-            if (IsByteArray(typeSymbol))
+            if (IsByteArray(type))
             {
                 return nameof(Utf8JsonReader.GetBytesFromBase64);
             }
 
-            if (string.Equals(
-                typeSymbol.ContainingNamespace.Name,
-                nameof(System),
-                StringComparison.Ordinal))
+            if (string.Equals(type.Namespace, nameof(System), StringComparison.Ordinal))
             {
-                switch (typeSymbol.Name)
+                switch (type.Name)
                 {
+                    case nameof(DateTime):
+                        return nameof(Utf8JsonReader.GetDateTime);
+
+                    case nameof(Decimal):
+                        return nameof(Utf8JsonReader.GetDecimal);
+
                     case nameof(Guid):
                         return nameof(Utf8JsonReader.GetGuid);
 
@@ -278,391 +299,321 @@ namespace Autocrat.Compiler.CodeGeneration
             return null;
         }
 
-        private static ExpressionSyntax InvokeMethod(
-            ExpressionSyntax expression,
-            string name,
-            params ExpressionSyntax[] parameters)
+        private MethodDefinition CreateConstructor(ModuleDefinition module)
         {
-            InvocationExpressionSyntax invoke = InvocationExpression(
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    expression,
-                    IdentifierName(name)));
+            var constructor = new MethodDefinition(
+                Constants.Constructor,
+                Constants.PublicConstructor,
+                module.TypeSystem.Void);
 
-            if (parameters.Length > 0)
-            {
-                invoke = invoke.WithArgumentList(
-                    ArgumentList(
-                        SeparatedList(
-                            Array.ConvertAll(parameters, Argument))));
-            }
+            ILProcessor il = constructor.Body.GetILProcessor();
 
-            return invoke;
+            //// object()
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, CecilHelper.ObjectConstructor(module));
+
+            //// this.instance = new T()
+            il.Emit(OpCodes.Ldarg_0);
+            EmitNew(il, this.classType);
+            il.Emit(OpCodes.Stfld, this.instanceField);
+
+            il.Emit(OpCodes.Ret);
+            return CecilHelper.OptimizeBody(constructor);
         }
 
-        private static bool IsByteArray(ITypeSymbol type)
+        private MethodDefinition CreateReadMethod(ModuleDefinition module, MethodDefinition readProperty)
         {
-            if (type is IArrayTypeSymbol arrayType)
-            {
-                return arrayType.ElementType.SpecialType == SpecialType.System_Byte;
-            }
-            else
-            {
-                return false;
-            }
-        }
+            //// public Type Read(ref Utf8JsonReader reader)
+            var method = new MethodDefinition(ReadMethodName, Constants.PublicMethod, this.classType);
+            var context = new ILContext(module, method.Body.GetILProcessor());
+            method.Parameters.Add(context.Reader);
 
-        private static ITypeSymbol UnwrapNullableTypes(ITypeSymbol symbol)
-        {
-            if ((symbol.NullableAnnotation == NullableAnnotation.Annotated) &&
-                symbol.IsValueType &&
-                (symbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T))
-            {
-                return ((INamedTypeSymbol)symbol).TypeArguments[0]
-                    .WithNullableAnnotation(NullableAnnotation.Annotated);
-            }
-            else
-            {
-                return symbol;
-            }
-        }
-
-        private MethodDeclarationSyntax CreateReadMethod(SyntaxToken readPropertyMethod)
-        {
-            var body = new List<StatementSyntax>();
-            IdentifierNameSyntax reader = IdentifierName("reader");
+            var beginLoop = Instruction.Create(OpCodes.Nop);
+            var endLoop = Instruction.Create(OpCodes.Nop);
+            var throwMissingStart = Instruction.Create(OpCodes.Nop);
+            var loopBody = Instruction.Create(OpCodes.Nop);
+            var methodEnd = Instruction.Create(OpCodes.Nop);
 
             // We allow to be positioned on the start object for the scenario
             // we're being used by a nested serializer
             //// if (reader.TokenType != JsonTokenType.StartObject)
             ////     if (!reader.Read() || (reader.TokenType != JsonTokenType.StartObject))
             ////         throw new FormatException("Missing start object token")
-            ExpressionSyntax callReaderRead = InvokeMethod(reader, nameof(Utf8JsonReader.Read));
-            body.Add(
-                IfStatement(
-                    CheckTokenType(reader, SyntaxKind.NotEqualsExpression, JsonTokenType.StartObject),
-                    IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.LogicalOrExpression,
-                            PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, callReaderRead),
-                            CheckTokenType(
-                                reader,
-                                SyntaxKind.NotEqualsExpression,
-                                JsonTokenType.StartObject)),
-                        CreateThrowFormatException("Missing start object token"))));
-
-            //// this.instance = new ClassType()
-            body.Add(
-                ExpressionStatement(
-                    AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        this.instanceField,
-                        ObjectCreationExpression(
-                            this.classType,
-                            ArgumentList(),
-                            null))));
+            EmitCompareTokenType(context, JsonTokenType.StartObject);
+            context.IL.Emit(OpCodes.Beq, beginLoop);
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.ReaderRead);
+            context.IL.Emit(OpCodes.Brfalse, throwMissingStart);
+            EmitCompareTokenType(context, JsonTokenType.StartObject);
+            context.IL.Emit(OpCodes.Beq, beginLoop);
+            context.IL.Append(throwMissingStart);
+            EmitThrowFormatException(context, "Missing start object token");
 
             //// while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
             ////     this.ReadProperty(ref reader)
-            ExpressionSyntax whileCondition = BinaryExpression(
-                SyntaxKind.LogicalAndExpression,
-                callReaderRead,
-                CheckTokenType(
-                    reader,
-                    SyntaxKind.EqualsExpression,
-                    JsonTokenType.PropertyName));
-
-            body.Add(
-                WhileStatement(
-                    whileCondition,
-                    ExpressionStatement(
-                        InvocationExpression(IdentifierName(readPropertyMethod))
-                        .WithArgumentList(ArgumentList(SingletonSeparatedList(
-                            Argument(reader)
-                            .WithRefKindKeyword(Token(SyntaxKind.RefKeyword))))))));
+            context.IL.Append(loopBody);
+            context.IL.Emit(OpCodes.Ldarg_0);
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, readProperty);
+            context.IL.Append(beginLoop);
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.ReaderRead);
+            context.IL.Emit(OpCodes.Brfalse, endLoop);
+            EmitCompareTokenType(context, JsonTokenType.PropertyName);
+            context.IL.Emit(OpCodes.Beq, loopBody);
 
             //// if (reader.TokenType != JsonTokenType.EndObject)
             ////     throw new FormatException("Missing end object token")
-            body.Add(
-                IfStatement(
-                    CheckTokenType(reader, SyntaxKind.NotEqualsExpression, JsonTokenType.EndObject),
-                    CreateThrowFormatException("Missing end object token")));
+            context.IL.Append(endLoop);
+            EmitCompareTokenType(context, JsonTokenType.EndObject);
+            context.IL.Emit(OpCodes.Beq, methodEnd);
+            EmitThrowFormatException(context, "Missing end object token");
 
-            //// return this.instance
-            body.Add(ReturnStatement(this.instanceField));
+            ////     return this.instance
+            context.IL.Append(methodEnd);
+            context.IL.Emit(OpCodes.Ldarg_0);
+            context.IL.Emit(OpCodes.Ldfld, this.instanceField);
+            context.IL.Emit(OpCodes.Ret);
 
-            return CreateMethod(
-                SyntaxKind.PublicKeyword,
-                ReadMethodName,
-                reader,
-                body,
-                this.classType);
+            return method;
         }
 
-        private MethodDeclarationSyntax CreateReadPropertyMethod()
+        private MethodDefinition CreateReadPropertyMethod(ModuleDefinition module)
         {
-            IdentifierNameSyntax reader = IdentifierName("reader");
-            StatementSyntax CallReadPropertyValueMethod(string property)
+            //// private void ReadProperties(ref Utf8JsonReader reader)
+            var method = new MethodDefinition("ReadProperties", Constants.PrivateMethod, module.TypeSystem.Void);
+            var context = new ILContext(module, method.Body.GetILProcessor());
+            method.Parameters.Add(context.Reader);
+
+            //// ReadOnlySpan<byte> value = reader.ValueSpan
+            VariableDefinition value = context.CreateLocal(context.References.ReadOnlySpanType);
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.ReaderValueSpan);
+            context.IL.Emit(OpCodes.Stloc, value);
+
+            //// switch (value)
+            var switchEmitter = new SwitchOnStringEmitter(context.Module, context.IL, value);
+            foreach (PropertyData property in this.properties)
             {
-                //// this.Read_Abc(ref reader)
-                return ExpressionStatement(
-                    InvocationExpression(
-                        IdentifierName("Read_" + property),
-                        ArgumentList(SingletonSeparatedList(
-                            Argument(reader)
-                            .WithRefKindKeyword(Token(SyntaxKind.RefKeyword))))));
+                switchEmitter.Add(property.Name, _ =>
+                {
+                    //// this.Read_Abc(ref reader)
+                    context.IL.Emit(OpCodes.Ldarg_0);
+                    context.IL.Emit(OpCodes.Ldarg, context.Reader);
+                    context.IL.Emit(OpCodes.Call, property.ReadMethod);
+                });
             }
 
             //// default: // Skip unknown properties
             ////     reader.Read()
             ////     reader.TrySkip()
-            var defaultStatements = new StatementSyntax[]
+            switchEmitter.DefaultCase = _ =>
             {
-                ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))),
-                ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.TrySkip))),
-                BreakStatement(),
+                context.IL.Emit(OpCodes.Ldarg, context.Reader);
+                context.IL.Emit(OpCodes.Call, context.References.ReaderRead);
+                context.IL.Emit(OpCodes.Pop);
+                context.IL.Emit(OpCodes.Ldarg, context.Reader);
+                context.IL.Emit(OpCodes.Call, context.References.ReaderTrySkip);
+                context.IL.Emit(OpCodes.Pop);
             };
+            switchEmitter.Emit();
 
-            //// switch (reader.ValueSpan)
-            StatementSyntax switchStatment = CreateSwitchOnString(
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    reader,
-                    IdentifierName(nameof(Utf8JsonReader.ValueSpan))),
-                this.properties.Select(pi => pi.Name),
-                CallReadPropertyValueMethod,
-                defaultStatements);
-
-            return CreateMethod(
-                SyntaxKind.PrivateKeyword,
-                "ReadProperty",
-                reader,
-                new[] { switchStatment });
+            context.IL.Emit(OpCodes.Ret);
+            return method;
         }
 
-        private StatementSyntax GenerateReadArray(
-            ExpressionSyntax target,
-            IdentifierNameSyntax reader,
-            IArrayTypeSymbol arrayType)
+        private VariableDefinition EmitReadArray(ILContext context, NullableTypeReference type)
         {
-            IdentifierNameSyntax buffer = IdentifierName("buffer");
-            IdentifierNameSyntax value = IdentifierName("value");
-
-            // We're not compiling in a nullable context, therefore, we need
-            // to remove the nullable annotation from reference types (we need
-            // to leave them on for value types as they're actually
-            // System.Nullable<T>)
-            ITypeSymbol elementTypeSymbol = arrayType.ElementType;
-            if (!elementTypeSymbol.IsValueType)
+            if (type.Element == null)
             {
-                elementTypeSymbol = elementTypeSymbol.WithNullableAnnotation(NullableAnnotation.None);
+                throw new InvalidOperationException("Unable to determine the array element type");
             }
 
-            TypeSyntax elementType = ParseTypeName(
-                RoslynHelper.GetString(elementTypeSymbol));
+            var endThrow = Instruction.Create(OpCodes.Nop);
+            var loopBody = Instruction.Create(OpCodes.Nop);
+            var loopEnd = Instruction.Create(OpCodes.Nop);
+            var loopStart = Instruction.Create(OpCodes.Nop);
+
+            TypeReference elementType = type.Element.NullableType ?? type.Element.Type;
+            VariableDefinition arrayValue = context.CreateLocal(new ArrayType(elementType));
+            VariableDefinition buffer = context.CreateLocal(context.References.ListType(elementType));
 
             //// if (reader.TokenType != JsonTokenType.StartArray)
             ////     throw new FormatException("Missing start array token")
-            StatementSyntax assertStartArray = IfStatement(
-                CheckTokenType(reader, SyntaxKind.NotEqualsExpression, JsonTokenType.StartArray),
-                CreateThrowFormatException("Missing start array token"));
+            EmitCompareTokenType(context, JsonTokenType.StartArray);
+            context.IL.Emit(OpCodes.Beq, endThrow);
+            EmitThrowFormatException(context, "Missing start array token");
+            context.IL.Append(endThrow);
 
-            //// var buffer = new List<type>();
-            NameSyntax listType = GenericName(
-                Identifier("System.Collections.Generic.List"),
-                TypeArgumentList(SingletonSeparatedList(elementType)));
+            //// var buffer = new List<T>();
+            context.IL.Emit(OpCodes.Newobj, context.References.ListConstructor(elementType));
+            context.IL.Emit(OpCodes.Stloc, buffer);
 
-            StatementSyntax createBuffer = CreateLocal(
-                buffer,
-                ObjectCreationExpression(listType, ArgumentList(), null));
+            //// while (...)
+            context.IL.Emit(OpCodes.Br, loopStart);
+
+            ////     buffer.Add(...)
+            context.IL.Append(loopBody);
+            this.EmitReadValueWithNullCheck(
+                context,
+                type.Element,
+                loadValue =>
+                {
+                    context.IL.Emit(OpCodes.Ldloc, buffer);
+                    loadValue();
+                    context.IL.Emit(
+                        OpCodes.Callvirt,
+                        context.References.ListMethod(elementType, nameof(List<object>.Add)));
+                });
 
             //// while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-            ExpressionSyntax whileCondition = BinaryExpression(
-                SyntaxKind.LogicalAndExpression,
-                InvokeMethod(reader, nameof(Utf8JsonReader.Read)),
-                CheckTokenType(
-                    reader,
-                    SyntaxKind.NotEqualsExpression,
-                    JsonTokenType.EndArray));
+            context.IL.Append(loopStart);
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.ReaderRead);
+            context.IL.Emit(OpCodes.Brfalse, loopEnd);
 
-            ////     var value = reader.ReadXxx()
-            ////     buffer.Add(value)
-            StatementSyntax whileBody = Block(
-                CreateLocal(value, type: elementType),
-                this.GenerateReadValueWithNullCheck(value, reader, arrayType.ElementType),
-                ExpressionStatement(InvokeMethod(buffer, "Add", value)));
+            EmitCompareTokenType(context, JsonTokenType.EndArray);
+            context.IL.Emit(OpCodes.Bne_Un, loopBody);
 
-            return Block(
-                assertStartArray,
-                createBuffer,
-                WhileStatement(whileCondition, whileBody),
-                ExpressionStatement(
-                    AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        target,
-                        InvokeMethod(buffer, "ToArray"))));
+            //// value = buffer.ToArray()
+            context.IL.Append(loopEnd);
+            context.IL.Emit(OpCodes.Ldloc, buffer);
+            context.IL.Emit(
+                OpCodes.Callvirt,
+                context.References.ListMethod(elementType, nameof(List<object>.ToArray)));
+            context.IL.Emit(OpCodes.Stloc, arrayValue);
+            return arrayValue;
         }
 
-        private StatementSyntax GenerateReadEnum(
-            ExpressionSyntax target,
-            IdentifierNameSyntax reader,
-            INamedTypeSymbol propertyType)
+        private void EmitReadValue(ILContext context, TypeReference type)
         {
-            TypeSyntax enumType = ParseTypeName(
-                RoslynHelper.GetString(propertyType));
-
-            StatementSyntax ConvertEnumValue(string member)
-            {
-                //// target = EnumType.Member
-                return ExpressionStatement(
-                    AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        target,
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            ParseName(RoslynHelper.GetString(propertyType)),
-                            IdentifierName(member))));
-            }
-
-            //// switch (reader.GetString())
-            ////     default: throw FormatException(...)
-            StatementSyntax readEnumAsString = CreateSwitchOnString(
-                InvokeMethod(reader, nameof(Utf8JsonReader.GetString)),
-                propertyType.MemberNames,
-                ConvertEnumValue,
-                new[] { CreateThrowFormatException("Invalid enum value") });
-
-            //// target = (EnumType)reader.GetIntXx()
-            Assert(propertyType.EnumUnderlyingType != null, "Method should only be called for enum types.");
-            string? readerMethod = GetJsonReaderMethod(propertyType.EnumUnderlyingType);
-            Assert(readerMethod != null, "Missing read integer mapping");
-            StatementSyntax readEnumAsNumber = ExpressionStatement(AssignmentExpression(
-                SyntaxKind.SimpleAssignmentExpression,
-                target,
-                CastExpression(
-                    enumType,
-                    InvokeMethod(reader, readerMethod))));
-
-            //// if (reader.TokenType == JsonTokenType.Number)
-            ////    target = (EnumType)reader.GetIntXx()
-            //// else
-            ////    switch ...
-            return IfStatement(
-                CheckTokenType(reader, SyntaxKind.EqualsExpression, JsonTokenType.Number),
-                readEnumAsNumber,
-                ElseClause(readEnumAsString));
-        }
-
-        private StatementSyntax GenerateReadValue(
-            ExpressionSyntax target,
-            IdentifierNameSyntax reader,
-            ITypeSymbol type)
-        {
-            ExpressionSyntax readValue;
             string? readerMethod = GetJsonReaderMethod(type);
             if (readerMethod != null)
             {
                 //// target = reader.GetXxx()
-                readValue = InvokeMethod(reader, readerMethod);
+                context.IL.Emit(OpCodes.Ldarg, context.Reader);
+                context.IL.Emit(OpCodes.Call, context.References.GetMethod(readerMethod));
             }
             else
             {
-                //// var deserializer = new TypeDeserializer()
-                ExpressionSyntax deserializer = ObjectCreationExpression(
-                    this.generator.GetClassFor(type),
-                    ArgumentList(),
-                    null);
+                TypeDefinition deserializer = this.generator.GetClassFor(type);
+                MethodDefinition readMethod = deserializer.Methods.First(
+                    m => string.Equals(m.Name, ReadMethodName, StringComparison.Ordinal));
 
-                //// target = deserializer.Read(ref reader)
-                readValue = InvocationExpression(
-                    MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        deserializer,
-                        IdentifierName(ReadMethodName)),
-                    ArgumentList(SingletonSeparatedList(
-                        Argument(reader)
-                        .WithRefKindKeyword(Token(SyntaxKind.RefKeyword)))));
+                //// new TypeDeserializer().Read(ref reader)
+                EmitNew(context.IL, deserializer);
+                context.IL.Emit(OpCodes.Ldarg, context.Reader);
+                context.IL.Emit(OpCodes.Call, readMethod);
             }
-
-            return ExpressionStatement(AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    target,
-                    readValue));
         }
 
-        private MethodDeclarationSyntax GenerateReadValueMethod(IPropertySymbol property)
+        private void EmitReadValueWithNullCheck(
+            ILContext context,
+            NullableTypeReference type,
+            Action<Action> store)
         {
-            var body = new List<StatementSyntax>();
-            IdentifierNameSyntax reader = IdentifierName("reader");
+            static bool IsByteArray(TypeReference tr)
+            {
+                return string.Equals(tr.FullName, "System.Byte[]", StringComparison.Ordinal);
+            }
+
+            var end = Instruction.Create(OpCodes.Nop);
+            if (type.AllowsNulls)
+            {
+                var elseBegin = Instruction.Create(OpCodes.Nop);
+
+                //// if (reader.TokenType == JsonTokenType.Null)
+                EmitCompareTokenType(context, JsonTokenType.Null);
+                context.IL.Emit(OpCodes.Bne_Un, elseBegin);
+
+                ////     value = null
+                store(() => EmitLoadNull(context, type));
+
+                //// else
+                context.IL.Emit(OpCodes.Br, end);
+                context.IL.Append(elseBegin);
+            }
+
+            //// value = ...
+            if (type.Type.IsArray)
+            {
+                if (IsByteArray(type.Type))
+                {
+                    store(() => this.EmitReadValue(context, type.Type));
+                }
+                else
+                {
+                    VariableDefinition value = this.EmitReadArray(context, type);
+                    store(() => context.IL.Emit(OpCodes.Ldloc, value));
+                }
+            }
+            else
+            {
+                // TypeDefinition looses the array information, hence the check
+                // for array is on the TypeReference
+                TypeDefinition definition = type.Type.Resolve();
+                if (definition.IsEnum)
+                {
+                    VariableDefinition value = EmitReadEnum(context, definition);
+                    store(() =>
+                    {
+                        context.IL.Emit(OpCodes.Ldloc, value);
+                        EmitConvertNullable(context, type);
+                    });
+                }
+                else
+                {
+                    store(() =>
+                    {
+                        this.EmitReadValue(context, definition);
+                        EmitConvertNullable(context, type);
+                    });
+                }
+            }
+
+            context.IL.Append(end);
+        }
+
+        private MethodDefinition GenerateReadValueMethod(
+            ModuleDefinition module,
+            PropertyData property)
+        {
+            //// void Read_Xxx(ref Utf8Reader reader)
+            MethodDefinition method = property.ReadMethod;
+            var context = new ILContext(module, method.Body.GetILProcessor());
+            method.Parameters.Add(context.Reader);
 
             //// reader.Read()
-            body.Add(ExpressionStatement(InvokeMethod(reader, nameof(Utf8JsonReader.Read))));
+            context.IL.Emit(OpCodes.Ldarg, context.Reader);
+            context.IL.Emit(OpCodes.Call, context.References.ReaderRead);
+            context.IL.Emit(OpCodes.Pop);
 
             //// this.instance.Value = ...
-            ExpressionSyntax accessProperty = MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                IdentifierName("instance"),
-                IdentifierName(property.Name));
+            this.EmitReadValueWithNullCheck(
+                context,
+                property.Type,
+                loadValue =>
+                {
+                    context.IL.Emit(OpCodes.Ldarg_0);
+                    context.IL.Emit(OpCodes.Ldfld, this.instanceField);
+                    loadValue();
+                    context.IL.Emit(OpCodes.Callvirt, property.SetMethod);
+                });
 
-            body.Add(this.GenerateReadValueWithNullCheck(
-                accessProperty,
-                reader,
-                property.Type));
-
-            return CreateMethod(
-                SyntaxKind.PrivateKeyword,
-                "Read_" + property.Name,
-                reader,
-                body);
+            context.IL.Emit(OpCodes.Ret);
+            return method;
         }
 
-        private StatementSyntax GenerateReadValueWithNullCheck(
-            ExpressionSyntax target,
-            IdentifierNameSyntax reader,
-            ITypeSymbol type)
+        private IEnumerable<MethodDefinition> GetMethods(ModuleDefinition module)
         {
-            type = UnwrapNullableTypes(type);
-            StatementSyntax readValue = type.TypeKind switch
-            {
-                TypeKind.Array when !IsByteArray(type) =>
-                    this.GenerateReadArray(target, reader, (IArrayTypeSymbol)type),
-
-                TypeKind.Enum =>
-                    this.GenerateReadEnum(target, reader, (INamedTypeSymbol)type),
-
-                _ => this.GenerateReadValue(target, reader, type),
-            };
-
-            if (type.NullableAnnotation == NullableAnnotation.Annotated)
-            {
-                //// if (reader.TokenType == JsonTokenType.Null)
-                ////     this.instance.Value = null
-                //// else
-                ////     this.instance.Value = ...
-                return IfStatement(
-                    CheckTokenType(reader, SyntaxKind.EqualsExpression, JsonTokenType.Null),
-                    ExpressionStatement(
-                        AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            target,
-                            LiteralExpression(SyntaxKind.NullLiteralExpression))),
-                    ElseClause(readValue));
-            }
-            else
-            {
-                return readValue;
-            }
-        }
-
-        private IEnumerable<MemberDeclarationSyntax> GetMethods()
-        {
-            MethodDeclarationSyntax readProperty = this.CreateReadPropertyMethod();
-            yield return this.CreateReadMethod(readProperty.Identifier);
+            yield return this.CreateConstructor(module);
+            MethodDefinition readProperty = this.CreateReadPropertyMethod(module);
+            yield return this.CreateReadMethod(module, readProperty);
             yield return readProperty;
 
-            foreach (IPropertySymbol property in this.properties)
+            foreach (PropertyData property in this.properties)
             {
-                yield return this.GenerateReadValueMethod(property);
+                yield return this.GenerateReadValueMethod(module, property);
             }
         }
     }

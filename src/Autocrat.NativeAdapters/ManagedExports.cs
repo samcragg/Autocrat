@@ -43,9 +43,9 @@ namespace Autocrat.NativeAdapters
         /// <c>false</c>.
         /// </returns>
         [UnmanagedCallersOnly(EntryPoint = nameof(LoadConfiguration), CallingConvention = CallingConvention.Cdecl)]
-        public static bool LoadConfiguration(byte[] source)
+        public static unsafe bool LoadConfiguration(void* source)
         {
-            return ConfigService.Load(source);
+            return ConfigService.Load(NativeHelpers.FromPointer<byte[]>(source));
         }
     }
 }

@@ -6,7 +6,6 @@
 namespace Autocrat.Compiler.Logging
 {
     using System;
-    using Microsoft.CodeAnalysis;
 
     /// <summary>
     /// Provides logging utility functions.
@@ -25,14 +24,11 @@ namespace Autocrat.Compiler.Logging
         /// <summary>
         /// Logs an error using the specified string.
         /// </summary>
-        /// <param name="location">
-        /// The optional location of where the error occurred.
-        /// </param>
         /// <param name="message">The message string.</param>
         /// <param name="messageArgs">
         /// Optional arguments for formatting the message string.
         /// </param>
-        void Error(Location location, string message, params object[] messageArgs);
+        void Error(string message, params object[] messageArgs);
 
         /// <summary>
         /// Logs an error using the message from the given exception context.

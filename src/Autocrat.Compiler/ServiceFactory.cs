@@ -8,7 +8,8 @@ namespace Autocrat.Compiler
     using System;
     using System.Collections.Generic;
     using Autocrat.Compiler.CodeGeneration;
-    using Microsoft.CodeAnalysis;
+    using Autocrat.Compiler.CodeRewriting;
+    using Mono.Cecil;
 
     /// <summary>
     /// Creates the services used by the application.
@@ -16,22 +17,20 @@ namespace Autocrat.Compiler
     internal class ServiceFactory
     {
         private static readonly Lazy<NativeImportGenerator> NativeImportGenerator = new Lazy<NativeImportGenerator>();
-        private readonly Compilation compilation;
-        private ConfigGenerator? configGenerator;
         private ConfigResolver? configResolver;
         private ConstructorResolver? constructorResolver;
         private InterfaceResolver? interfaceResolver;
-        private IKnownTypes? knownTypes;
+        private KnownTypes? knownTypes;
         private ManagedCallbackGenerator? managedCallbackGenerator;
         private ManagedExportsGenerator? managedExportsGenerator;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ServiceFactory"/> class.
+        /// Creates a new <see cref="AssemblyLoader"/> instance.
         /// </summary>
-        /// <param name="compilation">Contains the compiled information.</param>
-        public ServiceFactory(Compilation compilation)
+        /// <returns>A new instance of the <see cref="AssemblyLoader"/> class.</returns>
+        public virtual AssemblyLoader CreateAssemblyLoader()
         {
-            this.compilation = compilation;
+            return new AssemblyLoader();
         }
 
         /// <summary>
@@ -45,25 +44,32 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
-        /// Creates a new <see cref="InstanceBuilder"/> instance.
+        /// Creates a new <see cref="InterfaceRewriter"/> instance.
         /// </summary>
-        /// <returns>A new instance of the <see cref="InstanceBuilder"/> class.</returns>
-        public virtual InstanceBuilder CreateInstanceBuilder()
+        /// <returns>A new instance of the <see cref="InterfaceRewriter"/> class.</returns>
+        public virtual InterfaceRewriter CreateInterfaceRewriter()
         {
-            return new InstanceBuilder(
-                this.GetConstructorResolver(),
-                this.GetInterfaceResolver());
+            return new InterfaceRewriter(
+                this.GetKnownTypes());
         }
 
         /// <summary>
-        /// Creates a new <see cref="SyntaxTreeRewriter"/> instance.
+        /// Creates a new <see cref="ModuleRewriter"/> instance.
         /// </summary>
-        /// <returns>A new instance of the <see cref="SyntaxTreeRewriter"/> class.</returns>
-        public virtual SyntaxTreeRewriter CreateSyntaxTreeRewriter()
+        /// <returns>A new instance of the <see cref="ModuleRewriter"/> class.</returns>
+        public virtual ModuleRewriter CreateModuleRewriter()
         {
-            return new SyntaxTreeRewriter(
-                this.compilation,
-                this.CreateInterfaceRegisterRewriter);
+            return new ModuleRewriter();
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="NativeDelegateRewriter"/> instance.
+        /// </summary>
+        /// <returns>A new instance of the <see cref="NativeDelegateRewriter"/> class.</returns>
+        public virtual NativeDelegateRewriter CreateNativeDelegateRewriter()
+        {
+            return new NativeDelegateRewriter(
+                this.GetManagedCallbackGenerator());
         }
 
         /// <summary>
@@ -72,7 +78,7 @@ namespace Autocrat.Compiler
         /// <returns>A new instance of the <see cref="WorkerFactoryVisitor"/> class.</returns>
         public virtual WorkerFactoryVisitor CreateWorkerFactoryVisitor()
         {
-            return new WorkerFactoryVisitor(this.compilation);
+            return new WorkerFactoryVisitor();
         }
 
         /// <summary>
@@ -81,26 +87,12 @@ namespace Autocrat.Compiler
         /// <param name="factoryTypes">The worker types to register.</param>
         /// <returns>A new instance of the <see cref="WorkerRegisterGenerator"/> class.</returns>
         public virtual WorkerRegisterGenerator CreateWorkerRegisterGenerator(
-            IReadOnlyCollection<INamedTypeSymbol> factoryTypes)
+            IReadOnlyCollection<TypeReference> factoryTypes)
         {
             return new WorkerRegisterGenerator(
-                this.CreateInstanceBuilder,
+                this.CreateInstanceBuilder(),
                 factoryTypes,
                 this.GetNativeImportGenerator());
-        }
-
-        /// <summary>
-        /// Gets a <see cref="ConfigGenerator"/> instance.
-        /// </summary>
-        /// <returns>An instance of the <see cref="ConfigGenerator"/> class.</returns>
-        public virtual ConfigGenerator GetConfigGenerator()
-        {
-            if (this.configGenerator is null)
-            {
-                this.configGenerator = new ConfigGenerator();
-            }
-
-            return this.configGenerator;
         }
 
         /// <summary>
@@ -113,28 +105,10 @@ namespace Autocrat.Compiler
             {
                 this.configResolver = new ConfigResolver(
                     this.GetKnownTypes(),
-                    this.GetConfigGenerator());
+                    CreateConfigGenerator());
             }
 
             return this.configResolver;
-        }
-
-        /// <summary>
-        /// Gets a <see cref="ConstructorResolver"/> instance.
-        /// </summary>
-        /// <returns>An instance of the <see cref="ConstructorResolver"/> class.</returns>
-        public virtual ConstructorResolver GetConstructorResolver()
-        {
-            if (this.constructorResolver is null)
-            {
-                this.constructorResolver = new ConstructorResolver(
-                    this.compilation,
-                    this.GetKnownTypes(),
-                    this.GetConfigResolver(),
-                    this.GetInterfaceResolver());
-            }
-
-            return this.constructorResolver;
         }
 
         /// <summary>
@@ -153,6 +127,20 @@ namespace Autocrat.Compiler
         }
 
         /// <summary>
+        /// Gets a <see cref="KnownTypes"/> instance.
+        /// </summary>
+        /// <returns>An instance of the <see cref="KnownTypes"/> class.</returns>
+        public virtual KnownTypes GetKnownTypes()
+        {
+            if (this.knownTypes is null)
+            {
+                this.knownTypes = new KnownTypes();
+            }
+
+            return this.knownTypes;
+        }
+
+        /// <summary>
         /// Gets a <see cref="ManagedCallbackGenerator"/> instance.
         /// </summary>
         /// <returns>An instance of the <see cref="ManagedCallbackGenerator"/> class.</returns>
@@ -161,7 +149,7 @@ namespace Autocrat.Compiler
             if (this.managedCallbackGenerator is null)
             {
                 this.managedCallbackGenerator = new ManagedCallbackGenerator(
-                    this.CreateInstanceBuilder,
+                    this.CreateInstanceBuilder(),
                     this.GetNativeImportGenerator());
             }
 
@@ -191,26 +179,28 @@ namespace Autocrat.Compiler
             return NativeImportGenerator.Value;
         }
 
-        private InterfaceRewriter CreateInterfaceRegisterRewriter(SemanticModel model)
+        private static ConfigGenerator CreateConfigGenerator()
         {
-            return new InterfaceRewriter(
-                model,
-                this.GetKnownTypes(),
-                new NativeDelegateRewriter(
-                    this.GetManagedCallbackGenerator(),
-                    model));
+            return new ConfigGenerator();
         }
 
-        private IKnownTypes GetKnownTypes()
+        private InstanceBuilder CreateInstanceBuilder()
         {
-            if (this.knownTypes is null)
+            return new InstanceBuilder(
+                this.GetConfigResolver(),
+                this.GetConstructorResolver(),
+                this.GetInterfaceResolver());
+        }
+
+        private ConstructorResolver GetConstructorResolver()
+        {
+            if (this.constructorResolver is null)
             {
-                var typeVisitor = new NamedTypeVisitor();
-                typeVisitor.Visit(this.compilation.GlobalNamespace);
-                this.knownTypes = typeVisitor.Types;
+                this.constructorResolver = new ConstructorResolver(
+                    this.GetInterfaceResolver());
             }
 
-            return this.knownTypes;
+            return this.constructorResolver;
         }
     }
 }

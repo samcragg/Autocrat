@@ -27,8 +27,7 @@
     <AutocratTask Description="$(Description)"
                   OutputAssembly="$(AutocratOutputAssembly)"
                   OutputSource="$(AutocratOutputSource)"
-                  References="@(ReferencePath)"
-                  Sources="@(Compile)"
+                  Source="$(TargetPath)"
                   Version="$(Version)" />
 
     <Move SourceFiles="@(PublishedFiles)"

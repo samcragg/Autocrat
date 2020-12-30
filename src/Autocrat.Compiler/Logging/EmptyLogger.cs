@@ -6,7 +6,6 @@
 namespace Autocrat.Compiler.Logging
 {
     using System;
-    using Microsoft.CodeAnalysis;
 
     /// <summary>
     /// Implements the logger interface without performing any actions.
@@ -20,7 +19,7 @@ namespace Autocrat.Compiler.Logging
         }
 
         /// <inheritdoc />
-        public void Error(Location? location, string message, params object[] messageArgs)
+        public void Error(string message, params object[] messageArgs)
         {
             // Method intentionally left empty.
         }

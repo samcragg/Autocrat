@@ -7,8 +7,6 @@
     using FluentAssertions;
     using Microsoft.Build.Framework;
     using Microsoft.Build.Utilities;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.Text;
     using NSubstitute;
     using Xunit;
 
@@ -52,24 +50,13 @@
             }
 
             [Fact]
-            public void ShouldLogTheSourceLocation()
+            public void ShouldLogMessages()
             {
                 this.logger.Error(
-                    Location.Create(
-                        "fileName",
-                        new TextSpan(1, 2),
-                        new LinePositionSpan(
-                            new LinePosition(3, 4),
-                            new LinePosition(5, 6))),
                     "Test {0}",
                     "message");
 
                 BuildErrorEventArgs error = this.errors.Single();
-                error.File.Should().Be("fileName");
-                error.LineNumber.Should().Be(3);
-                error.ColumnNumber.Should().Be(4);
-                error.EndLineNumber.Should().Be(5);
-                error.EndColumnNumber.Should().Be(6);
                 error.Message.Should().Be("Test message");
             }
         }

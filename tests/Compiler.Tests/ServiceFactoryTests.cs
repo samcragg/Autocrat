@@ -1,17 +1,26 @@
 ﻿namespace Compiler.Tests
 {
+    using System;
     using Autocrat.Compiler;
     using Autocrat.Compiler.CodeGeneration;
+    using Autocrat.Compiler.CodeRewriting;
     using FluentAssertions;
+    using Mono.Cecil;
     using Xunit;
 
     public class ServiceFactoryTests
     {
-        private readonly ServiceFactory factory;
-
-        private ServiceFactoryTests()
+        private readonly ServiceFactory factory = new ServiceFactory();
+        public sealed class CreateAssemblyLoaderTests : ServiceFactoryTests
         {
-            this.factory = new ServiceFactory(CompilationHelper.CompileCode(""));
+            [Fact]
+            public void ShouldReturnANewInstance()
+            {
+                AssemblyLoader result1 = this.factory.CreateAssemblyLoader();
+                AssemblyLoader result2 = this.factory.CreateAssemblyLoader();
+
+                result1.Should().NotBeSameAs(result2);
+            }
         }
 
         public sealed class CreateInitializerGeneratorTests : ServiceFactoryTests
@@ -26,39 +35,52 @@
             }
         }
 
-        public sealed class CreateInstanceBuilderTests : ServiceFactoryTests
+        public sealed class CreateInterfaceRewriterTests : ServiceFactoryTests
         {
             [Fact]
             public void ShouldReturnANewInstance()
             {
-                InstanceBuilder result1 = this.factory.CreateInstanceBuilder();
-                InstanceBuilder result2 = this.factory.CreateInstanceBuilder();
+                InterfaceRewriter result1 = this.factory.CreateInterfaceRewriter();
+                InterfaceRewriter result2 = this.factory.CreateInterfaceRewriter();
 
                 result1.Should().NotBeSameAs(result2);
             }
         }
 
-        public sealed class CreateSyntaxTreeRewriterTests : ServiceFactoryTests
+        public sealed class CreateModuleRewriterTests : ServiceFactoryTests
         {
             [Fact]
             public void ShouldReturnANewInstance()
             {
-                SyntaxTreeRewriter result1 = this.factory.CreateSyntaxTreeRewriter();
-                SyntaxTreeRewriter result2 = this.factory.CreateSyntaxTreeRewriter();
+                ModuleRewriter result1 = this.factory.CreateModuleRewriter();
+                ModuleRewriter result2 = this.factory.CreateModuleRewriter();
 
                 result1.Should().NotBeSameAs(result2);
             }
         }
 
-        public sealed class GetConfigGeneratorTests : ServiceFactoryTests
+        public sealed class CreateNativeDelegateRewriterTests : ServiceFactoryTests
         {
             [Fact]
-            public void ShouldReturnTheSameInstance()
+            public void ShouldReturnANewInstance()
             {
-                ConfigGenerator result1 = this.factory.GetConfigGenerator();
-                ConfigGenerator result2 = this.factory.GetConfigGenerator();
+                NativeDelegateRewriter result1 = this.factory.CreateNativeDelegateRewriter();
+                NativeDelegateRewriter result2 = this.factory.CreateNativeDelegateRewriter();
 
-                result1.Should().BeSameAs(result2);
+                result1.Should().NotBeSameAs(result2);
+            }
+        }
+
+        public sealed class CreateWorkerRegisterGeneratorTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnANewInstance()
+            {
+                TypeReference[] types = Array.Empty<TypeReference>();
+                WorkerRegisterGenerator result1 = this.factory.CreateWorkerRegisterGenerator(types);
+                WorkerRegisterGenerator result2 = this.factory.CreateWorkerRegisterGenerator(types);
+
+                result1.Should().NotBeSameAs(result2);
             }
         }
 
@@ -74,18 +96,6 @@
             }
         }
 
-        public sealed class GetConstructorResolverTests : ServiceFactoryTests
-        {
-            [Fact]
-            public void ShouldReturnTheSameInstance()
-            {
-                ConstructorResolver result1 = this.factory.GetConstructorResolver();
-                ConstructorResolver result2 = this.factory.GetConstructorResolver();
-
-                result1.Should().BeSameAs(result2);
-            }
-        }
-
         public sealed class GetInterfaceResolverTests : ServiceFactoryTests
         {
             [Fact]
@@ -93,6 +103,18 @@
             {
                 InterfaceResolver result1 = this.factory.GetInterfaceResolver();
                 InterfaceResolver result2 = this.factory.GetInterfaceResolver();
+
+                result1.Should().BeSameAs(result2);
+            }
+        }
+
+        public sealed class GetKnownTypeTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnTheSameInstance()
+            {
+                KnownTypes result1 = this.factory.GetKnownTypes();
+                KnownTypes result2 = this.factory.GetKnownTypes();
 
                 result1.Should().BeSameAs(result2);
             }

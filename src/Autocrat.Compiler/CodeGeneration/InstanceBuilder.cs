@@ -5,37 +5,27 @@
 
 namespace Autocrat.Compiler.CodeGeneration
 {
-    using System;
     using System.Collections.Generic;
-    using System.Globalization;
-    using System.Linq;
     using Autocrat.Compiler.Logging;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
 
     /// <summary>
     /// Creates expressions for initializing new instances of types.
     /// </summary>
-    internal class InstanceBuilder
+    internal partial class InstanceBuilder
     {
-        private static readonly TypeSyntax VarKeyword = ParseTypeName("var");
+        private readonly ConfigResolver configResolver;
         private readonly ConstructorResolver constructorResolver;
-        private readonly List<StatementSyntax> declarations = new List<StatementSyntax>();
         private readonly InterfaceResolver interfaceResolver;
-
-        private readonly HashSet<string> localNames =
-            new HashSet<string>(StringComparer.Ordinal);
-
         private readonly ILogger logger = LogManager.GetLogger();
-
-        private readonly Dictionary<ITypeSymbol, IdentifierNameSyntax?> variables =
-            new Dictionary<ITypeSymbol, IdentifierNameSyntax?>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstanceBuilder"/> class.
         /// </summary>
+        /// <param name="configResolver">
+        /// Used to resolve classes representing configuration data.
+        /// </param>
         /// <param name="constructorResolver">
         /// Used to resolve the constructor for a type.
         /// </param>
@@ -43,126 +33,72 @@ namespace Autocrat.Compiler.CodeGeneration
         /// Used to resolve concrete types for interface types.
         /// </param>
         public InstanceBuilder(
+            ConfigResolver configResolver,
             ConstructorResolver constructorResolver,
             InterfaceResolver interfaceResolver)
         {
+            this.configResolver = configResolver;
             this.constructorResolver = constructorResolver;
             this.interfaceResolver = interfaceResolver;
         }
 
         /// <summary>
-        /// Gets the statements for declaring the local variables.
+        /// Initializes a new instance of the <see cref="InstanceBuilder"/> class.
         /// </summary>
-        public virtual IEnumerable<StatementSyntax> LocalDeclarations => this.declarations;
+        /// <remarks>
+        /// This constructor is to make the class easier to be mocked.
+        /// </remarks>
+        protected InstanceBuilder()
+        {
+            this.configResolver = null!;
+            this.constructorResolver = null!;
+            this.interfaceResolver = null!;
+        }
 
         /// <summary>
-        /// Generates a local variable of the specified type, reusing existing
-        /// locals where possible.
+        /// Generates a value of the specified type on the stack.
         /// </summary>
-        /// <param name="type">The type of the local variable.</param>
-        /// <returns>The name of the local variable.</returns>
-        public virtual IdentifierNameSyntax GenerateForType(INamedTypeSymbol type)
+        /// <param name="type">The type of the value to create.</param>
+        /// <param name="il">Where to generate the instructions to.</param>
+        public virtual void EmitNewObj(TypeReference type, ILProcessor il)
         {
-            if (!this.variables.TryGetValue(type, out IdentifierNameSyntax? name))
+            this.logger.Debug("Emitting code to create an instance of {0}", type.FullName);
+            this.EmitNewObj(new EmitContext(type, il));
+        }
+
+        private void EmitCreateArray(in EmitContext context, IReadOnlyCollection<TypeReference> types)
+        {
+            context.Processor.Emit(OpCodes.Ldc_I4, types.Count);
+            context.Processor.Emit(OpCodes.Newarr, context.Type.GetElementType());
+
+            int index = 0;
+            foreach (TypeReference type in types)
             {
-                // Create a marker to avoid cyclic dependencies
-                this.logger.Debug("Attempting to resolve {0}", type.ToDisplayString());
-                this.variables.Add(type, null);
-                name = this.DeclareLocal(type);
-                this.variables[type] = name;
+                context.Processor.Emit(OpCodes.Dup);
+                context.Processor.Emit(OpCodes.Ldc_I4, index++);
+                this.EmitNewObj(new EmitContext(context, type));
+                context.Processor.Emit(OpCodes.Stelem_Ref);
             }
-
-            return name ?? throw new InvalidOperationException(
-                "There is a cyclic dependency resolving '" + type.ToDisplayString() + "'");
         }
 
-        private void AddDeclaration(IdentifierNameSyntax name, ExpressionSyntax create)
+        private void EmitNewObj(in EmitContext context)
         {
-            VariableDeclaratorSyntax variable =
-                VariableDeclarator(name.Identifier)
-                    .WithInitializer(EqualsValueClause(create));
-
-            this.declarations.Add(
-                LocalDeclarationStatement(
-                    VariableDeclaration(
-                        VarKeyword,
-                        SingletonSeparatedList(variable))));
-        }
-
-        private string CreateName(string prefix)
-        {
-            prefix = char.ToLowerInvariant(prefix[0]) + prefix.Substring(1);
-
-            int count = 0;
-            string name = prefix;
-            while (this.localNames.Contains(name))
+            MethodDefinition constructor = this.constructorResolver.GetConstructor(context.Type);
+            foreach (TypeReference parameter in this.constructorResolver.GetParameters(constructor))
             {
-                count++;
-                name = prefix + count.ToString(NumberFormatInfo.InvariantInfo);
-            }
-
-            return name;
-        }
-
-        private IdentifierNameSyntax DeclareArray(INamedTypeSymbol type)
-        {
-            SeparatedSyntaxList<ExpressionSyntax> instances = default;
-            foreach (INamedTypeSymbol classType in this.interfaceResolver.FindClasses(type))
-            {
-                instances = instances.Add(this.GenerateForType(classType));
-            }
-
-            IdentifierNameSyntax nameSyntax = IdentifierName(this.CreateName("array"));
-            ArrayTypeSyntax arrayTypeSyntax = ArrayType(
-                ParseTypeName(type.ToDisplayString()),
-                SingletonList(ArrayRankSpecifier()));
-
-            this.AddDeclaration(
-                nameSyntax,
-                ArrayCreationExpression(
-                    arrayTypeSyntax,
-                    InitializerExpression(
-                        SyntaxKind.ArrayInitializerExpression,
-                        instances)));
-
-            return nameSyntax;
-        }
-
-        private IdentifierNameSyntax DeclareLocal(INamedTypeSymbol type)
-        {
-            IdentifierNameSyntax nameSyntax = IdentifierName(this.CreateName(type.Name));
-            TypeSyntax typeSyntax = ParseTypeName(type.ToDisplayString());
-            SeparatedSyntaxList<SyntaxNode> arguments = SeparatedList(
-                this.GetConstructorArguments(type));
-
-            this.AddDeclaration(
-                nameSyntax,
-                ObjectCreationExpression(typeSyntax)
-                    .WithArgumentList(ArgumentList(arguments)));
-
-            return nameSyntax;
-        }
-
-        private IEnumerable<SyntaxNode> GetConstructorArguments(INamedTypeSymbol type)
-        {
-            SyntaxNode ConvertParameter(object parameter)
-            {
-                return parameter switch
+                if (parameter.IsArray)
                 {
-                    ExpressionSyntax expression =>
-                        Argument(expression),
-
-                    IArrayTypeSymbol arrayType =>
-                        Argument(this.DeclareArray((INamedTypeSymbol)arrayType.ElementType)),
-
-                    INamedTypeSymbol namedType =>
-                        Argument(this.GenerateForType(namedType)),
-
-                    _ => throw new InvalidOperationException("Unknown parameter type: " + parameter),
-                };
+                    this.EmitCreateArray(
+                        new EmitContext(context, parameter),
+                        this.interfaceResolver.FindClasses(parameter.GetElementType()));
+                }
+                else if (!this.configResolver.EmitAccessConfig(parameter, context.Processor))
+                {
+                    this.EmitNewObj(new EmitContext(context, parameter));
+                }
             }
 
-            return this.constructorResolver.GetParameters(type).Select(ConvertParameter);
+            context.Processor.Emit(OpCodes.Newobj, constructor);
         }
     }
 }

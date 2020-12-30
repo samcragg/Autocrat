@@ -3,90 +3,57 @@
     using System;
     using System.Collections.Generic;
     using Autocrat.Compiler;
+    using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Mono.Cecil;
     using NSubstitute;
     using Xunit;
 
     public class ConstructorResolverTests
     {
-        private readonly INamedTypeSymbol abstractClass;
-        private readonly INamedTypeSymbol arrayOfDependencies;
-        private readonly ConfigResolver configResolver;
-        private readonly INamedTypeSymbol defaultConstructor;
         private readonly InterfaceResolver interfaceResolver;
-        private readonly IKnownTypes knownTypes;
-        private readonly INamedTypeSymbol multipleConstructors;
-        private readonly INamedTypeSymbol multipleDependencies;
+        private readonly ModuleDefinition module;
         private readonly ConstructorResolver resolver;
-        private readonly INamedTypeSymbol singleDependency;
 
         private ConstructorResolverTests()
         {
-            Compilation compilation = CompilationHelper.CompileCode(@"
-abstract class AbstractClass
-{
-}
+            this.module = ModuleDefinition.CreateModule("TestModule", ModuleKind.Console);
 
-class ArrayOfDependencies
-{
-    public ArrayOfDependencies(AbstractClass[] a)
-    {
-    }
-}
+            this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<KnownTypes>());
+            this.resolver = new ConstructorResolver(this.interfaceResolver);
+        }
 
-class DefaultConstructor
-{
-}
+        private MethodDefinition CreateConstructor(params TypeReference[] parameters)
+        {
+            var ctor = new MethodDefinition(
+                Constants.Constructor,
+                Constants.PublicConstructor,
+                this.module.TypeSystem.Void);
 
-class MultipleConstructors
-{
-    public MultipleConstructors(AbstractClass a)
-    {
-    }
+            foreach (TypeReference type in parameters)
+            {
+                ctor.Parameters.Add(new ParameterDefinition(type));
+            }
 
-    public MultipleConstructors(AbstractClass a, DefaultConstructor d)
-    {
-    }
-}
+            return ctor;
+        }
 
-class MultipleDependencies
-{
-    public MultipleDependencies(System.Collections.Generic.IEnumerable<AbstractClass> a)
-    {
-    }
-}
+        public sealed class GetConstructorTests : ConstructorResolverTests
+        {
+            [Fact]
+            public void ShouldReturnTheConstructorWithTheMostParameters()
+            {
+                var dependencyType = new TypeDefinition("", "Dependency", default);
+                var classType = new TypeDefinition("", "Class", default);
+                MethodDefinition oneParameter = this.CreateConstructor(dependencyType);
+                MethodDefinition twoParameters = this.CreateConstructor(dependencyType, dependencyType);
+                classType.Methods.Add(oneParameter);
+                classType.Methods.Add(twoParameters);
 
-class SingleDependency
-{
-    public SingleDependency(AbstractClass a)
-    {
-    }
-}");
-            this.abstractClass = compilation.GetTypeByMetadataName("AbstractClass");
-            this.arrayOfDependencies = compilation.GetTypeByMetadataName("ArrayOfDependencies");
-            this.defaultConstructor = compilation.GetTypeByMetadataName("DefaultConstructor");
-            this.multipleConstructors = compilation.GetTypeByMetadataName("MultipleConstructors");
-            this.multipleDependencies = compilation.GetTypeByMetadataName("MultipleDependencies");
-            this.singleDependency = compilation.GetTypeByMetadataName("SingleDependency");
+                MethodDefinition result = this.resolver.GetConstructor(classType);
 
-            this.configResolver = Substitute.For<ConfigResolver>();
-
-            this.interfaceResolver = Substitute.For<InterfaceResolver>(Substitute.For<IKnownTypes>());
-            this.interfaceResolver.FindClasses(null)
-                .ReturnsForAnyArgs(ci => new[] { (INamedTypeSymbol)ci.Args()[0] });
-
-            this.knownTypes = Substitute.For<IKnownTypes>();
-            this.knownTypes.FindClassForInterface(null)
-                .ReturnsForAnyArgs((ITypeSymbol)null);
-
-            this.resolver = new ConstructorResolver(
-                compilation,
-                this.knownTypes,
-                this.configResolver,
-                this.interfaceResolver);
+                result.Should().BeSameAs(twoParameters);
+            }
         }
 
         public sealed class GetParametersTests : ConstructorResolverTests
@@ -94,90 +61,73 @@ class SingleDependency
             [Fact]
             public void ShouldReturnAnEmptyArrayForDefaultConstructors()
             {
-                IReadOnlyList<object> result = this.resolver.GetParameters(
-                    this.defaultConstructor);
+                IEnumerable<TypeReference> result =
+                    this.resolver.GetParameters(this.CreateConstructor());
 
                 result.Should().BeEmpty();
             }
 
-            [Fact]
-            public void ShouldReturnArrayCompatibleDependencies()
+            // Types taken from https://docs.microsoft.com/en-gb/dotnet/api/system.array
+            [Theory]
+            [InlineData(typeof(IList<string>))]
+            [InlineData(typeof(ICollection<string>))]
+            [InlineData(typeof(IEnumerable<string>))]
+            [InlineData(typeof(IReadOnlyList<string>))]
+            [InlineData(typeof(IReadOnlyCollection<string>))]
+            public void ShouldReturnArrayCompatibleDependencies(Type parameterType)
             {
-                IReadOnlyList<object> result = this.resolver.GetParameters(
-                    this.multipleDependencies);
+                MethodDefinition constructor = this.CreateConstructor(
+                    this.module.ImportReference(parameterType));
+
+                IReadOnlyCollection<TypeReference> result =
+                    this.resolver.GetParameters(constructor);
 
                 this.interfaceResolver.DidNotReceiveWithAnyArgs().FindClasses(null);
                 result.Should().ContainSingle()
-                    .Which.Should().BeAssignableTo<IArrayTypeSymbol>()
-                    .Which.ElementType.Should().Be(this.abstractClass);
+                    .Which.Should().BeAssignableTo<ArrayType>()
+                    .Which.ElementType.FullName.Should().Be("System.String");
             }
 
             [Fact]
             public void ShouldReturnArrayDependencies()
             {
-                IReadOnlyList<object> result = this.resolver.GetParameters(
-                    this.arrayOfDependencies);
+                MethodDefinition constructor = this.CreateConstructor(
+                    new ArrayType(this.module.TypeSystem.String));
+
+                IReadOnlyCollection<TypeReference> result =
+                    this.resolver.GetParameters(constructor);
 
                 this.interfaceResolver.DidNotReceiveWithAnyArgs().FindClasses(null);
                 result.Should().ContainSingle()
-                    .Which.Should().BeAssignableTo<IArrayTypeSymbol>()
-                    .Which.ElementType.Should().Be(this.abstractClass);
-            }
-
-            [Fact]
-            public void ShouldReturnConfigurationTypes()
-            {
-                ExpressionSyntax expression = SyntaxFactory.ParseExpression("default");
-                this.configResolver.AccessConfig(this.abstractClass)
-                    .Returns(expression);
-
-                IReadOnlyList<object> result = this.resolver.GetParameters(
-                    this.singleDependency);
-
-                result.Should().ContainSingle().Which.Should().BeSameAs(expression);
+                    .Which.Should().BeAssignableTo<ArrayType>()
+                    .Which.ElementType.FullName.Should().Be("System.String");
             }
 
             [Fact]
             public void ShouldReturnDependencyTypes()
             {
-                IReadOnlyList<object> result = this.resolver.GetParameters(
-                    this.singleDependency);
+                var dependencyType = new TypeDefinition("", "TestDependency", default);
+                MethodDefinition constructor = this.CreateConstructor(dependencyType);
 
-                result.Should().ContainSingle().Which.Should().Be(this.abstractClass);
-            }
+                this.interfaceResolver.FindClasses(dependencyType)
+                    .Returns(new[] { dependencyType });
 
-            [Fact]
-            public void ShouldReturnNullExpressionForRewrittenInterfaces()
-            {
-                this.knownTypes.FindClassForInterface(this.abstractClass)
-                    .Returns(this.abstractClass);
+                IReadOnlyCollection<TypeReference> result =
+                    this.resolver.GetParameters(constructor);
 
-                IReadOnlyList<object> result = this.resolver.GetParameters(
-                    this.singleDependency);
-
-                result.Should().ContainSingle()
-                    .Which.Should().BeAssignableTo<ExpressionSyntax>()
-                    .Which.ToFullString().Should().Be("null");
-            }
-
-            [Fact]
-            public void ShouldReturnTheConstructorWithTheMostParameters()
-            {
-                IReadOnlyList<object> result = this.resolver.GetParameters(
-                    this.multipleConstructors);
-
-                result.Should().HaveCount(2);
-                result.Should().HaveElementAt(0, this.abstractClass);
-                result.Should().HaveElementAt(1, this.defaultConstructor);
+                result.Should().ContainSingle().Which.Should().Be(dependencyType);
             }
 
             [Fact]
             public void ShouldThrowIfMultipleDependenciesAreFound()
             {
-                this.interfaceResolver.FindClasses(this.abstractClass)
-                    .Returns(new INamedTypeSymbol[2]);
+                var dependencyType = new TypeDefinition("", "TestDependency", default);
+                MethodDefinition constructor = this.CreateConstructor(dependencyType);
 
-                this.resolver.Invoking(x => x.GetParameters(this.singleDependency))
+                this.interfaceResolver.FindClasses(dependencyType)
+                    .Returns(new TypeDefinition[2]);
+
+                this.resolver.Invoking(x => x.GetParameters(constructor))
                     .Should().Throw<InvalidOperationException>()
                     .WithMessage("Multiple*");
             }
@@ -185,10 +135,13 @@ class SingleDependency
             [Fact]
             public void ShouldThrowIfNoDependenciesAreFound()
             {
-                this.interfaceResolver.FindClasses(this.abstractClass)
-                    .Returns(Array.Empty<INamedTypeSymbol>());
+                var dependencyType = new TypeDefinition("", "TestDependency", default);
+                MethodDefinition constructor = this.CreateConstructor(dependencyType);
 
-                this.resolver.Invoking(x => x.GetParameters(this.singleDependency))
+                this.interfaceResolver.FindClasses(dependencyType)
+                    .Returns(new TypeDefinition[0]);
+
+                this.resolver.Invoking(x => x.GetParameters(constructor))
                     .Should().Throw<InvalidOperationException>()
                     .WithMessage("Unable to find*");
             }

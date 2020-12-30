@@ -7,25 +7,25 @@ namespace Autocrat.Compiler
 {
     using System;
     using System.Collections.Generic;
-    using Microsoft.CodeAnalysis;
+    using Mono.Cecil;
 
     /// <summary>
     /// Allows the matching of concrete types to an interface.
     /// </summary>
     internal class InterfaceResolver
     {
-        private readonly Dictionary<ITypeSymbol, HashSet<INamedTypeSymbol>> interfaceClasses =
-            new Dictionary<ITypeSymbol, HashSet<INamedTypeSymbol>>();
+        private readonly Dictionary<TypeReference, List<TypeDefinition>> interfaceClasses =
+            new Dictionary<TypeReference, List<TypeDefinition>>(new TypeReferenceEqualityComparer());
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterfaceResolver"/> class.
         /// </summary>
         /// <param name="knownTypes">Contains the discovered types.</param>
-        public InterfaceResolver(IKnownTypes knownTypes)
+        public InterfaceResolver(KnownTypes knownTypes)
         {
-            foreach (INamedTypeSymbol classType in knownTypes)
+            foreach (TypeDefinition classType in knownTypes)
             {
-                if (!classType.IsAbstract && classType.IsReferenceType)
+                if (classType.IsClass && !classType.IsAbstract)
                 {
                     this.RegisterClass(classType, classType);
                 }
@@ -47,37 +47,37 @@ namespace Autocrat.Compiler
         /// </summary>
         /// <param name="interfaceType">The type of the interface.</param>
         /// <returns>A list of all classes that implement the specified type.</returns>
-        public virtual IReadOnlyCollection<INamedTypeSymbol> FindClasses(ITypeSymbol interfaceType)
+        public virtual IReadOnlyCollection<TypeDefinition> FindClasses(TypeReference interfaceType)
         {
-            if (this.interfaceClasses.TryGetValue(interfaceType, out HashSet<INamedTypeSymbol>? mappedClasses))
+            if (this.interfaceClasses.TryGetValue(interfaceType, out List<TypeDefinition>? mappedClasses))
             {
                 return mappedClasses;
             }
             else
             {
-                return Array.Empty<INamedTypeSymbol>();
+                return Array.Empty<TypeDefinition>();
             }
         }
 
-        private void RegisterClass(INamedTypeSymbol serviceType, INamedTypeSymbol classType)
+        private void RegisterClass(TypeDefinition serviceType, TypeDefinition classType)
         {
             this.RegisterMapping(serviceType, classType);
-            foreach (INamedTypeSymbol interfaceType in classType.Interfaces)
+            foreach (InterfaceImplementation interfaceImp in classType.Interfaces)
             {
-                this.RegisterMapping(serviceType, interfaceType);
+                this.RegisterMapping(serviceType, interfaceImp.InterfaceType);
             }
 
             if (classType.BaseType != null)
             {
-                this.RegisterClass(serviceType, classType.BaseType);
+                this.RegisterClass(serviceType, classType.BaseType.Resolve());
             }
         }
 
-        private void RegisterMapping(INamedTypeSymbol classType, INamedTypeSymbol interfaceType)
+        private void RegisterMapping(TypeDefinition classType, TypeReference interfaceType)
         {
-            if (!this.interfaceClasses.TryGetValue(interfaceType, out HashSet<INamedTypeSymbol>? mappedClasses))
+            if (!this.interfaceClasses.TryGetValue(interfaceType, out List<TypeDefinition>? mappedClasses))
             {
-                mappedClasses = new HashSet<INamedTypeSymbol>();
+                mappedClasses = new List<TypeDefinition>();
                 this.interfaceClasses.Add(interfaceType, mappedClasses);
             }
 

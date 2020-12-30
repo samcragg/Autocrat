@@ -5,19 +5,15 @@
 
 namespace Autocrat.Compiler
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Text;
     using Autocrat.Abstractions;
     using Autocrat.Compiler.CodeGeneration;
+    using Autocrat.Compiler.CodeRewriting;
     using Autocrat.Compiler.Logging;
-    using Autocrat.NativeAdapters;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Microsoft.CodeAnalysis.Emit;
-    using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
 
     /// <summary>
     /// Creates the generated code for the managed and native parts of the
@@ -25,32 +21,20 @@ namespace Autocrat.Compiler
     /// </summary>
     internal class CodeGenerator
     {
-        private const string CallbackAdapterClassName = "NativeCallableMethods";
-        private readonly List<MethodDeclarationSyntax> callbackMethods = new List<MethodDeclarationSyntax>();
-        private readonly List<SyntaxTree> generatedCode = new List<SyntaxTree>();
         private readonly ILogger logger = LogManager.GetLogger();
-        private readonly HashSet<MetadataReference> references = new HashSet<MetadataReference>();
+        private readonly ModuleDefinition module;
         private readonly ServiceFactory serviceFactory;
-        private readonly Compilation source;
-        private readonly HashSet<INamedTypeSymbol> workerTypes = new HashSet<INamedTypeSymbol>();
+        private readonly List<TypeReference> workerTypes = new List<TypeReference>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeGenerator"/> class.
         /// </summary>
         /// <param name="factory">Used to create the services.</param>
-        /// <param name="compilation">Contains the compiled information.</param>
-        public CodeGenerator(ServiceFactory factory, Compilation compilation)
+        /// <param name="module">Contains the module information.</param>
+        public CodeGenerator(ServiceFactory factory, ModuleDefinition module)
         {
             this.serviceFactory = factory;
-            this.source = compilation;
-
-            this.generatedCode.AddRange(compilation.SyntaxTrees);
-            this.AddConfiguration();
-            this.RewriteInitializers();
-            this.RewriteNativeAdapters();
-            this.SaveCompilationMetadata();
-            this.SaveCallbacks();
-            this.SaveWorkerTypes();
+            this.module = module;
         }
 
         /// <summary>
@@ -62,7 +46,7 @@ namespace Autocrat.Compiler
         protected CodeGenerator()
         {
             this.serviceFactory = null!;
-            this.source = null!;
+            this.module = null!;
         }
 
         /// <summary>
@@ -72,27 +56,20 @@ namespace Autocrat.Compiler
         /// <param name="pdb">Where to save the debug information.</param>
         public virtual void EmitAssembly(Stream destination, Stream pdb)
         {
-            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            this.serviceFactory.GetKnownTypes().Scan(this.module);
 
-            CSharpCompilation compilation = CSharpCompilation
-                .Create("AutocratGeneratedAssembly", options: options)
-                .AddReferences(this.references)
-                .AddSyntaxTrees(this.generatedCode);
+            this.RewriteModule();
+            this.EmitConfigurationClass();
+            this.EmitInitializer();
+            this.EmitManagedClasses();
 
-            compilation = this.AddCallbackAdapters(compilation);
-            compilation = this.AddRegisterWorkerTypes(compilation);
-            compilation = this.AddManagedExports(compilation);
-
-            EmitResult result = compilation.Emit(destination, pdb);
-            if (!result.Success)
+            var options = new WriterParameters
             {
-                foreach (Diagnostic diagnostic in result.Diagnostics)
-                {
-                    this.logger.Error(diagnostic.Location, diagnostic.GetMessage());
-                }
-
-                throw new InvalidOperationException("Unable to compile generated code");
-            }
+                SymbolStream = pdb,
+                SymbolWriterProvider = new PortablePdbWriterProvider(),
+                WriteSymbols = true,
+            };
+            this.module.Write(destination, options);
         }
 
         /// <summary>
@@ -109,19 +86,6 @@ namespace Autocrat.Compiler
             string mainMethod = CreateNativeMain(version, description);
             byte[] bytes = Encoding.UTF8.GetBytes(mainMethod);
             destination.Write(bytes);
-        }
-
-        private static CSharpCompilation AddSyntaxTree(CSharpCompilation compilation, MethodGenerator generator)
-        {
-            if (generator.HasCode)
-            {
-                return compilation.AddSyntaxTrees(
-                    CSharpSyntaxTree.Create(generator.Generate(), encoding: Encoding.UTF8));
-            }
-            else
-            {
-                return compilation;
-            }
         }
 
         private static string CreateNativeMain(string? version, string? description)
@@ -145,115 +109,66 @@ namespace Autocrat.Compiler
             return buffer.ToString();
         }
 
-        private static IEnumerable<MetadataReference> GetAutocratReferences()
+        private void EmitInitializer()
         {
-            yield return MetadataReference.CreateFromFile(typeof(ConfigurationAttribute).Assembly.Location);
-            yield return MetadataReference.CreateFromFile(typeof(ConfigService).Assembly.Location);
-        }
-
-        private CSharpCompilation AddCallbackAdapters(CSharpCompilation compilation)
-        {
-            ClassDeclarationSyntax nativeClass =
-                ClassDeclaration(CallbackAdapterClassName)
-                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-                .WithMembers(List<MemberDeclarationSyntax>(this.callbackMethods));
-
-            UsingDirectiveSyntax nativeInterop = UsingDirective(
-                ParseName("System.Runtime.InteropServices"));
-
-            SyntaxTree tree = SyntaxTree(
-                CompilationUnit()
-                .WithUsings(SingletonList(nativeInterop))
-                .WithMembers(SingletonList<MemberDeclarationSyntax>(nativeClass)));
-
-            return compilation.AddSyntaxTrees(tree);
-        }
-
-        private void AddConfiguration()
-        {
-            ClassDeclarationSyntax? configClass = this.serviceFactory
-                .GetConfigResolver()
-                .CreateConfigurationClass();
-
-            if (!(configClass is null))
-            {
-                this.serviceFactory.GetManagedExportsGenerator().IncludeConfig = true;
-
-                ConfigGenerator generator = this.serviceFactory.GetConfigGenerator();
-                CompilationUnitSyntax compilation =
-                    generator.Generate()
-                             .AddMembers(configClass);
-
-                this.generatedCode.Add(SyntaxTree(compilation));
-            }
-        }
-
-        private CSharpCompilation AddManagedExports(CSharpCompilation compilation)
-        {
-            this.logger.Info("Generating managed type exports");
-            return AddSyntaxTree(
-                compilation,
-                this.serviceFactory.GetManagedExportsGenerator());
-        }
-
-        private CSharpCompilation AddRegisterWorkerTypes(CSharpCompilation compilation)
-        {
-            this.logger.Info("Generating worker types registration");
-            return AddSyntaxTree(
-                compilation,
-                this.serviceFactory.CreateWorkerRegisterGenerator(this.workerTypes));
-        }
-
-        private void RewriteInitializers()
-        {
-            this.logger.Info("Rewriting " + nameof(IInitializer) + "s");
-            INamedTypeSymbol initializer =
-                this.source.GetTypeByMetadataName("Autocrat.Abstractions." + nameof(IInitializer))
-                ?? throw new InvalidOperationException("Autocrat.Abstractions assembly is not loaded.");
-
+            this.logger.Debug("Emitting code for " + nameof(IInitializer) + " classes");
+            TypeReference initializerType = this.module.ImportReference(typeof(IInitializer));
             InterfaceResolver interfaceResolver = this.serviceFactory.GetInterfaceResolver();
             InitializerGenerator generator = this.serviceFactory.CreateInitializerGenerator();
-            foreach (INamedTypeSymbol type in interfaceResolver.FindClasses(initializer))
+            foreach (TypeDefinition type in interfaceResolver.FindClasses(initializerType))
             {
                 generator.AddClass(type);
             }
 
-            if (generator.HasCode)
-            {
-                this.generatedCode.Add(
-                    CSharpSyntaxTree.Create(generator.Generate(), encoding: Encoding.UTF8));
-            }
+            generator.Emit(this.module);
         }
 
-        private void RewriteNativeAdapters()
+        private void EmitManagedClasses()
         {
-            this.logger.Info("Rewriting native adapters");
-            SyntaxTreeRewriter rewriter = this.serviceFactory.CreateSyntaxTreeRewriter();
-            for (int i = 0; i < this.generatedCode.Count; i++)
-            {
-                this.generatedCode[i] = rewriter.Generate(this.generatedCode[i]);
-            }
+            ManagedExportsGenerator exports =
+                this.serviceFactory.GetManagedExportsGenerator();
+            ManagedCallbackGenerator managed =
+                this.serviceFactory.GetManagedCallbackGenerator();
+            WorkerRegisterGenerator worker =
+                this.serviceFactory.CreateWorkerRegisterGenerator(this.workerTypes);
+
+            this.logger.Info("Emitting callbacks");
+            managed.EmitType(this.module);
+
+            this.logger.Info("Emitting workers");
+            exports.WorkersClass = worker.EmitWorkerClass(this.module);
+
+            this.logger.Info("Emitting exports");
+            exports.Emit(this.module);
         }
 
-        private void SaveCallbacks()
+        private void EmitConfigurationClass()
         {
-            ManagedCallbackGenerator callbacks = this.serviceFactory.GetManagedCallbackGenerator();
-            this.callbackMethods.AddRange(callbacks.Methods);
+            this.logger.Info("Emitting configuration");
+            ConfigResolver config = this.serviceFactory.GetConfigResolver();
+            ManagedExportsGenerator exports = this.serviceFactory.GetManagedExportsGenerator();
+
+            exports.ConfigClass = config.EmitConfigurationClass(this.module);
         }
 
-        private void SaveCompilationMetadata()
+        private void RewriteModule()
         {
-            this.references.UnionWith(GetAutocratReferences());
-            foreach (MetadataReference reference in this.source.References)
-            {
-                this.references.Add(reference);
-            }
-        }
+            this.logger.Info("Rewriting module");
+            WorkerFactoryVisitor workerFactory =
+                this.serviceFactory.CreateWorkerFactoryVisitor();
 
-        private void SaveWorkerTypes()
-        {
-            WorkerFactoryVisitor visitor = this.serviceFactory.CreateWorkerFactoryVisitor();
-            this.workerTypes.UnionWith(visitor.WorkerTypes);
+            ModuleRewriter moduleRewriter =
+                this.serviceFactory.CreateModuleRewriter();
+
+            moduleRewriter.AddVisitor(workerFactory);
+            moduleRewriter.AddVisitor(
+                this.serviceFactory.CreateInterfaceRewriter());
+            moduleRewriter.AddVisitor(
+                this.serviceFactory.CreateNativeDelegateRewriter());
+
+            moduleRewriter.Visit(this.module);
+
+            this.workerTypes.AddRange(workerFactory.WorkerTypes);
         }
     }
 }

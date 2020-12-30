@@ -1,12 +1,10 @@
 ﻿namespace Compiler.Tests.CodeGeneration
 {
-    using System;
     using Autocrat.Abstractions;
     using Autocrat.Compiler.CodeGeneration;
     using FluentAssertions;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
     using NSubstitute;
     using Xunit;
 
@@ -17,59 +15,65 @@
 
         private InitializerGeneratorTests()
         {
-            this.builder = Substitute.For<InstanceBuilder>(null, null);
-
-            this.builder.GenerateForType(null)
-                .ReturnsForAnyArgs(SyntaxFactory.IdentifierName("instance"));
-
-            this.builder.LocalDeclarations
-                .Returns(new[] { SyntaxFactory.EmptyStatement() });
-
+            this.builder = Substitute.For<InstanceBuilder>();
             this.initializer = new InitializerGenerator(this.builder);
         }
 
-        public sealed class GenerateTests : InitializerGeneratorTests
+        private void EmitFor(string classDefinition)
         {
-            private const string GeneratedMethodName = nameof(IInitializer.OnConfigurationLoaded);
+            TypeReference type = CodeHelper.CompileType(classDefinition);
+            ModuleDefinition module = type.Module;
+            this.initializer.AddClass(type.Resolve());
+            this.initializer.Emit(module);
+        }
 
+        public sealed class EmitTests : InitializerGeneratorTests
+        {
             [Fact]
-            public void ShouldCreateAClassWithAManagedExportedMethod()
+            public void ShouldAddExplicitInterfaceMethods()
             {
-                this.initializer.AddClass(CreateClass());
-                CompilationUnitSyntax compilation = this.initializer.Generate();
-                MemberDeclarationSyntax member =
-                    compilation.Members.Should().ContainSingle()
-                    .Which.Should().BeAssignableTo<ClassDeclarationSyntax>()
-                    .Which.Members.Should().ContainSingle()
-                    .Subject;
-
-                CompilationHelper.AssertExportedAs(member, GeneratedMethodName);
-            }
-
-            [Fact]
-            public void ShouldThrowIfNoClassesAreAdded()
-            {
-                this.initializer.Invoking(x => x.Generate())
-                    .Should().Throw<InvalidOperationException>();
-            }
-
-            private static INamedTypeSymbol CreateClass()
-            {
-                return CompilationHelper.CreateTypeSymbol(
-@"namespace Autocrat.Abstractions
+                this.EmitFor(@"
+using Autocrat.Abstractions;
+class Explicit : IInitializer
 {
-    public interface IInitializer
-    {
-        void " + GeneratedMethodName + @"();
-    }
-}
-
-class TestClass : Autocrat.Abstractions." + nameof(IInitializer) + @"
-{
-    public void " + GeneratedMethodName + @"()
+    void IInitializer.OnConfigurationLoaded()
     {
     }
 }");
+                this.builder.Received().EmitNewObj(
+                    Arg.Is<TypeReference>(t => t.Name == "Explicit"),
+                    Arg.Any<ILProcessor>());
+            }
+
+            [Fact]
+            public void ShouldAddImplicitInterfaceMethods()
+            {
+                this.EmitFor(@"
+class Implicit : Autocrat.Abstractions.IInitializer
+{
+    public void OnConfigurationLoaded()
+    {
+    }
+}");
+
+                this.builder.Received().EmitNewObj(
+                    Arg.Is<TypeReference>(t => t.Name == "Implicit"),
+                    Arg.Any<ILProcessor>());
+            }
+
+            [Fact]
+            public void ShouldExportTheOnConfigurationLoadedMethod()
+            {
+                var module = ModuleDefinition.CreateModule("TestModule", ModuleKind.Dll);
+                this.initializer.Emit(module);
+
+                TypeDefinition generatedType = module.Types.Should()
+                    .ContainSingle(x => x.Name == InitializerGenerator.GeneratedClassName)
+                    .Subject;
+
+                CodeHelper.AssertHasExportedMember(
+                    generatedType,
+                    nameof(IInitializer.OnConfigurationLoaded));
             }
         }
     }
