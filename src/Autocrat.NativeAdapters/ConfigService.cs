@@ -37,6 +37,7 @@ namespace Autocrat.NativeAdapters
         /// <returns>
         /// <c>true</c> if the data was successfully loaded; otherwise, <c>false</c>.
         /// </returns>
+        [SuppressMessage("CodeSmell", "ERP022:Unobserved exception in a generic exception handler", Justification = "We can't propagate the exception to native code.")]
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "We can't propagate the exception to native code.")]
         public static bool Load(byte[] source)
         {

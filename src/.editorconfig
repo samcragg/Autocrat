@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CA5392: Use DefaultDllImportSearchPaths attribute for P/Invokes
+dotnet_diagnostic.CA5392.severity = none

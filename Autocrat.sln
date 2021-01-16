@@ -5,8 +5,8 @@ VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0AD2F87E-7081-4D98-907D-37DE3AF727D6}"
 	ProjectSection(SolutionItems) = preProject
+		src\.editorconfig = src\.editorconfig
 		src\Directory.build.props = src\Directory.build.props
-		src\GlobalSuppressions.cs = src\GlobalSuppressions.cs
 		src\stylecop.json = src\stylecop.json
 	EndProjectSection
 EndProject
@@ -51,7 +51,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{81
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimerExample", "Examples\TimerExample\TimerExample.csproj", "{EED9D604-FE9D-4C23-A9C3-86A0C5736D99}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integration.Tests", "tests\Integration.Tests\Integration.Tests.csproj", "{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integration.Tests", "tests\Integration.Tests\Integration.Tests.csproj", "{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
