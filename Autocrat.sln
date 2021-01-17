@@ -3,32 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0AD2F87E-7081-4D98-907D-37DE3AF727D6}"
-	ProjectSection(SolutionItems) = preProject
-		src\.editorconfig = src\.editorconfig
-		src\Directory.build.props = src\Directory.build.props
-		src\stylecop.json = src\stylecop.json
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Abstractions", "src\Autocrat.Abstractions\Autocrat.Abstractions.csproj", "{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Compiler", "src\Autocrat.Compiler\Autocrat.Compiler.csproj", "{1178FE97-0C99-4E74-8977-B48FBA81E267}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Autocrat.Bootstrap", "src\Autocrat.Bootstrap\Autocrat.Bootstrap.vcxproj", "{55F7D27B-06C1-4208-8D56-CAE84902E1CD}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.NativeAdapters", "src\Autocrat.NativeAdapters\Autocrat.NativeAdapters.csproj", "{E76A0C65-8E56-4EC5-B77F-9CD63EB530E0}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F7F91C1F-220D-494A-A575-A5B52D654F26}"
-	ProjectSection(SolutionItems) = preProject
-		tests\Directory.build.props = tests\Directory.build.props
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abstractions.Tests", "tests\Abstractions.Tests\Abstractions.Tests.csproj", "{6511D618-BE95-4AD5-82A4-81D67AE86F3C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compiler.Tests", "tests\Compiler.Tests\Compiler.Tests.csproj", "{A9E398F6-7C31-4333-8EC9-7860E782607B}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Bootstrap.Tests", "tests\Bootstrap.Tests\Bootstrap.Tests.vcxproj", "{A4783C54-DFE0-4FBC-86E9-2751EF0C06A7}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{67148BEE-BFD2-4A1F-A12C-4947C2B62455}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
@@ -45,17 +19,43 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{AA76D151
 		build\utilities.cake = build\utilities.cake
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeAdapters.Tests", "tests\NativeAdapters.Tests\NativeAdapters.Tests.csproj", "{8FA0A766-10A4-48DA-A4B7-6825899AB144}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{81F2A8FA-5DEC-4780-B3CC-0C67CFA685F0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimerExample", "Examples\TimerExample\TimerExample.csproj", "{EED9D604-FE9D-4C23-A9C3-86A0C5736D99}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0AD2F87E-7081-4D98-907D-37DE3AF727D6}"
+	ProjectSection(SolutionItems) = preProject
+		src\.editorconfig = src\.editorconfig
+		src\Directory.build.props = src\Directory.build.props
+		src\stylecop.json = src\stylecop.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F7F91C1F-220D-494A-A575-A5B52D654F26}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.build.props = tests\Directory.build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Abstractions", "src\Autocrat.Abstractions\Autocrat.Abstractions.csproj", "{6B9EC2CF-393A-4B66-976E-573A0CCD58EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Autocrat.Bootstrap", "src\Autocrat.Bootstrap\Autocrat.Bootstrap.vcxproj", "{55F7D27B-06C1-4208-8D56-CAE84902E1CD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.NativeAdapters", "src\Autocrat.NativeAdapters\Autocrat.NativeAdapters.csproj", "{E76A0C65-8E56-4EC5-B77F-9CD63EB530E0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Transform.Managed", "src\Autocrat.Transform.Managed\Autocrat.Transform.Managed.csproj", "{1178FE97-0C99-4E74-8977-B48FBA81E267}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Transform.Native", "src\Autocrat.Transform.Native\Autocrat.Transform.Native.csproj", "{156D07A0-078F-4DAC-9310-4F691F57D6F2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abstractions.Tests", "tests\Abstractions.Tests\Abstractions.Tests.csproj", "{6511D618-BE95-4AD5-82A4-81D67AE86F3C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Bootstrap.Tests", "tests\Bootstrap.Tests\Bootstrap.Tests.vcxproj", "{A4783C54-DFE0-4FBC-86E9-2751EF0C06A7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integration.Tests", "tests\Integration.Tests\Integration.Tests.csproj", "{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Transform.Native.Tests", "tests\Transform.Native.Tests\Transform.Native.Tests.csproj", "{12B15A76-CD72-4565-A971-F2B3CA9D1A7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeAdapters.Tests", "tests\NativeAdapters.Tests\NativeAdapters.Tests.csproj", "{8FA0A766-10A4-48DA-A4B7-6825899AB144}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Transform.Native", "src\Autocrat.Transform.Native\Autocrat.Transform.Native.csproj", "{156D07A0-078F-4DAC-9310-4F691F57D6F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimerExample", "Examples\TimerExample\TimerExample.csproj", "{EED9D604-FE9D-4C23-A9C3-86A0C5736D99}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Transform.Managed.Tests", "tests\Transform.Managed.Tests\Transform.Managed.Tests.csproj", "{A9E398F6-7C31-4333-8EC9-7860E782607B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Transform.Native.Tests", "tests\Transform.Native.Tests\Transform.Native.Tests.csproj", "{12B15A76-CD72-4565-A971-F2B3CA9D1A7B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
