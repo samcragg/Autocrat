@@ -53,6 +53,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimerExample", "Examples\Ti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integration.Tests", "tests\Integration.Tests\Integration.Tests.csproj", "{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Transform.Native.Tests", "tests\Transform.Native.Tests\Transform.Native.Tests.csproj", "{12B15A76-CD72-4565-A971-F2B3CA9D1A7B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autocrat.Transform.Native", "src\Autocrat.Transform.Native\Autocrat.Transform.Native.csproj", "{156D07A0-078F-4DAC-9310-4F691F57D6F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +103,14 @@ Global
 		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12B15A76-CD72-4565-A971-F2B3CA9D1A7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12B15A76-CD72-4565-A971-F2B3CA9D1A7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12B15A76-CD72-4565-A971-F2B3CA9D1A7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12B15A76-CD72-4565-A971-F2B3CA9D1A7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{156D07A0-078F-4DAC-9310-4F691F57D6F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{156D07A0-078F-4DAC-9310-4F691F57D6F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{156D07A0-078F-4DAC-9310-4F691F57D6F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{156D07A0-078F-4DAC-9310-4F691F57D6F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -114,6 +126,8 @@ Global
 		{8FA0A766-10A4-48DA-A4B7-6825899AB144} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
 		{EED9D604-FE9D-4C23-A9C3-86A0C5736D99} = {81F2A8FA-5DEC-4780-B3CC-0C67CFA685F0}
 		{49BFB09A-C0E7-4378-A42B-F0DE2F28D19D} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
+		{12B15A76-CD72-4565-A971-F2B3CA9D1A7B} = {F7F91C1F-220D-494A-A575-A5B52D654F26}
+		{156D07A0-078F-4DAC-9310-4F691F57D6F2} = {0AD2F87E-7081-4D98-907D-37DE3AF727D6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4EF8B246-D856-451C-AB5D-4C4821DBE8A4}
