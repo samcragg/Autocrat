@@ -1,6 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- The assembly '...' is not inside the 'lib' folder and hence it won't be added as a reference when the package is installed into a project. -->
+    <NoWarn>$(NoWarn);NU5100</NoWarn>
+    
+    <NuspecFile>Autocrat.Compiler.nuspec</NuspecFile>
+    <NuspecProperties>id=$(AssemblyName);version=$(Version)</NuspecProperties>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="PackageFiles\Dependencies.proj" />
+    <None Include="PackageFiles\ManagedToNative.csproj" />
+    <None Include="PackageFiles\NativeProgram.proj" />
+  </ItemGroup>
 </Project>
