@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 </Project>
