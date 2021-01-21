@@ -8,9 +8,14 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
+
   <ItemGroup>
-    <None Include="PackageFiles\Dependencies.proj" />
-    <None Include="PackageFiles\ManagedToNative.csproj" />
-    <None Include="PackageFiles\NativeProgram.proj" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.8.0" />
+    <ProjectReference Include="..\Autocrat.Common\Autocrat.Common.csproj" />
+    <ProjectReference Include="..\Autocrat.Transform.Managed\Autocrat.Transform.Managed.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="PackageFiles\*" />
   </ItemGroup>
 </Project>

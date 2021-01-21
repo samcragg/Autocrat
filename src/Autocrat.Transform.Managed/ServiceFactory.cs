@@ -34,6 +34,16 @@ namespace Autocrat.Transform.Managed
         }
 
         /// <summary>
+        /// Creates a new <see cref="CodeGenerator"/> instance.
+        /// </summary>
+        /// <param name="module">Contains the module information.</param>
+        /// <returns>A new instance of the <see cref="CodeGenerator"/> class.</returns>
+        public virtual CodeGenerator CreateCodeGenerator(ModuleDefinition module)
+        {
+            return new CodeGenerator(this, module);
+        }
+
+        /// <summary>
         /// Creates a new <see cref="InitializerGenerator"/> instance.
         /// </summary>
         /// <returns>A new instance of the <see cref="InitializerGenerator"/> class.</returns>

@@ -11,6 +11,7 @@
     public class ServiceFactoryTests
     {
         private readonly ServiceFactory factory = new ServiceFactory();
+
         public sealed class CreateAssemblyLoaderTests : ServiceFactoryTests
         {
             [Fact]
@@ -18,6 +19,18 @@
             {
                 AssemblyLoader result1 = this.factory.CreateAssemblyLoader();
                 AssemblyLoader result2 = this.factory.CreateAssemblyLoader();
+
+                result1.Should().NotBeSameAs(result2);
+            }
+        }
+
+        public sealed class CreateCodeGeneratorTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnANewInstance()
+            {
+                CodeGenerator result1 = this.factory.CreateCodeGenerator(null);
+                CodeGenerator result2 = this.factory.CreateCodeGenerator(null);
 
                 result1.Should().NotBeSameAs(result2);
             }
