@@ -7,7 +7,7 @@ namespace Autocrat.Transform.Managed.CodeGeneration
 {
     using System;
     using System.Collections.Generic;
-    using Autocrat.Transform.Managed.Logging;
+    using Autocrat.Common;
     using Mono.Cecil;
 
     /// <summary>

@@ -10,7 +10,7 @@ namespace Autocrat.Transform.Managed.CodeGeneration
     using System.Linq;
     using System.Text.Json;
     using Autocrat.Abstractions;
-    using Autocrat.Transform.Managed.Logging;
+    using Autocrat.Common;
     using Mono.Cecil;
     using Mono.Cecil.Cil;
     using static System.Diagnostics.Debug;

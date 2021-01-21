@@ -8,7 +8,7 @@ namespace Autocrat.Transform.Managed
     using System.Collections;
     using System.Collections.Generic;
     using Autocrat.Abstractions;
-    using Autocrat.Transform.Managed.Logging;
+    using Autocrat.Common;
     using Mono.Cecil;
 
     /// <summary>

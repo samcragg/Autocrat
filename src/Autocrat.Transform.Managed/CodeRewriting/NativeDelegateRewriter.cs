@@ -6,8 +6,8 @@
 namespace Autocrat.Transform.Managed.CodeRewriting
 {
     using Autocrat.Abstractions;
+    using Autocrat.Common;
     using Autocrat.Transform.Managed.CodeGeneration;
-    using Autocrat.Transform.Managed.Logging;
     using Mono.Cecil;
     using Mono.Cecil.Cil;
 

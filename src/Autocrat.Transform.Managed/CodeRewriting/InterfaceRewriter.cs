@@ -7,7 +7,7 @@ namespace Autocrat.Transform.Managed.CodeRewriting
 {
     using System;
     using System.Linq;
-    using Autocrat.Transform.Managed.Logging;
+    using Autocrat.Common;
     using Mono.Cecil;
     using Mono.Cecil.Cil;
 

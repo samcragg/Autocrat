@@ -1,9 +1,9 @@
-﻿namespace Transform.Managed.Tests.Logging
+﻿namespace Compiler.Tests
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Autocrat.Transform.Managed.Logging;
+    using Autocrat.Compiler;
     using FluentAssertions;
     using Microsoft.Build.Framework;
     using Microsoft.Build.Utilities;

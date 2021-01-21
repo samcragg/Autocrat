@@ -3,11 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for
 // full license information.
 
-namespace Autocrat.Transform.Managed.Logging
+namespace Autocrat.Compiler
 {
     using System;
-    using Microsoft.Build.Framework;
+    using Autocrat.Common;
     using Microsoft.Build.Utilities;
+    using MessageImportance = Microsoft.Build.Framework.MessageImportance;
 
     /// <summary>
     /// Provides an adapter for logging to MSBuild.

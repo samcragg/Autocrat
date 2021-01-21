@@ -3,33 +3,39 @@
 // Licensed under the MIT license. See LICENSE file in the project root for
 // full license information.
 
-namespace Autocrat.Transform.Managed.Logging
+namespace Autocrat.Common
 {
-    using Microsoft.Build.Utilities;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// Manages instances of logger objects.
     /// </summary>
-    internal static class LogManager
+    public static class LogManager
     {
         private static ILogger logger = new EmptyLogger();
 
         /// <summary>
         /// Gets the currently active logger.
         /// </summary>
+        /// <param name="sourceFile">
+        /// The full path of source file that contains the caller.
+        /// </param>
         /// <returns>The active logger.</returns>
-        public static ILogger GetLogger()
+        public static ILogger GetLogger([CallerFilePath] string sourceFile = "")
         {
+            Debug.WriteLine("Logger requested for " + Path.GetFileNameWithoutExtension(sourceFile));
             return logger;
         }
 
         /// <summary>
         /// Sets the active logger to log to the specified instance.
         /// </summary>
-        /// <param name="loggingHelper">The instance to log to.</param>
-        public static void SetLogger(TaskLoggingHelper loggingHelper)
+        /// <param name="logger">The instance to log to.</param>
+        public static void SetLogger(ILogger logger)
         {
-            logger = new MSBuildLogger(loggingHelper);
+            LogManager.logger = logger;
         }
     }
 }

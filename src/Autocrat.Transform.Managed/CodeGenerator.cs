@@ -9,9 +9,9 @@ namespace Autocrat.Transform.Managed
     using System.IO;
     using System.Text;
     using Autocrat.Abstractions;
+    using Autocrat.Common;
     using Autocrat.Transform.Managed.CodeGeneration;
     using Autocrat.Transform.Managed.CodeRewriting;
-    using Autocrat.Transform.Managed.Logging;
     using Mono.Cecil;
     using Mono.Cecil.Cil;
 
