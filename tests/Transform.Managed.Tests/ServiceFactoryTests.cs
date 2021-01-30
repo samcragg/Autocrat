@@ -109,6 +109,18 @@
             }
         }
 
+        public sealed class GetExportedMethodsTests : ServiceFactoryTests
+        {
+            [Fact]
+            public void ShouldReturnTheSameInstance()
+            {
+                ExportedMethods result1 = this.factory.GetExportedMethods();
+                ExportedMethods result2 = this.factory.GetExportedMethods();
+
+                result1.Should().BeSameAs(result2);
+            }
+        }
+
         public sealed class GetInterfaceResolverTests : ServiceFactoryTests
         {
             [Fact]
@@ -152,18 +164,6 @@
             {
                 ManagedExportsGenerator result1 = this.factory.GetManagedExportsGenerator();
                 ManagedExportsGenerator result2 = this.factory.GetManagedExportsGenerator();
-
-                result1.Should().BeSameAs(result2);
-            }
-        }
-
-        public sealed class GetNativeImportGeneratorTests : ServiceFactoryTests
-        {
-            [Fact]
-            public void ShouldReturnTheSameInstance()
-            {
-                NativeImportGenerator result1 = this.factory.GetNativeImportGenerator();
-                NativeImportGenerator result2 = this.factory.GetNativeImportGenerator();
 
                 result1.Should().BeSameAs(result2);
             }

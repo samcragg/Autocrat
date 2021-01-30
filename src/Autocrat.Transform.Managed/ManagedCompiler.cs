@@ -5,41 +5,59 @@
 
 namespace Autocrat.Transform.Managed
 {
-    using System.IO;
     using Autocrat.Common;
     using Mono.Cecil;
 
     /// <summary>
-    /// Provides an MSBuild task to transform an assembly.
+    /// Transforms a managed assembly to add additional functionality required
+    /// by the native compiler.
     /// </summary>
     public sealed class ManagedCompiler
     {
+        private readonly IOutputFile assemblyOutput;
         private readonly string assemblyPath;
+        private readonly IOutputFile exportsOutput;
         private readonly ServiceFactory factory;
         private readonly ILogger logger = LogManager.GetLogger();
-        private readonly IOutputFile output;
+        private readonly IOutputFile pdbOutput;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ManagedCompiler"/> class.
         /// </summary>
         /// <param name="assemblyPath">The managed assembly to load.</param>
-        /// <param name="output">Specifies where to write the output to.</param>
-        public ManagedCompiler(string assemblyPath, IOutputFile output)
+        /// <param name="assembly">Where to write the generated assembly.</param>
+        /// <param name="pdb">Where to write the debug information.</param>
+        /// <param name="exports">Where to write the exported information.</param>
+        public ManagedCompiler(
+            string assemblyPath,
+            IOutputFile assembly,
+            IOutputFile pdb,
+            IOutputFile exports)
+            : this(assemblyPath, assembly, pdb, exports, new ServiceFactory())
         {
-            this.assemblyPath = assemblyPath;
-            this.output = output;
-            this.factory = new ServiceFactory();
         }
 
         /// <summary>
-        /// Gets or sets the description of the program.
+        /// Initializes a new instance of the <see cref="ManagedCompiler"/> class.
         /// </summary>
-        public string? Description { get; set; }
-
-        /// <summary>
-        /// Gets or sets the version of the program.
-        /// </summary>
-        public string? Version { get; set; }
+        /// <param name="assemblyPath">The managed assembly to load.</param>
+        /// <param name="assembly">Where to write the generated assembly.</param>
+        /// <param name="pdb">Where to write the debug information.</param>
+        /// <param name="exports">Where to write the exported information.</param>
+        /// <param name="factory">Factory to create the services.</param>
+        internal ManagedCompiler(
+            string assemblyPath,
+            IOutputFile assembly,
+            IOutputFile pdb,
+            IOutputFile exports,
+            ServiceFactory factory)
+        {
+            this.assemblyOutput = assembly;
+            this.assemblyPath = assemblyPath;
+            this.exportsOutput = exports;
+            this.factory = factory;
+            this.pdbOutput = pdb;
+        }
 
         /// <summary>
         /// Transforms the managed assembly, generating a separate managed
@@ -57,14 +75,14 @@ namespace Autocrat.Transform.Managed
             CodeGenerator generator = this.factory.CreateCodeGenerator(assembly.MainModule);
 
             this.logger.Info("Emitting assembly");
-            this.output.EnsureExists(); // Also ensures the directory is created
-            using Stream pdbStream = File.Create(
-                Path.ChangeExtension(this.output.Path, ".pdb"));
-            generator.EmitAssembly(this.output.Stream, pdbStream);
+            generator.EmitAssembly(
+                this.assemblyOutput.Stream,
+                this.pdbOutput.Stream);
 
-            //// This needs moving...
-            //// this.logger.Info("Emitting native source");
-            //// generator.EmitNativeCode(this.Version, this.Description, output.Source);
+            this.logger.Info("Saving export information");
+            this.factory.GetExportedMethods().SerializeTo(
+                this.exportsOutput.Stream);
+
             return true;
         }
     }

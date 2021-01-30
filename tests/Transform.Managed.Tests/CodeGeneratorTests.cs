@@ -1,9 +1,7 @@
 ﻿namespace Transform.Managed.Tests
 {
     using System.IO;
-    using System.Text;
     using Autocrat.Transform.Managed;
-    using FluentAssertions;
     using Mono.Cecil;
     using NSubstitute;
     using Xunit;
@@ -51,40 +49,6 @@
                 this.factory.CreateModuleRewriter()
                     .Received()
                     .Visit(this.module);
-            }
-        }
-
-        public sealed class EmitNativeCodeTests : CodeGeneratorTests
-        {
-            [Fact]
-            public void ShouldSetTheDescription()
-            {
-                this.GetOutput(null, "Test description")
-                    .Should().Contain("set_description(\"Test description\");");
-            }
-
-            [Fact]
-            public void ShouldSetTheVersion()
-            {
-                this.GetOutput("1.2.3", null)
-                    .Should().Contain("set_version(\"1.2.3\");");
-            }
-
-            [Fact]
-            public void ShouldWriteTheNativeImportCode()
-            {
-                this.generator.EmitNativeCode(null, null, Stream.Null);
-
-                this.factory.GetNativeImportGenerator()
-                    .Received()
-                    .WriteTo(Stream.Null);
-            }
-
-            private string GetOutput(string version, string description)
-            {
-                using var stream = new MemoryStream();
-                this.generator.EmitNativeCode(version, description, stream);
-                return Encoding.UTF8.GetString(stream.ToArray());
             }
         }
     }

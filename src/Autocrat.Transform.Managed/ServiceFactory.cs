@@ -5,7 +5,6 @@
 
 namespace Autocrat.Transform.Managed
 {
-    using System;
     using System.Collections.Generic;
     using Autocrat.Transform.Managed.CodeGeneration;
     using Autocrat.Transform.Managed.CodeRewriting;
@@ -16,9 +15,9 @@ namespace Autocrat.Transform.Managed
     /// </summary>
     internal class ServiceFactory
     {
-        private static readonly Lazy<NativeImportGenerator> NativeImportGenerator = new Lazy<NativeImportGenerator>();
         private ConfigResolver? configResolver;
         private ConstructorResolver? constructorResolver;
+        private ExportedMethods? exportedMethods;
         private InterfaceResolver? interfaceResolver;
         private KnownTypes? knownTypes;
         private ManagedCallbackGenerator? managedCallbackGenerator;
@@ -102,7 +101,7 @@ namespace Autocrat.Transform.Managed
             return new WorkerRegisterGenerator(
                 this.CreateInstanceBuilder(),
                 factoryTypes,
-                this.GetNativeImportGenerator());
+                this.GetExportedMethods());
         }
 
         /// <summary>
@@ -119,6 +118,20 @@ namespace Autocrat.Transform.Managed
             }
 
             return this.configResolver;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ExportedMethods"/> instance.
+        /// </summary>
+        /// <returns>An instance of the <see cref="ExportedMethods"/> class.</returns>
+        public virtual ExportedMethods GetExportedMethods()
+        {
+            if (this.exportedMethods is null)
+            {
+                this.exportedMethods = new ExportedMethods();
+            }
+
+            return this.exportedMethods;
         }
 
         /// <summary>
@@ -160,7 +173,7 @@ namespace Autocrat.Transform.Managed
             {
                 this.managedCallbackGenerator = new ManagedCallbackGenerator(
                     this.CreateInstanceBuilder(),
-                    this.GetNativeImportGenerator());
+                    this.GetExportedMethods());
             }
 
             return this.managedCallbackGenerator;
@@ -178,15 +191,6 @@ namespace Autocrat.Transform.Managed
             }
 
             return this.managedExportsGenerator;
-        }
-
-        /// <summary>
-        /// Gets a <see cref="NativeImportGenerator"/> instance.
-        /// </summary>
-        /// <returns>An instance of the <see cref="NativeImportGenerator"/> class.</returns>
-        public virtual NativeImportGenerator GetNativeImportGenerator()
-        {
-            return NativeImportGenerator.Value;
         }
 
         private static ConfigGenerator CreateConfigGenerator()

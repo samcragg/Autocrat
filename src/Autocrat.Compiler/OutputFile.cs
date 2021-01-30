@@ -41,12 +41,6 @@ namespace Autocrat.Compiler
             }
         }
 
-        /// <inheritdoc />
-        public void EnsureExists()
-        {
-            _ = this.stream.Value;
-        }
-
         private Stream OpenWrite()
         {
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(this.Path));

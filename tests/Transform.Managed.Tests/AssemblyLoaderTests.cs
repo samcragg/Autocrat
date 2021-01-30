@@ -45,8 +45,6 @@
 
         public sealed class LoadTests : AssemblyLoaderTests
         {
-            private static int AssemblyCount = 0;
-
             [Fact]
             public void ShouldResolveAssembliesInTheCompilerDirectory()
             {
@@ -65,14 +63,14 @@
 
             private TypeReference CreateAssemblyWithType(string directory)
             {
-                AssemblyCount++;
-                string assemblyName = "TestAssembly" + AssemblyCount;
+                string uniqueId = Guid.NewGuid().ToString();
+                string assemblyName = "TestAssembly" + uniqueId;
                 using var assembly = AssemblyDefinition.CreateAssembly(
                     new AssemblyNameDefinition(assemblyName, new Version(1, 0)),
-                    "TestModule" + AssemblyCount,
+                    "TestModule" + uniqueId,
                     ModuleKind.Dll);
 
-                var type = new TypeDefinition("", "TestClass" + AssemblyCount, default);
+                var type = new TypeDefinition("", "TestClass" + uniqueId, default);
                 assembly.MainModule.Types.Add(type);
 
                 string assemblyFile = Path.Combine(directory, assemblyName + ".dll");

@@ -22,10 +22,5 @@ namespace Autocrat.Common
         /// Gets the stream to write to.
         /// </summary>
         Stream Stream { get; }
-
-        /// <summary>
-        /// Ensures the output file exists on disk.
-        /// </summary>
-        void EnsureExists();
     }
 }

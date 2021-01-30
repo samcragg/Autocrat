@@ -7,7 +7,6 @@ namespace Autocrat.Transform.Managed
 {
     using System.Collections.Generic;
     using System.IO;
-    using System.Text;
     using Autocrat.Abstractions;
     using Autocrat.Common;
     using Autocrat.Transform.Managed.CodeGeneration;
@@ -16,8 +15,7 @@ namespace Autocrat.Transform.Managed
     using Mono.Cecil.Cil;
 
     /// <summary>
-    /// Creates the generated code for the managed and native parts of the
-    /// application.
+    /// Creates the generated code for the transformed managed assembly.
     /// </summary>
     internal class CodeGenerator
     {
@@ -72,41 +70,13 @@ namespace Autocrat.Transform.Managed
             this.module.Write(destination, options);
         }
 
-        /// <summary>
-        /// Generates the native source code.
-        /// </summary>
-        /// <param name="version">The version information to report at runtime.</param>
-        /// <param name="description">The description to report at runtime.</param>
-        /// <param name="destination">Where to save the source code to.</param>
-        public virtual void EmitNativeCode(string? version, string? description, Stream destination)
+        private void EmitConfigurationClass()
         {
-            NativeImportGenerator nativeGenerator = this.serviceFactory.GetNativeImportGenerator();
-            nativeGenerator.WriteTo(destination);
+            this.logger.Info("Emitting configuration");
+            ConfigResolver config = this.serviceFactory.GetConfigResolver();
+            ManagedExportsGenerator exports = this.serviceFactory.GetManagedExportsGenerator();
 
-            string mainMethod = CreateNativeMain(version, description);
-            byte[] bytes = Encoding.UTF8.GetBytes(mainMethod);
-            destination.Write(bytes);
-        }
-
-        private static string CreateNativeMain(string? version, string? description)
-        {
-            var buffer = new StringBuilder();
-            buffer.AppendLine("int main(int argc, char* argv[])");
-            buffer.AppendLine("{");
-
-            if (!string.IsNullOrEmpty(description))
-            {
-                buffer.Append("    set_description(\"").Append(description).AppendLine("\");");
-            }
-
-            if (!string.IsNullOrEmpty(version))
-            {
-                buffer.Append("    set_version(\"").Append(version).AppendLine("\");");
-            }
-
-            buffer.AppendLine("    return autocrat_main(argc, argv);");
-            buffer.AppendLine("}");
-            return buffer.ToString();
+            exports.ConfigClass = config.EmitConfigurationClass(this.module);
         }
 
         private void EmitInitializer()
@@ -140,15 +110,6 @@ namespace Autocrat.Transform.Managed
 
             this.logger.Info("Emitting exports");
             exports.Emit(this.module);
-        }
-
-        private void EmitConfigurationClass()
-        {
-            this.logger.Info("Emitting configuration");
-            ConfigResolver config = this.serviceFactory.GetConfigResolver();
-            ManagedExportsGenerator exports = this.serviceFactory.GetManagedExportsGenerator();
-
-            exports.ConfigClass = config.EmitConfigurationClass(this.module);
         }
 
         private void RewriteModule()
