@@ -1,5 +1,5 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <UsingTask TaskName="Autocrat.Compiler.AutocratTask"
+  <UsingTask TaskName="Autocrat.Compiler.AutocratManagedTask"
              AssemblyFile="$(AutocratCompiler)" />
   
   <Target Name="AutocratTarget"
@@ -24,11 +24,9 @@
       <ReferencePath Include="$(AutocratNativeAdapters)" />
     </ItemGroup>
 
-    <AutocratTask Description="$(Description)"
-                  OutputAssembly="$(AutocratOutputAssembly)"
-                  OutputSource="$(AutocratOutputSource)"
-                  Source="$(TargetPath)"
-                  Version="$(Version)" />
+    <AutocratManagedTask OutputAssembly="$(AutocratOutputAssembly)"
+                         OutputExports="$(AutocratOutputExports)"
+                         Source="$(TargetPath)" />
 
     <Move SourceFiles="@(PublishedFiles)"
           DestinationFolder="$(AutocratOutputDirectory)" />
