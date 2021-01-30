@@ -48,9 +48,9 @@ namespace Autocrat.Transform.Managed.CodeGeneration
         //// }
         //
         // where 123 is the method handle for the CreateMyClass method.
+        private readonly ExportedMethods exportedMethods;
         private readonly IReadOnlyCollection<TypeReference> factoryTypes;
         private readonly InstanceBuilder instanceBuilder;
-        private readonly NativeImportGenerator nativeGenerator;
         private MethodDefinition? workerFactoryRegister;
 
         /// <summary>
@@ -60,15 +60,15 @@ namespace Autocrat.Transform.Managed.CodeGeneration
         /// Used to generate code to create new objects.
         /// </param>
         /// <param name="factoryTypes">The worker types to register.</param>
-        /// <param name="nativeGenerator">Used to register the managed methods.</param>
+        /// <param name="exportedMethods">Used to register the managed methods.</param>
         public WorkerRegisterGenerator(
             InstanceBuilder instanceBuilder,
             IReadOnlyCollection<TypeReference> factoryTypes,
-            NativeImportGenerator nativeGenerator)
+            ExportedMethods exportedMethods)
         {
             this.factoryTypes = factoryTypes;
             this.instanceBuilder = instanceBuilder;
-            this.nativeGenerator = nativeGenerator;
+            this.exportedMethods = exportedMethods;
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Autocrat.Transform.Managed.CodeGeneration
         {
             this.factoryTypes = null!;
             this.instanceBuilder = null!;
-            this.nativeGenerator = null!;
+            this.exportedMethods = null!;
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace Autocrat.Transform.Managed.CodeGeneration
             il.Emit(OpCodes.Ret);
 
             CecilHelper.OptimizeBody(method);
-            return this.nativeGenerator.RegisterMethod("void* {0}()", method.Name);
+            return this.exportedMethods.RegisterMethod("void* {0}()", method.Name);
         }
     }
 }

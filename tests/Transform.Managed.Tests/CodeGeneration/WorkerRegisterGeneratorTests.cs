@@ -1,6 +1,7 @@
 ﻿namespace Transform.Managed.Tests.CodeGeneration
 {
     using System.Collections.Generic;
+    using Autocrat.Transform.Managed;
     using Autocrat.Transform.Managed.CodeGeneration;
     using Mono.Cecil;
     using NSubstitute;
@@ -10,15 +11,15 @@
     {
         private readonly InstanceBuilder builder;
         private readonly WorkerRegisterGenerator generator;
-        private readonly NativeImportGenerator nativeGenerator;
+        private readonly ExportedMethods exportedMethods;
         private readonly List<TypeReference> workerTypes = new List<TypeReference>();
 
         private WorkerRegisterGeneratorTests()
         {
             this.builder = Substitute.For<InstanceBuilder>();
-            this.nativeGenerator = Substitute.For<NativeImportGenerator>();
+            this.exportedMethods = Substitute.For<ExportedMethods>();
 
-            this.generator = new WorkerRegisterGenerator(this.builder, this.workerTypes, this.nativeGenerator);
+            this.generator = new WorkerRegisterGenerator(this.builder, this.workerTypes, this.exportedMethods);
         }
 
         public sealed class GenerateTests : WorkerRegisterGeneratorTests
@@ -44,7 +45,7 @@
 
                 this.generator.EmitWorkerClass(testWorker.Module);
 
-                this.nativeGenerator.ReceivedWithAnyArgs(3).RegisterMethod(null, null);
+                this.exportedMethods.ReceivedWithAnyArgs(3).RegisterMethod(null, null);
             }
         }
     }

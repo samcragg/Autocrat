@@ -1,6 +1,7 @@
 ﻿namespace Transform.Managed.Tests.CodeGeneration
 {
     using System.Linq;
+    using Autocrat.Transform.Managed;
     using Autocrat.Transform.Managed.CodeGeneration;
     using FluentAssertions;
     using Mono.Cecil;
@@ -13,16 +14,16 @@
     {
         private readonly ManagedCallbackGenerator generator;
         private readonly InstanceBuilder instanceBuilder;
-        private readonly NativeImportGenerator nativeGenerator;
+        private readonly ExportedMethods exportedMethods;
 
         private ManagedCallbackGeneratorTests()
         {
             this.instanceBuilder = Substitute.For<InstanceBuilder>();
-            this.nativeGenerator = Substitute.For<NativeImportGenerator>();
+            this.exportedMethods = Substitute.For<ExportedMethods>();
 
             this.generator = new ManagedCallbackGenerator(
                 this.instanceBuilder,
-                this.nativeGenerator);
+                this.exportedMethods);
         }
 
         public sealed class AddMethodTests : ManagedCallbackGeneratorTests
@@ -31,7 +32,7 @@
             public void ShouldReturnTheRegistrationOfTheGeneratedMethod()
             {
                 var method = new CodeHelper.GeneratedMethod();
-                this.nativeGenerator.RegisterMethod("signature", Arg.Any<string>())
+                this.exportedMethods.RegisterMethod("signature", Arg.Any<string>())
                     .Returns(123);
 
                 int result = this.generator.AddMethod("signature", method.Method);

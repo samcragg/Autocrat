@@ -46,21 +46,21 @@ namespace Autocrat.Transform.Managed.CodeGeneration
         ////         return instance.Method();
         ////     }
         //// }
+        private readonly ExportedMethods exportedMethods;
         private readonly InstanceBuilder instanceBuilder;
         private readonly List<MethodRegistration> methods = new List<MethodRegistration>();
-        private readonly NativeImportGenerator nativeGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ManagedCallbackGenerator"/> class.
         /// </summary>
         /// <param name="instanceBuilder">Used to generate code to create objects.</param>
-        /// <param name="nativeGenerator">Used to register the managed methods.</param>
+        /// <param name="exportedMethods">Used to register the managed methods.</param>
         public ManagedCallbackGenerator(
             InstanceBuilder instanceBuilder,
-            NativeImportGenerator nativeGenerator)
+            ExportedMethods exportedMethods)
         {
             this.instanceBuilder = instanceBuilder;
-            this.nativeGenerator = nativeGenerator;
+            this.exportedMethods = exportedMethods;
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace Autocrat.Transform.Managed.CodeGeneration
         protected ManagedCallbackGenerator()
         {
             this.instanceBuilder = null!;
-            this.nativeGenerator = null!;
+            this.exportedMethods = null!;
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Autocrat.Transform.Managed.CodeGeneration
         {
             var registration = new MethodRegistration(method);
             this.methods.Add(registration);
-            return this.nativeGenerator.RegisterMethod(nativeSignature, registration.Name);
+            return this.exportedMethods.RegisterMethod(nativeSignature, registration.Name);
         }
 
         /// <summary>
