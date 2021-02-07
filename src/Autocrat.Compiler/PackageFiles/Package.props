@@ -10,6 +10,7 @@
     <AutocratNativeTargets Condition="'$([MSBuild]::IsOSPlatform(Windows))' == 'true'">$(AutocratContentDir)NativeCompile.Windows.targets</AutocratNativeTargets>
     <AutocratOutputDirectory>$(MSBuildProjectDirectory)/obj/autocrat/</AutocratOutputDirectory>
     <AutocratOutputAssembly>$(AutocratOutputDirectory)AutocratGeneratedAssembly.dll</AutocratOutputAssembly>
+    <AutocratOutputExports>$(AutocratOutputDirectory)exports.json</AutocratOutputExports>
     <AutocratOutputSource>$(AutocratOutputDirectory)source.cpp</AutocratOutputSource>
   </PropertyGroup>
 </Project>
