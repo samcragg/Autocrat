@@ -1,6 +1,9 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <UsingTask TaskName="Autocrat.Compiler.AutocratManagedTask"
              AssemblyFile="$(AutocratCompiler)" />
+
+  <UsingTask TaskName="Autocrat.Compiler.AutocratNativeTask"
+             AssemblyFile="$(AutocratCompiler)" />
   
   <Target Name="AutocratTarget"
           AfterTargets="Publish"
@@ -24,6 +27,7 @@
       <ReferencePath Include="$(AutocratNativeAdapters)" />
     </ItemGroup>
 
+    <!-- Prepare the managed assembly -->
     <AutocratManagedTask OutputAssembly="$(AutocratOutputAssembly)"
                          OutputExports="$(AutocratOutputExports)"
                          Source="$(TargetPath)" />
@@ -52,6 +56,12 @@
     <MSBuild Projects="$(AutocratOutputDirectory)$(AutocratManagedProject)"
              Properties="@(AdditionalProjectOptions);RestorePackagesPath=$(RestorePackagesPath)"
              Targets="Restore" />
+
+    <!-- Create the native adapters -->
+    <AutocratNativeTask Description="$(Description)"
+                        Exports="$(AutocratOutputExports)"
+                        OutputSource="$(AutocratOutputSource)"
+                        Version="$(Version)" />
     
     <!-- Compile the native and managed projects in parallel -->
     <MSBuild BuildInParallel="True"
