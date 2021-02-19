@@ -11,7 +11,7 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    
+
     <IlcDisableReflection>true</IlcDisableReflection>
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
     <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
@@ -27,8 +27,10 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Ensure the types in our generated assembly are sent to the IL compiler too -->
   <ItemGroup>
+    <IlcArg Include="--map:$(CoreRtMapFile)" />
+    
+    <!-- Ensure the types in our generated assembly are sent to the IL compiler too -->
     <IlcArg Include="$(AutocratOutputAssembly)" />
     <IlcArg Include="$(AutocratNativeAdapters)" />
   </ItemGroup>

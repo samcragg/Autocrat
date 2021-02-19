@@ -3,12 +3,6 @@
   <Import Project="$(AutocratNativeTargets)" />
   <Import Project="$(CoreRTNativeProps)" />
 
-  <Target Name="Build">
-  </Target>
-
-  <Target Name="Publish" DependsOnTargets="AutocratCompile">
-  </Target>
-
-  <Target Name="Link" DependsOnTargets="AutocratLink">
+  <Target Name="Build" DependsOnTargets="AutocratCompile;AutocratLink">
   </Target>
 </Project>

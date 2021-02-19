@@ -12,5 +12,6 @@
     <AutocratOutputAssembly>$(AutocratOutputDirectory)AutocratGeneratedAssembly.dll</AutocratOutputAssembly>
     <AutocratOutputExports>$(AutocratOutputDirectory)exports.json</AutocratOutputExports>
     <AutocratOutputSource>$(AutocratOutputDirectory)source.cpp</AutocratOutputSource>
+    <CoreRtMapFile>$(AutocratOutputDirectory)compiler.map</CoreRtMapFile>
   </PropertyGroup>
 </Project>

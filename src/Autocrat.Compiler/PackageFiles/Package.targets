@@ -15,6 +15,7 @@
       <AdditionalProjectOptions Include="AutocratNativeTargets=$(AutocratNativeTargets)" />
       <AdditionalProjectOptions Include="AutocratOutputAssembly=$(AutocratOutputAssembly)" />
       <AdditionalProjectOptions Include="AutocratOutputSource=$(AutocratOutputSource)" />
+      <AdditionalProjectOptions Include="CoreRtMapFile=$(CoreRtMapFile)" />
       <AdditionalProjectOptions Include="Configuration=$(Configuration)" />
       <AdditionalProjectOptions Include="PublishDir=publish" />
       <AdditionalProjectOptions Include="RestoreSources=$(RestoreSources)" />
@@ -27,7 +28,7 @@
       <ReferencePath Include="$(AutocratNativeAdapters)" />
     </ItemGroup>
 
-    <!-- Prepare the managed assembly -->
+    <!-- Modify the managed assembly to include the native adapters -->
     <AutocratManagedTask OutputAssembly="$(AutocratOutputAssembly)"
                          OutputExports="$(AutocratOutputExports)"
                          Source="$(TargetPath)" />
@@ -57,26 +58,25 @@
              Properties="@(AdditionalProjectOptions);RestorePackagesPath=$(RestorePackagesPath)"
              Targets="Restore" />
 
-    <!-- Create the native adapters -->
+    <!-- Compile managed project to a native library -->
+    <MSBuild Projects="$(AutocratOutputDirectory)$(AutocratManagedProject)"
+             Properties="@(AdditionalProjectOptions)"
+             Targets="Publish" />
+
+    <!-- Create the additional native code to compile -->
     <AutocratNativeTask Description="$(Description)"
                         Exports="$(AutocratOutputExports)"
+                        Map="$(CoreRtMapFile)"
                         OutputSource="$(AutocratOutputSource)"
                         Version="$(Version)" />
     
-    <!-- Compile the native and managed projects in parallel -->
-    <MSBuild BuildInParallel="True"
-             Projects="$(AutocratOutputDirectory)$(AutocratManagedProject);$(AutocratOutputDirectory)$(AutocratNativeProject)"
-             Properties="@(AdditionalProjectOptions)"
-             Targets="Build;Publish" />
-    
-    <!-- Link the two project outputs together -->
+    <!-- Compile the native project -->
     <MSBuild Projects="$(AutocratOutputDirectory)$(AutocratNativeProject)"
              Properties="@(AdditionalProjectOptions)"
-             Targets="Link" />
+             Targets="Build" />
 
     <!-- Do a little cleaning -->
     <RemoveDir Directories="$(AutocratOutputDirectory)bin;$(AutocratOutputDirectory)publish" />
-
   </Target>
 
   <Target Name="AutocratCopyOutputFiles"
