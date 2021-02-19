@@ -27,6 +27,12 @@ namespace Autocrat.Compiler
         public string Exports { get; set; } = null!;
 
         /// <summary>
+        /// Gets or sets the filename of the generated map file.
+        /// </summary>
+        [Required]
+        public string Map { get; set; } = null!;
+
+        /// <summary>
         /// Gets or sets the filename of the generated native source code.
         /// </summary>
         [Required]
@@ -47,8 +53,9 @@ namespace Autocrat.Compiler
             };
 
             using Stream exports = File.OpenRead(this.Exports);
+            using Stream map = File.OpenRead(this.Map);
             using var output = new OutputFile(this.OutputSource);
-            generator.Generate(exports, output);
+            generator.Generate(exports, map, output);
             return true;
         }
     }

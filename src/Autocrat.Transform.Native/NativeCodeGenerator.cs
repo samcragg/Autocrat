@@ -17,12 +17,16 @@ namespace Autocrat.Transform.Native
     {
         private readonly MainGenerator main;
         private readonly NativeImportGenerator nativeImports;
+        private readonly StaticInitializerGenerator staticInitializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NativeCodeGenerator"/> class.
         /// </summary>
         public NativeCodeGenerator()
-            : this(new MainGenerator(), new NativeImportGenerator())
+            : this(
+                  new MainGenerator(),
+                  new NativeImportGenerator(),
+                  new StaticInitializerGenerator())
         {
         }
 
@@ -31,10 +35,15 @@ namespace Autocrat.Transform.Native
         /// </summary>
         /// <param name="main">Used to generate the main entry point.</param>
         /// <param name="nativeImports">Used to generate the native imports.</param>
-        internal NativeCodeGenerator(MainGenerator main, NativeImportGenerator nativeImports)
+        /// <param name="staticInitializer">Used to generate static initialization.</param>
+        internal NativeCodeGenerator(
+            MainGenerator main,
+            NativeImportGenerator nativeImports,
+            StaticInitializerGenerator staticInitializer)
         {
             this.main = main;
             this.nativeImports = nativeImports;
+            this.staticInitializer = staticInitializer;
         }
 
         /// <summary>
@@ -51,12 +60,18 @@ namespace Autocrat.Transform.Native
         /// Temporary method to avoid compile errors.
         /// </summary>
         /// <param name="exports">Contains the managed export information.</param>
+        /// <param name="map">Contains the generated map file.</param>
         /// <param name="output">Where to write the generated output to.</param>
-        public void Generate(Stream exports, IOutputFile output)
+        public void Generate(Stream exports, Stream map, IOutputFile output)
         {
             if (exports is null)
             {
                 throw new ArgumentNullException(nameof(exports));
+            }
+
+            if (map is null)
+            {
+                throw new ArgumentNullException(nameof(map));
             }
 
             if (output is null)
@@ -67,6 +82,9 @@ namespace Autocrat.Transform.Native
             using var writer = new StreamWriter(output.Stream, Encoding.UTF8);
             this.nativeImports.LoadExports(exports);
             this.nativeImports.WriteTo(writer);
+
+            this.staticInitializer.Load(map);
+            this.staticInitializer.WriteTo(writer);
 
             this.main.Description = this.Description;
             this.main.Version = this.Version;
