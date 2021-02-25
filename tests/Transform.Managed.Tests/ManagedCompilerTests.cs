@@ -42,12 +42,35 @@
         public sealed class TransformTests : ManagedCompilerTests
         {
             [Fact]
+            public void ShouldLoadTheNativeAdaptersTypes()
+            {
+                this.compiler.Transform();
+
+                this.factory.CreateAssemblyLoader()
+                    .Received()
+                    .Load(Arg.Is<string>(s => s.Contains(nameof(Autocrat.NativeAdapters))));
+            }
+
+            [Fact]
             public void ShouldSaveTheExportedMethods()
             {
                 this.compiler.Transform();
 
                 this.factory.GetExportedMethods().Received()
                     .SerializeTo(this.exports.Stream);
+            }
+
+            [Fact]
+            public void ShouldScanTheKnownTypesOfAnAssembly()
+            {
+                var module = ModuleDefinition.CreateModule("TestModule", ModuleKind.Dll);
+                this.factory.CreateAssemblyLoader()
+                    .Modules.Returns(new[] { module });
+
+                this.compiler.Transform();
+
+                this.factory.GetKnownTypes()
+                    .Received().Scan(module);
             }
         }
     }

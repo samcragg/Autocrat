@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using Autocrat.Transform.Managed;
     using FluentAssertions;
     using Mono.Cecil;
@@ -28,23 +29,43 @@
 
         public void Dispose()
         {
-            try
+            static void Try(Action action)
             {
-                foreach (string assembly in this.tempAssemblies)
+                try
                 {
-                    File.Delete(assembly);
+                    action();
                 }
+                catch
+                {
+                }
+            }
 
-                Directory.SetCurrentDirectory(this.workingDirectory);
-                Directory.Delete(this.tempDirectory, recursive: true);
-            }
-            catch
+            foreach (string assembly in this.tempAssemblies)
             {
+                Try(() => File.Delete(assembly));
             }
+
+            Try(() => Directory.Delete(this.tempDirectory, recursive: true));
+            Directory.SetCurrentDirectory(this.workingDirectory);
         }
 
         public sealed class LoadTests : AssemblyLoaderTests
         {
+            [Fact]
+            public void ShouldAddAllTheModules()
+            {
+                string mainModuleName = null;
+                string assemblyPath = this.CreateAssembly(this.tempDirectory, assembly =>
+                {
+                    mainModuleName = assembly.MainModule.Name;
+                });
+
+                this.loader.Load(assemblyPath);
+
+                this.loader.Modules.Select(m => m.Name)
+                    .Should().Contain(new[] { mainModuleName });
+            }
+
             [Fact]
             public void ShouldResolveAssembliesInTheCompilerDirectory()
             {
@@ -61,7 +82,7 @@
                     .Should().NotThrow();
             }
 
-            private TypeReference CreateAssemblyWithType(string directory)
+            private string CreateAssembly(string directory, Action<AssemblyDefinition> configure)
             {
                 string uniqueId = Guid.NewGuid().ToString();
                 string assemblyName = "TestAssembly" + uniqueId;
@@ -70,13 +91,22 @@
                     "TestModule" + uniqueId,
                     ModuleKind.Dll);
 
-                var type = new TypeDefinition("", "TestClass" + uniqueId, default);
-                assembly.MainModule.Types.Add(type);
+                configure(assembly);
 
                 string assemblyFile = Path.Combine(directory, assemblyName + ".dll");
                 assembly.Write(assemblyFile);
                 this.tempAssemblies.Add(assemblyFile);
+                return assemblyFile;
+            }
 
+            private TypeReference CreateAssemblyWithType(string directory)
+            {
+                TypeDefinition type = null;
+                this.CreateAssembly(directory, assembly =>
+                {
+                    type = new TypeDefinition("", assembly.Name + "_TestClass", default);
+                    assembly.MainModule.Types.Add(type);
+                });
                 return type;
             }
         }

@@ -54,8 +54,6 @@ namespace Autocrat.Transform.Managed
         /// <param name="pdb">Where to save the debug information.</param>
         public virtual void EmitAssembly(Stream destination, Stream pdb)
         {
-            this.serviceFactory.GetKnownTypes().Scan(this.module);
-
             this.RewriteModule();
             this.EmitConfigurationClass();
             this.EmitInitializer();

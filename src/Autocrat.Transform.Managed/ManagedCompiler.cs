@@ -6,6 +6,7 @@
 namespace Autocrat.Transform.Managed
 {
     using Autocrat.Common;
+    using Autocrat.NativeAdapters;
     using Mono.Cecil;
 
     /// <summary>
@@ -67,9 +68,18 @@ namespace Autocrat.Transform.Managed
         public bool Transform()
         {
             this.logger.Info("Loading assembly");
-            AssemblyDefinition assembly = this.factory
-                .CreateAssemblyLoader()
-                .Load(this.assemblyPath);
+            AssemblyLoader loader = this.factory.CreateAssemblyLoader();
+            KnownTypes knownTypes = this.factory.GetKnownTypes();
+
+            AssemblyDefinition assembly = loader.Load(this.assemblyPath);
+
+            // The NativeAdapters implement some of the interfaces in
+            // Abstractions, so make sure its modules are scanned too.
+            loader.Load(typeof(ConfigService).Assembly.Location);
+            foreach (ModuleDefinition module in loader.Modules)
+            {
+                knownTypes.Scan(module);
+            }
 
             this.logger.Info("Generating code");
             CodeGenerator generator = this.factory.CreateCodeGenerator(assembly.MainModule);
