@@ -93,7 +93,7 @@ namespace Autocrat.Transform.Managed.CodeRewriting
         /// </summary>
         /// <param name="instruction">The instruction information.</param>
         /// <param name="constructor">The constructor used to initialise the object.</param>
-        protected virtual void OnNewObj(Instruction instruction, MethodDefinition constructor)
+        protected virtual void OnNewObj(Instruction instruction, MethodReference constructor)
         {
         }
 
@@ -212,7 +212,7 @@ namespace Autocrat.Transform.Managed.CodeRewriting
                     break;
 
                 case Code.Newobj:
-                    this.OnNewObj(instruction, (MethodDefinition)instruction.Operand);
+                    this.OnNewObj(instruction, (MethodReference)instruction.Operand);
                     break;
 
                 case Code.Starg:

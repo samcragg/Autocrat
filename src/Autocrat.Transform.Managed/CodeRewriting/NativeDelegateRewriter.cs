@@ -41,21 +41,20 @@ namespace Autocrat.Transform.Managed.CodeRewriting
         }
 
         /// <inheritdoc />
-        protected override void OnNewObj(Instruction instruction, MethodDefinition constructor)
+        protected override void OnNewObj(Instruction instruction, MethodReference constructor)
         {
             // For creating a delegate, we're expecting to see this sequence:
             //// ldarg  <- The "instance" value, will be null for statics
             //// ldftn  <- The method to call
             //// newobj <- The delegate marked with the NativeDelegateAttribute
-            string? signature = GetNativeSignature(constructor.DeclaringType);
+            TypeDefinition type = constructor.Resolve().DeclaringType;
+            string? signature = GetNativeSignature(type);
             if (signature is null)
             {
                 return;
             }
 
-            this.logger.Debug(
-                "Rewriting native delegate creation of {0}",
-                constructor.DeclaringType.Name);
+            this.logger.Debug("Rewriting native delegate creation of {0}", type.Name);
 
             // Remove the existing instructions
             var method = (MethodDefinition)instruction.Previous.Operand;
